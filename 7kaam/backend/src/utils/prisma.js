@@ -3,9 +3,6 @@
  *
  * We wrap @supabase/supabase-js so every controller continues to call
  * `prisma.<model>.<method>()` — identical API, no controller changes needed.
- *
- * Why: Supabase free-tier blocks external TCP on port 5432/6543 (IPv4 Add-on
- * required). The HTTPS REST API (PostgREST) always works on port 443.
  */
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
@@ -16,12 +13,24 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-// ── tiny helpers ──────────────────────────────────────────────────────────────
-
-function snakeToModel(name) {
-  // Prisma model names → Supabase table names (we use PascalCase for tables)
-  return name;
-}
+const REL_TO_TABLE = {
+  kaamCards: 'KaamCard',
+  kaamCard: 'KaamCard',
+  workHistories: 'WorkHistory',
+  workHistory: 'WorkHistory',
+  testSubmissions: 'TestSubmission',
+  testSubmission: 'TestSubmission',
+  scoringLogs: 'ScoringLog',
+  scoringLog: 'ScoringLog',
+  bookings: 'Booking',
+  booking: 'Booking',
+  createdTests: 'TradeTest',
+  test: 'TradeTest',
+  submissions: 'TestSubmission',
+  admin: 'Admin',
+  worker: 'Worker',
+  customer: 'Customer',
+};
 
 /** Throw a Prisma-style error so controllers don't need changes */
 function dbError(op, table, msg) {
@@ -36,15 +45,23 @@ function applyWhere(query, where = {}) {
   for (const [key, val] of Object.entries(where)) {
     if (val === null) {
       query = query.is(key, null);
+    } else if (val instanceof Date) {
+      query = query.eq(key, val.toISOString());
     } else if (typeof val === 'object' && !Array.isArray(val)) {
-      if (val.in)         query = query.in(key, val.in);
-      else if (val.gte)   query = query.gte(key, val.gte);
-      else if (val.lte)   query = query.lte(key, val.lte);
-      else if (val.gt)    query = query.gt(key, val.gt);
-      else if (val.lt)    query = query.lt(key, val.lt);
-      else if (val.not)   query = query.neq(key, val.not);
-      else if (val.contains) query = query.ilike(key, `%${val.contains}%`);
-      else                query = query.eq(key, val);
+      const fmt = (v) => (v instanceof Date ? v.toISOString() : v);
+      if (val.in) query = query.in(key, val.in.map(fmt));
+      else if (val.gte) query = query.gte(key, fmt(val.gte));
+      else if (val.lte) query = query.lte(key, fmt(val.lte));
+      else if (val.gt) query = query.gt(key, fmt(val.gt));
+      else if (val.lt) query = query.lt(key, fmt(val.lt));
+      else if ('not' in val) {
+        if (val.not === null) query = query.not(key, 'is', null);
+        else query = query.neq(key, fmt(val.not));
+      } else if (val.contains) {
+        query = query.ilike(key, `%${val.contains}%`);
+      } else {
+        query = query.eq(key, val);
+      }
     } else {
       query = query.eq(key, val);
     }
@@ -56,34 +73,78 @@ function applyWhere(query, where = {}) {
 function buildSelect(include = {}) {
   const parts = ['*'];
   for (const [rel, val] of Object.entries(include)) {
-    if (val === true) parts.push(`${rel}(*)`);
-    else if (typeof val === 'object') {
+    if (rel.startsWith('_')) continue;
+    const tableName = REL_TO_TABLE[rel] || rel;
+    if (val === true) {
+      parts.push(`${tableName}(*)`);
+    } else if (typeof val === 'object') {
       const subSel = val.select
         ? Object.keys(val.select).join(',')
         : '*';
-      const subOrder = val.orderBy
-        ? Object.entries(val.orderBy).map(([k, v]) => `${k}.${v}`).join(',')
-        : null;
-      let relStr = `${rel}(${subSel})`;
-      parts.push(relStr);
+      parts.push(`${tableName}(${subSel})`);
+    }
+  }
+  if (include._count && typeof include._count === 'object' && include._count.select) {
+    for (const rel of Object.keys(include._count.select)) {
+      const tableName = REL_TO_TABLE[rel] || rel;
+      if (!parts.some(p => p.startsWith(tableName))) {
+        parts.push(`${tableName}(id)`);
+      }
     }
   }
   return parts.join(',');
+}
+
+/** Transform returned PostgREST row keys back to Prisma camelCase relation keys */
+function transformRow(row, include) {
+  if (!row) return row;
+  const out = { ...row };
+  if (include) {
+    for (const [rel] of Object.entries(include)) {
+      if (rel.startsWith('_')) continue;
+      const tableName = REL_TO_TABLE[rel] || rel;
+      if (out[tableName] !== undefined) {
+        let val = out[tableName];
+        if (['worker', 'admin', 'test', 'customer', 'kaamCard'].includes(rel) && Array.isArray(val)) {
+          val = val[0] || null;
+        }
+        out[rel] = val;
+        if (tableName !== rel) {
+          delete out[tableName];
+        }
+      }
+    }
+    if (include._count) {
+      out._count = {};
+      if (typeof include._count === 'object' && include._count.select) {
+        for (const [rel] of Object.entries(include._count.select)) {
+          const tableName = REL_TO_TABLE[rel] || rel;
+          const arr = row[tableName] || row[rel] || [];
+          out._count[rel] = Array.isArray(arr) ? arr.length : (arr ? 1 : 0);
+          if (!include[rel]) {
+            delete out[tableName];
+            delete out[rel];
+          }
+        }
+      }
+    }
+  }
+  return out;
 }
 
 // ── model proxy factory ───────────────────────────────────────────────────────
 
 function makeModel(table) {
   return {
-    async findUnique({ where, include, select } = {}) {
+    async findUnique({ where, include } = {}) {
       let q = supabase.from(table).select(buildSelect(include)).limit(1);
       q = applyWhere(q, where);
       const { data, error } = await q;
       if (error) dbError('findUnique', table, error.message);
-      return data?.[0] ?? null;
+      return data?.[0] ? transformRow(data[0], include) : null;
     },
 
-    async findFirst({ where, include, orderBy, select } = {}) {
+    async findFirst({ where, include, orderBy } = {}) {
       let q = supabase.from(table).select(buildSelect(include)).limit(1);
       q = applyWhere(q, where);
       if (orderBy) {
@@ -93,22 +154,27 @@ function makeModel(table) {
       }
       const { data, error } = await q;
       if (error) dbError('findFirst', table, error.message);
-      return data?.[0] ?? null;
+      return data?.[0] ? transformRow(data[0], include) : null;
     },
 
-    async findMany({ where, include, orderBy, skip, take, select } = {}) {
+    async findMany({ where, include, orderBy, skip, take } = {}) {
       let q = supabase.from(table).select(buildSelect(include), { count: 'exact' });
       q = applyWhere(q, where);
       if (orderBy) {
-        for (const [col, dir] of Object.entries(Array.isArray(orderBy) ? orderBy.reduce((a, o) => ({ ...a, ...o }), {}) : orderBy)) {
+        const orderObj = Array.isArray(orderBy)
+          ? orderBy.reduce((a, o) => ({ ...a, ...o }), {})
+          : orderBy;
+        for (const [col, dir] of Object.entries(orderObj)) {
           q = q.order(col, { ascending: dir === 'asc' });
         }
       }
       if (skip != null) q = q.range(skip, skip + (take ?? 1000) - 1);
       else if (take != null) q = q.limit(take);
+
       const { data, error, count } = await q;
       if (error) dbError('findMany', table, error.message);
-      return Object.assign(data ?? [], { _count: count });
+      const transformed = (data ?? []).map(r => transformRow(r, include));
+      return Object.assign(transformed, { _count: count });
     },
 
     async count({ where } = {}) {
@@ -120,32 +186,35 @@ function makeModel(table) {
     },
 
     async create({ data, include } = {}) {
-      // Prisma generates UUIDs — we need to supply them
       if (!data.id) {
         data.id = require('crypto').randomUUID();
+      }
+      if (table === 'Worker' && !data.updatedAt) {
+        data.updatedAt = new Date().toISOString();
       }
       const { data: rows, error } = await supabase
         .from(table)
         .insert(data)
         .select(buildSelect(include));
       if (error) dbError('create', table, error.message);
-      return rows?.[0] ?? null;
+      return rows?.[0] ? transformRow(rows[0], include) : null;
     },
 
     async update({ where, data, include } = {}) {
-      // Remove undefined values
       const cleaned = Object.fromEntries(
         Object.entries(data).filter(([, v]) => v !== undefined)
       );
+      if (table === 'Worker' && !cleaned.updatedAt) {
+        cleaned.updatedAt = new Date().toISOString();
+      }
       let q = supabase.from(table).update(cleaned).select(buildSelect(include));
       q = applyWhere(q, where);
       const { data: rows, error } = await q;
       if (error) dbError('update', table, error.message);
-      return rows?.[0] ?? null;
+      return rows?.[0] ? transformRow(rows[0], include) : null;
     },
 
     async upsert({ where, create: createData, update: updateData, include } = {}) {
-      // Try update first; if nothing updated, insert
       let q = supabase.from(table).select('id');
       q = applyWhere(q, where);
       const { data: existing } = await q;
@@ -164,7 +233,7 @@ function makeModel(table) {
       return data?.[0] ?? null;
     },
 
-    async aggregate({ where, _avg, _sum, _count, _min, _max } = {}) {
+    async aggregate({ where, _avg, _sum, _count } = {}) {
       let q = supabase.from(table).select('*');
       q = applyWhere(q, where);
       const { data, error } = await q;
@@ -197,7 +266,6 @@ function makeModel(table) {
       q = applyWhere(q, where);
       const { data, error } = await q;
       if (error) dbError('groupBy', table, error.message);
-      // Manual grouping
       const groups = {};
       for (const row of data ?? []) {
         const key = by.map(b => row[b]).join('\x00');
@@ -215,18 +283,20 @@ function makeModel(table) {
       }
       const result = Object.values(groups).map(g => {
         const out = Object.fromEntries(by.map(b => [b, g[b]]));
-        if (_count) out._count = (_count === true || _count?.id) ? { id: g._rawCount } : g._rawCount;
+        if (_count) out._count = g._rawCount;
         if (_sum)  { out._sum = {}; for (const f of Object.keys(_sum)) out._sum[f] = g._sumAcc[f] ?? 0; }
         if (_avg)  { out._avg = {}; for (const f of Object.keys(_avg)) { const arr = g._avgAcc[f] ?? []; out._avg[f] = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; } }
         return out;
       });
       if (orderBy) {
-        const entries = Object.entries(Array.isArray(orderBy) ? orderBy.reduce((a,o)=>({...a,...o}),{}) : orderBy);
-        const [col, dir] = entries[0];
+        const orderObj = Array.isArray(orderBy)
+          ? orderBy.reduce((a, o) => ({ ...a, ...o }), {})
+          : orderBy;
+        const [col, dir] = Object.entries(orderObj)[0];
         result.sort((a, b) => {
-          const av = col === '_count' ? a._count?.id ?? a._count : a[col];
-          const bv = col === '_count' ? b._count?.id ?? b._count : b[col];
-          return dir === 'asc' ? (av??0)-(bv??0) : (bv??0)-(av??0);
+          const av = col === '_count' ? a._count : a[col];
+          const bv = col === '_count' ? b._count : b[col];
+          return dir === 'asc' ? (av ?? 0) - (bv ?? 0) : (bv ?? 0) - (av ?? 0);
         });
       }
       return result;
@@ -247,15 +317,14 @@ const db = {
   customer:       makeModel('Customer'),
   booking:        makeModel('Booking'),
 
-  // Raw SQL via supabase rpc (for complex queries)
-  $queryRaw: async (query, ...params) => {
+  $queryRaw: async (query) => {
     const { data, error } = await supabase.rpc('exec_sql', { sql: String(query) });
     if (error) throw new Error(error.message);
     return data;
   },
 
-  $disconnect: async () => { /* no-op for supabase */ },
-  supabase, // expose for direct usage
+  $disconnect: async () => {},
+  supabase,
 };
 
 module.exports = db;

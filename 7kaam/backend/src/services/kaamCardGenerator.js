@@ -66,7 +66,7 @@ async function generateKaamCard({ worker, videoScore, testScore, workHistoryScor
   // Aadhaar verified badge
   if (worker.aadhaarVerified) {
     page.drawRectangle({ x: 50, y: height - 165, width: 120, height: 20, color: TEAL, borderRadius: 4 });
-    page.drawText('✓ Aadhaar Verified', { x: 56, y: height - 159, size: 9, font: boldFont, color: WHITE });
+    page.drawText('Aadhaar Verified', { x: 60, y: height - 159, size: 9, font: boldFont, color: WHITE });
   }
 
   // ── Score Section ─────────────────────────────────────────────────────────────

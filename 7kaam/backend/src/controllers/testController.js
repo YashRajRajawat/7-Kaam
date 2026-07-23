@@ -4,8 +4,13 @@ const prisma = require('../utils/prisma');
 async function createTest(req, res) {
   try {
     const { trade, language, title, questions } = req.body;
+    let createdBy = req.admin?.id || null;
+    if (createdBy) {
+      const adminExists = await prisma.admin.findUnique({ where: { id: createdBy } });
+      if (!adminExists) createdBy = null;
+    }
     const test = await prisma.tradeTest.create({
-      data: { trade, language, title, questions, createdBy: req.admin.id },
+      data: { trade, language, title, questions, createdBy },
     });
     res.status(201).json(test);
   } catch (err) {

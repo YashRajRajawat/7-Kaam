@@ -25,7 +25,8 @@ export default function NewTestPage() {
   const [error, setError] = useState('');
 
   const createTest = useMutation({
-    mutationFn: () => api.post('/tests', { ...form, questions }),
+    mutationFn: (payload: { trade: string; language: string; title: string; questions: Question[] }) =>
+      api.post('/tests', payload),
     onSuccess: () => router.push('/tests'),
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { error?: string } } };
@@ -48,19 +49,25 @@ export default function NewTestPage() {
   function updateOption(qi: number, oi: number, val: string) {
     setQuestions(qs => qs.map((q, idx) => {
       if (idx !== qi) return q;
+      const oldVal = q.options[oi];
       const opts = [...q.options];
       opts[oi] = val;
-      return { ...q, options: opts };
+      const isSelected = q.correctAnswer === oldVal || (!q.correctAnswer && oi === 0);
+      return { ...q, options: opts, correctAnswer: isSelected ? val : q.correctAnswer };
     }));
   }
 
   function handleSubmit() {
     setError('');
     if (!form.title) { setError('Test title required'); return; }
-    if (questions.some(q => !q.question || !q.correctAnswer)) {
-      setError('All questions must have text and a correct answer'); return;
+    const cleanedQuestions = questions.map(q => ({
+      ...q,
+      options: q.options.filter(o => o.trim() !== ''),
+    }));
+    if (cleanedQuestions.some(q => !q.question || !q.correctAnswer || q.options.length < 2)) {
+      setError('All questions must have a question, at least 2 options, and a correct answer'); return;
     }
-    createTest.mutate();
+    createTest.mutate({ ...form, questions: cleanedQuestions });
   }
 
   return (

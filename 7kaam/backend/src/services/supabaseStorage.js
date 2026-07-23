@@ -7,6 +7,20 @@ const supabase = createClient(
 
 const BUCKET = '7kaam-assets';
 
+let bucketChecked = false;
+async function ensureBucketExists() {
+  if (bucketChecked) return;
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (buckets && !buckets.some(b => b.name === BUCKET)) {
+      await supabase.storage.createBucket(BUCKET, { public: true });
+    }
+    bucketChecked = true;
+  } catch (err) {
+    console.warn(`[supabaseStorage] Bucket check warning: ${err.message}`);
+  }
+}
+
 /**
  * Upload a Buffer to Supabase Storage.
  * @param {Buffer} buffer - File contents
@@ -15,11 +29,27 @@ const BUCKET = '7kaam-assets';
  * @returns {string} Public URL
  */
 async function uploadBuffer(buffer, path, contentType = 'application/octet-stream') {
-  const { error } = await supabase.storage
+  await ensureBucketExists();
+
+  let { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, buffer, { contentType, upsert: true });
 
-  if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+  if (error && (error.message?.includes('Bucket not found') || error.message?.includes('not_found'))) {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+    const retry = await supabase.storage
+      .from(BUCKET)
+      .upload(path, buffer, { contentType, upsert: true });
+    error = retry.error;
+  }
+
+  if (error) {
+    console.error(`Supabase upload failed for ${path}:`, error.message);
+    if (contentType.startsWith('image/')) {
+      return `data:${contentType};base64,${buffer.toString('base64')}`;
+    }
+    throw new Error(`Supabase upload failed: ${error.message}`);
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
