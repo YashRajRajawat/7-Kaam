@@ -1,0 +1,473 @@
+You are a senior full-stack engineer building "7 Kaam" — an AI-powered skill 
+certification and discovery platform for blue-collar workers in India.
+
+## IMPORTANT — READ BEFORE WRITING ANY CODE
+
+- Build everything in ONE monorepo folder called `7kaam/`
+- Ask ZERO clarifying questions. Make decisions and build.
+- After every major step, run the code and fix errors before moving on.
+- The goal is a FULLY WORKING demo by end of session.
+- When you finish a step, tell me what was built and what to do next.
+
+---
+
+## WHAT WE ARE BUILDING
+
+A two-part system:
+1. Backend REST API (Node.js + Express + Prisma + Supabase PostgreSQL)
+2. Admin Dashboard (Next.js 14 + Tailwind + shadcn/ui)
+
+Both must be fully connected and working. The backend is also designed 
+to support a React Native mobile app later — so all routes must be 
+versioned at /api/v1/ from day one.
+
+---
+
+## THE PLATFORM — 7 KAAM
+
+Workers (electricians, plumbers, carpenters, AC technicians, painters, 
+welders) are certified through a 3-signal AI scoring pipeline:
+
+Signal 1 — Skill Video (35% weight)
+  - Worker uploads a 60-second skill demonstration video
+  - Stored on Supabase Storage (free, built-in)
+  - Scored by a mock computer vision function for now
+    (return a realistic random score 55-95, mark as TODO for real CV later)
+
+Signal 2 — Trade Test (45% weight)  
+  - Worker takes a 10-question trade-specific test
+  - Delivered via the Admin Dashboard web UI (NOT WhatsApp — dropped)
+  - Test answers evaluated by GROQ API (free tier)
+  - Use model: llama3-8b-8192
+  - Groq API endpoint: https://api.groq.com/openai/v1/chat/completions
+  - Evaluation prompt: score each answer 0-10, return structured JSON
+
+Signal 3 — Work History (20% weight)
+  - Admin enters employer name, rating (1-5), tenure dates
+  - Score computed: avg(ratings) normalized to 0-100 + verified bonus
+
+Final Score = (VideoScore × 0.35) + (TestScore × 0.45) + (WorkHistory × 0.20)
+
+Tier:
+  0–39   → BRONZE
+  40–59  → SILVER  
+  60–79  → GOLD
+  80–100 → EXPERT
+
+Output: KaamCard — verified certificate with score/100, tier badge,
+sub-skill breakdown, and a QR code linking to public verification page.
+
+---
+
+## TECH STACK
+
+Backend:
+  - Node.js + Express.js
+  - Prisma ORM
+  - Supabase (PostgreSQL database + file storage for videos/photos/PDFs)
+  - Redis via Upstash (free tier) for BullMQ job queues
+  - Groq API (free) for NLP test evaluation
+  - pdf-lib for KaamCard PDF generation
+  - qrcode npm package for QR code generation
+  - JWT (jsonwebtoken) for auth — access token + refresh token
+  - bcrypt for password hashing
+  - Zod for request validation
+  - multer for file uploads
+
+Admin Dashboard:
+  - Next.js 14 App Router
+  - TypeScript
+  - Tailwind CSS
+  - shadcn/ui components
+  - TanStack React Query v5 for API calls
+  - TanStack Table v8 for data tables
+  - React Hook Form + Zod for forms
+  - Recharts for analytics charts
+  - Zustand for auth state
+  - Axios with JWT interceptor
+  - Lucide React for icons
+
+---
+
+## SUPABASE SETUP INSTRUCTIONS
+
+Tell me exactly what to do in the Supabase dashboard:
+1. Create a new project
+2. Get the DATABASE_URL (connection string with pgBouncer for Prisma)
+3. Get the DIRECT_URL (direct connection for migrations)
+4. Create a storage bucket called "7kaam-assets" (public)
+5. Get the SUPABASE_URL and SUPABASE_ANON_KEY
+
+Use both DATABASE_URL (pooled) and DIRECT_URL in schema.prisma:
+  datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+  }
+
+---
+
+## DATABASE SCHEMA (Prisma)
+
+Create ALL of these models — the schema must support 
+the mobile app (customers + bookings) from day one:
+
+enum Trade {
+  ELECTRICIAN
+  PLUMBER
+  CARPENTER
+  AC_TECHNICIAN
+  PAINTER
+  WELDER
+}
+
+enum Tier {
+  BRONZE
+  SILVER
+  GOLD
+  EXPERT
+}
+
+enum WorkerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  CITY_ADMIN
+  REVIEWER
+}
+
+enum TestLanguage {
+  ENGLISH
+  HINDI
+  KANNADA
+  TAMIL
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  EVALUATING
+  COMPLETED
+  FAILED
+}
+
+enum SignalType {
+  VIDEO
+  TEST
+  WORK_HISTORY
+  FINAL
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Worker {
+  id                String        @id @default(uuid())
+  aadhaarHash       String        @unique
+  fullName          String
+  phoneNumber       String        @unique
+  profilePhotoUrl   String?
+  trade             Trade
+  city              String
+  locality          String?
+  videoUrl          String?
+  videoScore        Float?
+  videoScoredAt     DateTime?
+  testScore         Float?
+  testScoredAt      DateTime?
+  workHistoryScore  Float?
+  finalScore        Float?
+  tier              Tier?
+  kaamCardUrl       String?
+  qrCodeUrl         String?
+  kaamCardIssuedAt  DateTime?
+  aadhaarVerified   Boolean       @default(false)
+  status            WorkerStatus  @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  testSubmissions   TestSubmission[]
+  workHistories     WorkHistory[]
+  kaamCards         KaamCard[]
+  scoringLogs       ScoringLog[]
+  bookings          Booking[]
+}
+
+model Admin {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  role         AdminRole  @default(REVIEWER)
+  city         String?
+  createdAt    DateTime   @default(now())
+  createdTests TradeTest[]
+}
+
+model TradeTest {
+  id          String       @id @default(uuid())
+  trade       Trade
+  language    TestLanguage
+  title       String
+  questions   Json
+  isActive    Boolean      @default(true)
+  createdBy   String?
+  createdAt   DateTime     @default(now())
+  admin       Admin?       @relation(fields: [createdBy], references: [id])
+  submissions TestSubmission[]
+}
+
+model TestSubmission {
+  id           String           @id @default(uuid())
+  workerId     String
+  testId       String
+  answers      Json
+  rawScore     Float?
+  aiEvaluation Json?
+  status       SubmissionStatus @default(SUBMITTED)
+  submittedAt  DateTime         @default(now())
+  worker       Worker           @relation(fields: [workerId], references: [id])
+  test         TradeTest        @relation(fields: [testId], references: [id])
+}
+
+model WorkHistory {
+  id             String   @id @default(uuid())
+  workerId       String
+  employerName   String
+  employerPhone  String?
+  role           String
+  startDate      DateTime
+  endDate        DateTime?
+  rating         Int
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  worker         Worker   @relation(fields: [workerId], references: [id])
+}
+
+model KaamCard {
+  id             String   @id @default(uuid())
+  workerId       String
+  scoreBreakdown Json
+  qrToken        String   @unique
+  pdfUrl         String?
+  version        Int      @default(1)
+  issuedAt       DateTime @default(now())
+  expiresAt      DateTime
+  isRevoked      Boolean  @default(false)
+  revokedReason  String?
+  worker         Worker   @relation(fields: [workerId], references: [id])
+}
+
+model ScoringLog {
+  id          String     @id @default(uuid())
+  workerId    String
+  signalType  SignalType
+  inputData   Json?
+  outputScore Float
+  scoredAt    DateTime   @default(now())
+  notes       String?
+  worker      Worker     @relation(fields: [workerId], references: [id])
+}
+
+model Customer {
+  id          String    @id @default(uuid())
+  phoneNumber String    @unique
+  fullName    String
+  city        String
+  createdAt   DateTime  @default(now())
+  bookings    Booking[]
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  customerId  String
+  workerId    String
+  trade       Trade
+  status      BookingStatus @default(PENDING)
+  scheduledAt DateTime
+  address     String
+  notes       String?
+  createdAt   DateTime      @default(now())
+  customer    Customer      @relation(fields: [customerId], references: [id])
+  worker      Worker        @relation(fields: [workerId], references: [id])
+}
+
+---
+
+## PROJECT FOLDER STRUCTURE
+
+7kaam/
+├── backend/
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   ├── workers.js
+│   │   │   ├── tests.js
+│   │   │   ├── scoring.js
+│   │   │   ├── kaamcards.js
+│   │   │   └── analytics.js
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── workerController.js
+│   │   │   ├── testController.js
+│   │   │   ├── scoringController.js
+│   │   │   ├── kaamCardController.js
+│   │   │   └── analyticsController.js
+│   │   ├── services/
+│   │   │   ├── scoringEngine.js
+│   │   │   ├── groqEvaluator.js
+│   │   │   ├── kaamCardGenerator.js
+│   │   │   ├── supabaseStorage.js
+│   │   │   └── qrService.js
+│   │   ├── middleware/
+│   │   │   ├── auth.js
+│   │   │   └── validate.js
+│   │   ├── utils/
+│   │   │   └── hash.js
+│   │   └── app.js
+│   ├── .env.example
+│   └── package.json
+│
+└── dashboard/
+    ├── app/
+    │   ├── (auth)/
+    │   │   └── login/
+    │   │       └── page.tsx
+    │   ├── (dashboard)/
+    │   │   ├── layout.tsx
+    │   │   ├── dashboard/
+    │   │   │   └── page.tsx
+    │   │   ├── workers/
+    │   │   │   ├── page.tsx
+    │   │   │   ├── new/
+    │   │   │   │   └── page.tsx
+    │   │   │   └── [id]/
+    │   │   │       └── page.tsx
+    │   │   ├── tests/
+    │   │   │   ├── page.tsx
+    │   │   │   └── new/
+    │   │   │       └── page.tsx
+    │   │   ├── kaamcards/
+    │   │   │   └── page.tsx
+    │   │   └── analytics/
+    │   │       └── page.tsx
+    │   └── layout.tsx
+    ├── components/
+    │   ├── ui/
+    │   ├── layout/
+    │   │   ├── Sidebar.tsx
+    │   │   └── Topbar.tsx
+    │   ├── workers/
+    │   │   ├── WorkerTable.tsx
+    │   │   ├── WorkerFilters.tsx
+    │   │   ├── ScoreCards.tsx
+    │   │   ├── PipelineTracker.tsx
+    │   │   └── KaamCardPreview.tsx
+    │   ├── charts/
+    │   │   ├── TierPieChart.tsx
+    │   │   ├── ScoreHistogram.tsx
+    │   │   └── CertificationsLineChart.tsx
+    │   └── forms/
+    │       ├── WorkerOnboardForm.tsx
+    │       └── TestBuilderForm.tsx
+    ├── lib/
+    │   ├── api.ts
+    │   ├── queryClient.ts
+    │   └── store.ts
+    ├── types/
+    │   └── index.ts
+    └── package.json
+
+---
+
+## ALL BACKEND API ROUTES
+
+Prefix all routes with /api/v1/
+
+### Auth
+POST   /api/v1/auth/login          → JWT login for admin
+POST   /api/v1/auth/refresh        → refresh access token
+POST   /api/v1/auth/logout
+
+### Workers  
+POST   /api/v1/workers             → onboard new worker
+GET    /api/v1/workers             → list (filters: trade, city, tier, status, search)
+GET    /api/v1/workers/:id         → full worker detail
+PATCH  /api/v1/workers/:id         → update worker
+DELETE /api/v1/workers/:id         → soft delete (set status SUSPENDED)
+
+### AI Scoring Pipeline
+POST   /api/v1/workers/:id/upload-video       → get Supabase Storage presigned URL
+POST   /api/v1/workers/:id/score-video        → mock CV scorer, save videoScore
+POST   /api/v1/workers/:id/submit-test        → submit answers, trigger Groq evaluation
+POST   /api/v1/workers/:id/add-work-history   → add employer entry
+POST   /api/v1/workers/:id/compute-score      → fuse 3 signals, compute tier
+POST   /api/v1/workers/:id/issue-kaamcard     → generate PDF + QR, upload to Supabase
+
+### Trade Tests
+POST   /api/v1/tests               → create test
+GET    /api/v1/tests               → list tests
+GET    /api/v1/tests/:id           → get test with questions
+PATCH  /api/v1/tests/:id           → update/toggle active
+DELETE /api/v1/tests/:id
+
+### KaamCards
+GET    /api/v1/kaamcards           → all kaamcards (admin)
+GET    /api/v1/kaamcards/:workerId → get worker's latest kaamcard
+POST   /api/v1/kaamcards/:id/revoke → revoke with reason
+GET    /api/v1/verify/:qrToken     → PUBLIC — verify kaamcard by QR token (no auth)
+
+### Analytics
+GET    /api/v1/analytics/overview         → totals, avg score, tier split
+GET    /api/v1/analytics/by-trade         → breakdown per trade
+GET    /api/v1/analytics/by-city          → breakdown per city
+GET    /api/v1/analytics/score-distribution → histogram data
+GET    /api/v1/analytics/certifications-over-time → daily certs (last 30 days)
+
+### Mobile App (stub — implemented but returns mock data for now)
+GET    /api/v1/mobile/workers/nearby       → workers by location + trade filter
+GET    /api/v1/mobile/workers/:id/public   → public worker profile
+POST   /api/v1/mobile/bookings             → create booking
+GET    /api/v1/mobile/bookings/:id         → get booking
+POST   /api/v1/mobile/customers/register   → register customer
+
+---
+
+## GROQ EVALUATOR (services/groqEvaluator.js)
+
+Use Groq free API with model: llama3-8b-8192
+
+System prompt:
+"You are an expert trade certification evaluator for Indian blue-collar workers.
+Evaluate the worker's answers strictly and fairly. Return ONLY valid JSON, 
+no markdown, no explanation outside the JSON."
+
+User prompt template:
+"Trade: {trade}
+Test Title: {testTitle}
+Questions and Worker Answers:
+{questions.map((q, i) => `Q${i+1}: ${q.question}
+Correct Answer: ${q.correctAnswer}
+Worker Answer: ${answers[i]}`).join('\n\n')}
+
+Return this exact JSON:
+{
+  \"totalScore\": <number 0-100>,
+  \"breakdown\": [
+    {\"question\": \"...\", \"workerAnswer\": \"...\", \"score\": <0-10>, \"feedback\": \"...\"}
+  ],
+  \"overallFeedback\": \"...\"
+}"
+
+Wrap in try/catch — if Groq fails, return a mock score with a note.
+
+---

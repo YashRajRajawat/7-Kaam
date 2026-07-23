@@ -1,0 +1,242 @@
+
+## SCORING ENGINE (services/scoringEngine.js)
+
+computeWorkHistoryScore(workHistories):
+  - If no entries: return 0
+  - base = average of all ratings mapped to 0-100 scale: ((avg - 1) / 4) * 100
+  - bonus = verified entries * 5 (max bonus = 15)
+  - return Math.min(100, base + bonus)
+
+computeFinalScore(videoScore, testScore, workHistoryScore):
+  return (videoScore * 0.35) + (testScore * 0.45) + (workHistoryScore * 0.20)
+
+computeTier(finalScore):
+  if >= 80 → EXPERT
+  if >= 60 → GOLD  
+  if >= 40 → SILVER
+  else     → BRONZE
+
+mockVideoScore():
+  return Math.floor(Math.random() * 40) + 55  // 55-95 realistic range
+
+---
+
+## KAAMCARD PDF (services/kaamCardGenerator.js)
+
+Use pdf-lib to generate a professional A4 certificate PDF:
+
+Layout:
+  Header bar (teal #0F6E56): "7 Kaam — Verified Skill Certificate"
+  Worker section: Name, Trade, City, Aadhaar Verified badge
+  Score section: Big "XX/100" score, Tier badge (BRONZE/SILVER/GOLD/EXPERT)
+  Sub-scores: Three bars — Video Score | Test Score | Work History Score
+  Identity: KaamCard ID, Issue Date, Expiry Date
+  QR Code: Bottom right corner (embed as PNG bytes)
+  Footer: "Verified by 7 Kaam | 7kaam.in"
+
+Generate a unique qrToken = uuid(), 
+QR encodes: https://7kaam.in/verify/{qrToken}
+Upload PDF to Supabase Storage bucket "7kaam-assets" at path:
+  kaamcards/{workerId}/{kaamCardId}.pdf
+
+---
+
+## DASHBOARD PAGES — EXACT CONTENT
+
+### /login
+  - 7 Kaam logo + tagline "Certifying India's Skilled Workforce"
+  - Email + password fields
+  - "Sign In" button
+  - On success → redirect to /dashboard
+
+### /dashboard (Overview)
+  Four KPI cards:
+    - Total Workers (with trend vs last week)
+    - Certified Today
+    - Average Score (platform-wide)
+    - Active Cities
+  
+  Charts:
+    - Tier distribution pie chart (BRONZE/SILVER/GOLD/EXPERT with colours)
+    - Score distribution histogram (bands: 0-20, 20-40, 40-60, 60-80, 80-100)
+    - Certifications issued over last 30 days (line chart)
+  
+  Recent Activity Feed:
+    - Last 10 events from ScoringLog (Worker name, signal, score, time ago)
+
+### /workers (List)
+  - Search bar (name or phone)
+  - Filter dropdowns: Trade | City | Tier | Status
+  - TanStack Table with columns:
+    Avatar+Name | Trade | City | Score (with tier badge) | Status | KaamCard | Actions
+  - Sortable by Name, Score, Date
+  - Server-side pagination (10/25/50 rows)
+  - Row actions: View | Suspend/Activate
+
+### /workers/new (Onboard)
+  Step form:
+    Step 1 — Personal Info: Full Name, Phone, Trade, City, Locality
+    Step 2 — Identity: Aadhaar number input (masked, hash before sending)
+    Step 3 — Photo: Upload profile photo → Supabase Storage
+  On submit → POST /api/v1/workers → redirect to /workers/{id}
+
+### /workers/[id] (Detail — most important page)
+  
+  Top section:
+    - Worker photo, name, trade badge, city, status pill, Aadhaar verified tag
+    - Large score ring (SVG circle) showing FinalScore/100
+    - Tier badge (colour coded)
+  
+  Pipeline Tracker (horizontal steps):
+    Step 1: Video Upload     → Pending/Complete
+    Step 2: Video Scored     → Pending/In Progress/Complete
+    Step 3: Test Submitted   → Pending/Complete
+    Step 4: Score Computed   → Pending/Complete
+    Step 5: KaamCard Issued  → Pending/Complete
+  
+  Score Breakdown (3 cards):
+    - Video Score: value/100, scored date, "Scored by AI Vision Model"
+    - Test Score: value/100, scored date, "Evaluated by Groq LLaMA 3"
+    - Work History Score: value/100, "Based on X employer ratings"
+  
+  Action Panel (buttons enabled/disabled by pipeline state):
+    [Upload Video] [Score Video] [Assign & Take Test] 
+    [Add Work History] [Compute Final Score] [Issue KaamCard]
+    [Revoke KaamCard] (red, only if issued)
+  
+  Work History Section:
+    - Table: Employer | Role | Period | Rating (stars) | Verified
+    - Inline "Add Entry" form below table
+  
+  Test History:
+    - Table of all submissions with Score, Test Name, Date
+    - Expandable row: shows AI breakdown per question + overall feedback
+  
+  KaamCard Preview:
+    - Styled card preview matching the PDF layout
+    - QR code image
+    - "Download PDF" button
+    - "Copy Verification Link" button
+
+### /tests (Test Management)
+  - Table: Title | Trade | Language | Questions | Status | Actions
+  - Toggle active/inactive per test
+  - "Create New Test" button → /tests/new
+
+### /tests/new (Test Builder)
+  - Trade selector
+  - Language selector (English/Hindi/Kannada/Tamil)
+  - Title input
+  - Dynamic question builder:
+      "Add Question" → shows: Question text, 4 option inputs, 
+      correct answer radio, remove button
+  - Drag to reorder questions
+  - Save Test button
+
+### /kaamcards (Certificates)
+  - Table: Worker | Trade | Score | Tier | Issued | Expires | Status | Actions
+  - "Revoke" button → opens modal with required reason field
+  - Status badges: Valid (green) | Expired (orange) | Revoked (red)
+  - Copy verification URL per row
+
+### /analytics (Reports)
+  - Certifications over time (line chart — 30 days)
+  - Workers by trade (horizontal bar chart)
+  - Score distribution (bar chart)
+  - City breakdown table with: City | Workers | Certified | Avg Score
+
+---
+
+## SEED DATA
+
+Create a seed file (prisma/seed.js) that inserts:
+
+1 Super Admin:
+  email: admin@7kaam.in
+  password: Admin@7kaam (bcrypt hashed)
+  role: SUPER_ADMIN
+
+3 Workers with complete data:
+  Worker 1: Ravi Kumar, ELECTRICIAN, Bangalore, finalScore: 87, tier: EXPERT
+  Worker 2: Sunita Patil, PLUMBER, Bangalore, finalScore: 72, tier: GOLD  
+  Worker 3: Mohan Reddy, CARPENTER, Bangalore, finalScore: 48, tier: SILVER
+
+2 Trade Tests:
+  Test 1: Electrician Safety — English, 5 questions
+  Test 2: Plumbing Fundamentals — Hindi, 5 questions
+
+KaamCards for all 3 workers (issued, not revoked)
+
+ScoringLog entries for all scoring events
+
+---
+
+## ENVIRONMENT VARIABLES
+
+backend/.env:
+  DATABASE_URL=          ← Supabase pooled connection string
+  DIRECT_URL=            ← Supabase direct connection string
+  JWT_SECRET=7kaam_jwt_secret_2025
+  JWT_REFRESH_SECRET=7kaam_refresh_secret_2025
+  GROQ_API_KEY=          ← from console.groq.com (free, no card needed)
+  SUPABASE_URL=          ← from Supabase project settings
+  SUPABASE_SERVICE_KEY=  ← service role key (NOT anon key, for storage uploads)
+  PORT=8000
+  GROQ_API_KEY=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   ← paste your Groq key here
+  SUPABASE_URL=https://qywflwdkrckyjdrsadvo.supabase.co   ← from Supabase project settings
+  SUPABASE_SERVICE_KEY=sb_secret_xJD9ZgF8dZfnGalPdIp05Q_JB_q_wJN          ← service role key from Supabase
+  PORT=8000
+
+dashboard/.env.local:
+  NEXT_PUBLIC_API_URL=http://localhost:8000
+
+---
+
+## BUILD ORDER — FOLLOW THIS EXACTLY
+
+1. Create monorepo structure, initialize both projects, install all deps
+2. Guide me through Supabase project setup (what to click, what to copy)
+3. Set up Prisma schema, connect to Supabase, run migration
+4. Build Express app skeleton with error handling and CORS
+5. Build admin auth (login, JWT, refresh, protected middleware)
+6. Build Worker CRUD API
+7. Build scoring services: mockVideoScorer, groqEvaluator, scoringEngine, 
+   workHistoryCalculator
+8. Build KaamCard generator (PDF + QR + Supabase upload)
+9. Build all remaining API routes (tests, kaamcards, analytics, mobile stubs)
+10. Run prisma seed
+11. Test ALL API routes with curl or REST client — fix any errors
+12. Initialize Next.js dashboard
+13. Set up Axios, React Query, Zustand auth store, TypeScript types
+14. Build login page + JWT auth flow
+15. Build dashboard layout (sidebar + topbar)
+16. Build Overview page (KPIs + charts)
+17. Build Workers list page (table + filters)
+18. Build Worker detail page (pipeline tracker + score cards + actions)
+19. Build Worker onboarding form
+20. Build Test builder page
+21. Build KaamCards page
+22. Build Analytics page
+23. Connect every dashboard page to live backend API
+24. Test the full flow: onboard worker → score → issue KaamCard → verify QR
+25. Fix all bugs, write a README with setup instructions
+
+---
+
+## AFTER BUILDING — WHAT DEMO SHOULD SHOW
+
+For tomorrow's presentation, the demo should walk through:
+1. Login as admin@7kaam.in
+2. Dashboard overview with real seeded data and charts
+3. Navigate to Workers — show Ravi Kumar with EXPERT badge
+4. Click into Ravi Kumar's detail page — show full pipeline complete
+5. Show his KaamCard preview with QR code
+6. Create a NEW worker live (onboarding form)
+7. Walk through the pipeline steps for new worker
+8. Show Analytics page
+9. Open /verify/:qrToken in browser — show public verification page
+
+---
+
+Now start with Step 1. Create the full folder structure and 
+initialize both projects. Tell me every command to run.

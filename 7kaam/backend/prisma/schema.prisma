@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Trade {
+  ELECTRICIAN
+  PLUMBER
+  CARPENTER
+  AC_TECHNICIAN
+  PAINTER
+  WELDER
+}
+
+enum Tier {
+  BRONZE
+  SILVER
+  GOLD
+  EXPERT
+}
+
+enum WorkerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  CITY_ADMIN
+  REVIEWER
+}
+
+enum TestLanguage {
+  ENGLISH
+  HINDI
+  KANNADA
+  TAMIL
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  EVALUATING
+  COMPLETED
+  FAILED
+}
+
+enum SignalType {
+  VIDEO
+  TEST
+  WORK_HISTORY
+  FINAL
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Worker {
+  id               String       @id @default(uuid())
+  aadhaarHash      String       @unique
+  fullName         String
+  phoneNumber      String       @unique
+  profilePhotoUrl  String?
+  trade            Trade
+  city             String
+  locality         String?
+  videoUrl         String?
+  videoScore       Float?
+  videoScoredAt    DateTime?
+  testScore        Float?
+  testScoredAt     DateTime?
+  workHistoryScore Float?
+  finalScore       Float?
+  tier             Tier?
+  kaamCardUrl      String?
+  qrCodeUrl        String?
+  kaamCardIssuedAt DateTime?
+  aadhaarVerified  Boolean      @default(false)
+  status           WorkerStatus @default(PENDING)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  testSubmissions TestSubmission[]
+  workHistories   WorkHistory[]
+  kaamCards       KaamCard[]
+  scoringLogs     ScoringLog[]
+  bookings        Booking[]
+}
+
+model Admin {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(REVIEWER)
+  city         String?
+  createdAt    DateTime  @default(now())
+
+  createdTests TradeTest[]
+}
+
+model TradeTest {
+  id        String       @id @default(uuid())
+  trade     Trade
+  language  TestLanguage
+  title     String
+  questions Json
+  isActive  Boolean      @default(true)
+  createdBy String?
+  createdAt DateTime     @default(now())
+
+  admin       Admin?          @relation(fields: [createdBy], references: [id])
+  submissions TestSubmission[]
+}
+
+model TestSubmission {
+  id           String           @id @default(uuid())
+  workerId     String
+  testId       String
+  answers      Json
+  rawScore     Float?
+  aiEvaluation Json?
+  status       SubmissionStatus @default(SUBMITTED)
+  submittedAt  DateTime         @default(now())
+
+  worker Worker    @relation(fields: [workerId], references: [id])
+  test   TradeTest @relation(fields: [testId], references: [id])
+}
+
+model WorkHistory {
+  id            String    @id @default(uuid())
+  workerId      String
+  employerName  String
+  employerPhone String?
+  role          String
+  startDate     DateTime
+  endDate       DateTime?
+  rating        Int
+  verified      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  worker Worker @relation(fields: [workerId], references: [id])
+}
+
+model KaamCard {
+  id             String   @id @default(uuid())
+  workerId       String
+  scoreBreakdown Json
+  qrToken        String   @unique
+  pdfUrl         String?
+  version        Int      @default(1)
+  issuedAt       DateTime @default(now())
+  expiresAt      DateTime
+  isRevoked      Boolean  @default(false)
+  revokedReason  String?
+
+  worker Worker @relation(fields: [workerId], references: [id])
+}
+
+model ScoringLog {
+  id          String     @id @default(uuid())
+  workerId    String
+  signalType  SignalType
+  inputData   Json?
+  outputScore Float
+  scoredAt    DateTime   @default(now())
+  notes       String?
+
+  worker Worker @relation(fields: [workerId], references: [id])
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  phoneNumber String   @unique
+  fullName    String
+  city        String
+  createdAt   DateTime @default(now())
+
+  bookings Booking[]
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  customerId  String
+  workerId    String
+  trade       Trade
+  status      BookingStatus @default(PENDING)
+  scheduledAt DateTime
+  address     String
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  worker   Worker   @relation(fields: [workerId], references: [id])
+}
