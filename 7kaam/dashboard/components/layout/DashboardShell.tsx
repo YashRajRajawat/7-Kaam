@@ -18,18 +18,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0e13]">
-        <div className="w-8 h-8 border-2 border-[#0F6E56] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f9fb]">
+        <div className="w-8 h-8 border-2 border-[#4648d4] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e13]">
+    <div className="min-h-screen bg-[#f7f9fb] text-[#191c1e]">
       <Sidebar />
       <Topbar />
-      <main className="ml-60 pt-14 min-h-screen">
-        <div className="p-6">{children}</div>
+      <main className="ml-[280px] pt-16 min-h-screen">
+        <div className="p-8 max-w-[1440px] mx-auto">{children}</div>
       </main>
     </div>
   );

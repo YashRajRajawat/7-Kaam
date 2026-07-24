@@ -10,7 +10,7 @@ import type { Worker, PaginatedResponse } from '@/types';
 import { cn, tierColor, statusColor, tradeLabel, formatScore, formatDate } from '@/lib/utils';
 import {
   Plus, Search, ChevronLeft, ChevronRight, Eye,
-  UserX, UserCheck, Award,
+  UserX, UserCheck, Award, Users, Filter,
 } from 'lucide-react';
 
 const TRADES = ['', 'ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAINTER', 'WELDER'];
@@ -45,187 +45,203 @@ export default function WorkersPage() {
 
   return (
     <DashboardShell>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-lg font-bold text-white">Workers</h2>
-          <p className="text-xs text-[#6b7280]">{data?.total ?? 0} total registered</p>
-        </div>
-        <Link
-          href="/workers/new"
-          id="onboard-worker-btn"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0F6E56] hover:bg-[#1a9070] text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-[#0F6E56]/30"
-        >
-          <Plus size={14} />
-          Onboard Worker
-        </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="glass-card p-4 mb-4">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4b5563]" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search by name or phone..."
-              className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#0F6E56] transition-colors"
-            />
-          </div>
-
-          {[
-            { value: trade, onChange: setTrade, options: TRADES, label: 'Trade' },
-            { value: tier,  onChange: setTier,  options: TIERS,  label: 'Tier' },
-            { value: status, onChange: setStatus, options: STATUSES, label: 'Status' },
-          ].map(({ value, onChange, options, label }) => (
-            <select
-              key={label}
-              value={value}
-              onChange={e => { onChange(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-[#0F6E56] transition-colors appearance-none cursor-pointer"
-            >
-              <option value="" className="bg-[#111827]">All {label}s</option>
-              {options.filter(Boolean).map(o => (
-                <option key={o} value={o} className="bg-[#111827]">{tradeLabel(o)}</option>
-              ))}
-            </select>
-          ))}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/5">
-                {['Worker', 'Trade', 'City', 'Score', 'Status', 'KaamCard', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#4b5563] uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-white/5 animate-pulse">
-                    {Array.from({ length: 7 }).map((_, j) => (
-                      <td key={j} className="px-4 py-4">
-                        <div className="h-3 bg-white/5 rounded w-3/4" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : data?.data?.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-[#4b5563]">No workers found. Onboard your first worker!</td>
-                </tr>
-              ) : (
-                data?.data?.map(worker => (
-                  <tr key={worker.id} className="border-b border-white/5 hover:bg-white/3 transition-colors group">
-                    {/* Avatar + Name */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0F6E56] to-[#22c55e] flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold text-xs">{worker.fullName[0]}</span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-white text-xs">{worker.fullName}</p>
-                          <p className="text-[10px] text-[#4b5563]">{worker.phoneNumber}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#94a3b8]">{tradeLabel(worker.trade)}</td>
-                    <td className="px-4 py-3 text-xs text-[#94a3b8]">{worker.city}</td>
-                    {/* Score + tier */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{formatScore(worker.finalScore)}</span>
-                        {worker.tier && (
-                          <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold border', tierColor(worker.tier))}>
-                            {worker.tier}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    {/* Status */}
-                    <td className="px-4 py-3">
-                      <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold', statusColor(worker.status))}>
-                        {worker.status}
-                      </span>
-                    </td>
-                    {/* KaamCard */}
-                    <td className="px-4 py-3">
-                      {worker.kaamCardIssuedAt ? (
-                        <div className="flex items-center gap-1 text-green-400 text-xs">
-                          <Award size={12} />
-                          <span className="hidden sm:inline">{formatDate(worker.kaamCardIssuedAt)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-[#4b5563]">Not issued</span>
-                      )}
-                    </td>
-                    {/* Actions */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => router.push(`/workers/${worker.id}`)}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-[#0F6E56]/20 hover:text-[#4ade80] text-[#6b7280] transition-colors"
-                          title="View"
-                        >
-                          <Eye size={13} />
-                        </button>
-                        {worker.status === 'SUSPENDED' ? (
-                          <button
-                            onClick={() => toggleStatus.mutate({ id: worker.id, status: 'ACTIVE' })}
-                            className="p-1.5 rounded-lg bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-[#6b7280] transition-colors"
-                            title="Activate"
-                          >
-                            <UserCheck size={13} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toggleStatus.mutate({ id: worker.id, status: 'SUSPENDED' })}
-                            className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-[#6b7280] transition-colors"
-                            title="Suspend"
-                          >
-                            <UserX size={13} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-            <p className="text-xs text-[#4b5563]">
-              Showing {((page - 1) * limit) + 1}–{Math.min(page * limit, data?.total || 0)} of {data?.total}
-            </p>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={14} className="text-white" />
-              </button>
-              <span className="px-3 py-1 text-xs text-white">{page} / {totalPages}</span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={14} className="text-white" />
-              </button>
+      <div className="space-y-6 fade-in">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-[#e0e3e5] rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#4648d4] flex items-center justify-center text-white font-bold shadow-sm">
+              <Users size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[#191c1e] tracking-tight">Worker & Team Directory</h2>
+              <p className="text-xs text-[#565e74]">{data?.total ?? 0} registered skilled workers</p>
             </div>
           </div>
-        )}
+          <Link
+            href="/workers/new"
+            id="onboard-worker-btn"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
+          >
+            <Plus size={16} />
+            Onboard New Worker
+          </Link>
+        </div>
+
+        {/* Filter Controls Bar */}
+        <div className="bg-white border border-[#e0e3e5] rounded-xl p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#767586]" />
+              <input
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Search by name, phone, city..."
+                className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#f2f4f6] border border-[#e0e3e5] text-xs text-[#191c1e] placeholder:text-[#767586] focus:outline-none focus:border-[#4648d4] transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto">
+              <Filter size={14} className="text-[#767586] ml-1 hidden sm:block" />
+              {[
+                { value: trade, onChange: setTrade, options: TRADES, label: 'Trade' },
+                { value: tier,  onChange: setTier,  options: TIERS,  label: 'Tier' },
+                { value: status, onChange: setStatus, options: STATUSES, label: 'Status' },
+              ].map(({ value, onChange, options, label }) => (
+                <select
+                  key={label}
+                  value={value}
+                  onChange={e => { onChange(e.target.value); setPage(1); }}
+                  className="px-3 py-2 rounded-xl bg-[#f2f4f6] border border-[#e0e3e5] text-xs text-[#191c1e] focus:outline-none focus:border-[#4648d4] cursor-pointer"
+                >
+                  <option value="" className="bg-white">All {label}s</option>
+                  {options.filter(Boolean).map(o => (
+                    <option key={o} value={o} className="bg-white">{tradeLabel(o)}</option>
+                  ))}
+                </select>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Workers Data Table */}
+        <div className="bg-white border border-[#e0e3e5] rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#e0e3e5] bg-[#f2f4f6]">
+                  {['Worker Info', 'Trade', 'City', 'Score & Tier', 'Status', 'KaamCard', 'Actions'].map(h => (
+                    <th key={h} className="px-6 py-3.5 text-left text-xs font-bold text-[#767586] uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e0e3e5]">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      {Array.from({ length: 7 }).map((_, j) => (
+                        <td key={j} className="px-6 py-4">
+                          <div className="h-3 bg-[#f2f4f6] rounded w-3/4" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : data?.data?.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-[#767586] text-xs">
+                      No matching workers found. Try adjusting filters or onboard a new worker.
+                    </td>
+                  </tr>
+                ) : (
+                  data?.data?.map(worker => (
+                    <tr key={worker.id} className="hover:bg-[#f7f9fb] transition-colors group">
+                      {/* Avatar + Name */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#4648d4] flex items-center justify-center flex-shrink-0 text-white font-black text-xs shadow-sm">
+                            {worker.fullName[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#191c1e] text-xs group-hover:text-[#4648d4] transition-colors">{worker.fullName}</p>
+                            <p className="text-[11px] text-[#767586] mt-0.5">{worker.phoneNumber}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-[#565e74] font-semibold">{tradeLabel(worker.trade)}</td>
+                      <td className="px-6 py-4 text-xs text-[#565e74]">{worker.city}</td>
+                      
+                      {/* Score & Tier */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#191c1e]">{formatScore(worker.finalScore)}</span>
+                          {worker.tier && (
+                            <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold border', tierColor(worker.tier))}>
+                              {worker.tier}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold', statusColor(worker.status))}>
+                          ● {worker.status}
+                        </span>
+                      </td>
+
+                      {/* KaamCard Status */}
+                      <td className="px-6 py-4">
+                        {worker.kaamCardIssuedAt ? (
+                          <div className="flex items-center gap-1.5 text-[#059669] text-xs font-bold">
+                            <Award size={14} />
+                            <span>{formatDate(worker.kaamCardIssuedAt)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-[#767586]">Pending Verification</span>
+                        )}
+                      </td>
+
+                      {/* Action buttons */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => router.push(`/workers/${worker.id}`)}
+                            className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-[#e1e0ff] hover:text-[#4648d4] text-[#565e74] transition-all"
+                            title="View Full Profile"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          {worker.status === 'SUSPENDED' ? (
+                            <button
+                              onClick={() => toggleStatus.mutate({ id: worker.id, status: 'ACTIVE' })}
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-emerald-100 hover:text-emerald-700 text-[#565e74] transition-all"
+                              title="Activate Worker"
+                            >
+                              <UserCheck size={14} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => toggleStatus.mutate({ id: worker.id, status: 'SUSPENDED' })}
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 hover:text-red-700 text-[#565e74] transition-all"
+                              title="Suspend Worker"
+                            >
+                              <UserX size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-[#e0e3e5] bg-[#f7f9fb]">
+              <p className="text-xs text-[#767586]">
+                Showing {((page - 1) * limit) + 1}–{Math.min(page * limit, data?.total || 0)} of {data?.total}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-xl bg-white border border-[#e0e3e5] hover:bg-[#f2f4f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={14} className="text-[#191c1e]" />
+                </button>
+                <span className="px-3 py-1 text-xs font-bold text-[#191c1e]">{page} / {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-xl bg-white border border-[#e0e3e5] hover:bg-[#f2f4f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={14} className="text-[#191c1e]" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </DashboardShell>
   );

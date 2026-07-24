@@ -3,64 +3,82 @@
 @tailwind utilities;
 
 :root {
-  --teal: #0F6E56;
-  --teal-light: #1a9070;
-  --teal-dim: #0a4f3e;
-  --bg-dark: #0a0e13;
-  --bg-card: #111827;
-  --bg-card2: #1a2233;
-  --border: rgba(255,255,255,0.08);
-  --text-muted: #6b7280;
+  --primary: #4648d4;
+  --primary-hover: #3738b8;
+  --primary-container: #e1e0ff;
+  --on-primary-container: #07006c;
+  --bg-page: #f7f9fb;
+  --bg-card: #ffffff;
+  --text-main: #191c1e;
+  --text-muted: #565e74;
+  --text-[#464554]: #767586;
+  --border: #e0e3e5;
+  --sidebar-bg: #1e232a;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html, body {
-  background: var(--bg-dark);
-  color: #f1f5f9;
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-track { background: #f2f4f6; }
+::-webkit-scrollbar-thumb { background: #c7c4d7; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #4648d4; }
 
-/* Custom glass card */
-.glass-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  backdrop-filter: blur(12px);
+/* Stitch Card Component */
+.stitch-card {
+  background: #ffffff;
+  border: 1px solid #e0e3e5;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
 }
 
-/* Teal gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #0F6E56, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.stitch-card-hover:hover {
+  border-color: #c7c4d7;
+  box-shadow: 0 10px 25px -5px rgba(70, 72, 212, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 
-/* Tier badges */
-.tier-expert { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
-.tier-gold   { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
-.tier-silver { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
-.tier-bronze { background: rgba(251,146,60,0.15);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+.stitch-badge-primary {
+  background-color: #e1e0ff;
+  color: #4648d4;
+  border: 1px solid rgba(70, 72, 212, 0.2);
+}
+
+.stitch-badge-emerald {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.stitch-badge-purple {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.stitch-badge-amber {
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-in { animation: fadeIn 0.3s ease forwards; }
-
-@keyframes pulse-ring {
-  0%   { transform: scale(0.95); opacity: 0.8; }
-  50%  { transform: scale(1.02); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-.pulse-ring { animation: pulse-ring 2.5s ease-in-out infinite; }
+.fade-in { animation: fadeIn 0.25s ease-out forwards; }
