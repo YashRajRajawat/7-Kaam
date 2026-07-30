@@ -1,8 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qywflwdkrckyjdrsadvo.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_xJD9ZgF8dZfnGalPdIp05Q_JB_q_wJN';
+
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY
 );
 
 const BUCKET = '7kaam-assets';

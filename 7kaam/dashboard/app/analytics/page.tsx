@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardShell>
-      <div className="space-y-6 fade-in">
+      <div className="max-w-7xl mx-auto space-y-6 fade-in">
         {/* Header & Highlights */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-[#e0e3e5] rounded-xl p-6 shadow-sm">
           <div>

@@ -1,0 +1,279 @@
+================================================================================
+                           7 KAAM PLATFORM - SYSTEM ARCHITECTURE & FILE ROUTING
+================================================================================
+Generated Date: 2026-07-29
+Project Name: 7 Kaam (AI-Powered Blue-Collar Skill Certification & Verification Platform)
+Workspace Root: c:\Users\DARSHAN PRAJAPATHI\Desktop\7-Kaam\7kaam
+
+================================================================================
+1. SYSTEM ARCHITECTURE OVERVIEW
+================================================================================
+7 Kaam is a dual-application monorepo designed for certifying Indian skilled/blue-collar
+workers (electricians, plumbers, carpenters, AC technicians, painters, welders) through a
+3-signal AI evaluation pipeline and issuing verifiable digital credential cards ("KaamCards").
+
+Architecture Stack:
+  ├── Backend (Node.js REST API)
+  │     ├── Framework: Express.js (v5.2.1)
+  │     ├── Database ORM: Prisma ORM (v7.9.0) with PostgreSQL
+  │     ├── Authentication: JWT (Access & Refresh tokens), bcryptjs password hashing
+  │     ├── AI Evaluation Service: Groq API (llama-3.1-8b-instant LLM for trade test grading)
+  │     ├── File Storage: Supabase Cloud Storage JS SDK (for profile pictures and video storage)
+  │     ├── Digital Card Generation: pdf-lib (PDF creation) & qrcode (QR Token generation)
+  │     └── Task/Queue System: BullMQ + Redis (infrastructure-ready dependencies)
+  │
+  └── Dashboard Frontend (Admin & Operator Web Portal)
+        ├── Framework: Next.js 14 (App Router) & React 18
+        ├── Language: TypeScript & Node.js
+        ├── Styling: Tailwind CSS & Radix UI Primitives
+        ├── Data Fetching & State: TanStack React Query (v5), Axios with auto-JWT refresh, Zustand
+        ├── Visualizations: Recharts (Charts for analytics & score distribution)
+        └── Icons: Lucide-React
+
+Scoring & Certification Pipeline (3-Signal Fusion Engine):
+  1. Signal 1 - Video Practical Analysis (35% weight): Practical demonstration scoring.
+  2. Signal 2 - Trade Test Assessment (45% weight): AI-evaluated trade knowledge test using Groq LLM.
+  3. Signal 3 - Verified Work History (20% weight): Peer/employer ratings and verified job records.
+  ──> Weighted Fusion Engine computes Final Score (0–100) and assigns Tier:
+      • EXPERT:  Score >= 80
+      • GOLD:    Score >= 60 & < 80
+      • SILVER:  Score >= 40 & < 60
+      • BRONZE:  Score < 40
+
+================================================================================
+2. DATABASE DATA MODELS & ENUMS (Prisma PostgreSQL Schema)
+================================================================================
+Enums:
+  - Trade: ELECTRICIAN, PLUMBER, CARPENTER, AC_TECHNICIAN, PAINTER, WELDER
+  - Tier: BRONZE, SILVER, GOLD, EXPERT
+  - WorkerStatus: PENDING, ACTIVE, SUSPENDED
+  - AdminRole: SUPER_ADMIN, CITY_ADMIN, REVIEWER
+  - TestLanguage: ENGLISH, HINDI, KANNADA, TAMIL
+  - SubmissionStatus: SUBMITTED, EVALUATING, COMPLETED, FAILED
+  - SignalType: VIDEO, TEST, WORK_HISTORY, FINAL
+  - BookingStatus: PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
+
+Models:
+  - Worker: Core entity tracking demographic data, Aadhaar hash, photo, trade, scores, tier, and status.
+  - Admin: Admin users for dashboard login with role-based access.
+  - TradeTest: Question bank and trade assessment tests.
+  - TestSubmission: Worker responses and Groq AI grading outputs.
+  - WorkHistory: Past employment records, ratings, and verification flag.
+  - KaamCard: Issued digital cards with QR tokens, expiration, and PDF links.
+  - ScoringLog: Audit trail of all score computations and signal entries.
+  - Customer: Mobile app users hiring workers.
+  - Booking: Service appointments linking Customer and Worker.
+
+================================================================================
+3. COMPLETE ROUTING MATRIX
+================================================================================
+
+A. BACKEND API ROUTES (Base URL: /api/v1)
+--------------------------------------------------------------------------------
+Module          HTTP Method  Endpoint                            Auth Required  Description
+--------------------------------------------------------------------------------
+Auth            POST         /api/v1/auth/login                  No             Admin login, returns JWT access & refresh tokens
+Auth            POST         /api/v1/auth/refresh                No             Refreshes expired access tokens
+Auth            POST         /api/v1/auth/logout                 No             Clears session / logs out admin
+
+Workers         POST         /api/v1/workers                     Yes            Create worker profile (with multipart profile photo)
+Workers         GET          /api/v1/workers                     Yes            List workers with search, trade, city, tier filters
+Workers         GET          /api/v1/workers/:id                 Yes            Get complete worker details with history & test scores
+Workers         PATCH        /api/v1/workers/:id                 Yes            Update worker details or verification status
+Workers         DELETE       /api/v1/workers/:id                 Yes            Remove worker record
+
+Trade Tests     POST         /api/v1/tests                       Yes            Create new trade assessment test
+Trade Tests     GET          /api/v1/tests                       Yes            List all trade tests (filterable by trade/language)
+Trade Tests     GET          /api/v1/tests/:id                   Yes            Get trade test details & questions
+Trade Tests     PATCH        /api/v1/tests/:id                   Yes            Update trade test
+Trade Tests     DELETE       /api/v1/tests/:id                   Yes            Delete trade test
+
+Scoring Engine  POST         /api/v1/workers/:id/upload-video    Yes            Get presigned video upload URL / upload video
+Scoring Engine  POST         /api/v1/workers/:id/score-video     Yes            Triggers Signal 1 video evaluation (35%)
+Scoring Engine  POST         /api/v1/workers/:id/submit-test     Yes            Triggers Signal 2 trade test evaluation via Groq AI (45%)
+Scoring Engine  POST         /api/v1/workers/:id/add-work-history Yes           Adds work history entry & computes Signal 3 (20%)
+Scoring Engine  POST         /api/v1/workers/:id/compute-score   Yes            Runs 3-signal fusion formula, updates Final Score & Tier
+Scoring Engine  POST         /api/v1/workers/:id/issue-kaamcard  Yes            Generates digital KaamCard PDF and unique QR token
+
+KaamCards       GET          /api/v1/kaamcards                   Yes            List all issued KaamCards across platform
+KaamCards       GET          /api/v1/kaamcards/:workerId         Yes            Get specific KaamCard by worker ID
+KaamCards       POST         /api/v1/kaamcards/:id/revoke        Yes            Revoke a KaamCard with revocation reason
+
+Public Verify   GET          /api/v1/verify/:qrToken             No (Public)    Public endpoint to verify QR token validity & worker card data
+
+Analytics       GET          /api/v1/analytics/overview          Yes            Summary metrics (total workers, active, certified, etc.)
+Analytics       GET          /api/v1/analytics/by-trade          Yes            Worker counts grouped by trade
+Analytics       GET          /api/v1/analytics/by-city           Yes            Worker counts grouped by city
+Analytics       GET          /api/v1/analytics/score-distribution Yes           Histogram of worker final scores
+Analytics       GET          /api/v1/analytics/certifications-over-time Yes     Time-series chart data of issued certifications
+
+Mobile API      GET          /api/v1/mobile/workers/nearby       No (Public)    Search active verified workers by trade & city
+Mobile API      GET          /api/v1/mobile/workers/:id/public  No (Public)    Get public worker card details & QR verification
+Mobile API      POST         /api/v1/mobile/customers/register  No (Public)    Register/upsert customer user
+Mobile API      POST         /api/v1/mobile/bookings             No (Public)    Create service booking request with worker
+Mobile API      GET          /api/v1/mobile/bookings/:id        No (Public)    Retrieve booking status and worker contact info
+
+System Health   GET          /health                             No             Health check endpoint (status: ok, timestamp)
+
+
+B. FRONTEND DASHBOARD ROUTES (Next.js App Router)
+--------------------------------------------------------------------------------
+Route Path               File Location                          Access Control  Description
+--------------------------------------------------------------------------------
+/                        app/page.tsx                           Redirect        Redirects to /dashboard or /login
+/login                   app/login/page.tsx                     Public          Admin authentication page (JWT saved to localStorage)
+/dashboard               app/dashboard/page.tsx                 Auth Required   Main operational dashboard overview & stats
+/workers                 app/workers/page.tsx                   Auth Required   Worker list, table view, search, trade/tier filters
+/workers/new             app/workers/new/page.tsx               Auth Required   Register new worker profile form
+/workers/[id]            app/workers/[id]/page.tsx              Auth Required   3-Signal Scoring workspace, evaluation & card issue page
+/tests                   app/tests/page.tsx                     Auth Required   Trade tests question bank manager
+/tests/new               app/tests/new/page.tsx                 Auth Required   Create new trade test form
+/kaamcards               app/kaamcards/page.tsx                 Auth Required   KaamCards directory, PDF preview, QR codes & revocation
+/analytics               app/analytics/page.tsx                 Auth Required   Platform performance metrics, charts & distribution graphs
+/settings                app/settings/page.tsx                  Auth Required   Admin application configuration & settings
+
+================================================================================
+4. ENTIRE PROJECT FILE TREE & COMPONENT DIRECTORY
+================================================================================
+
+7kaam/
+├── project_info.txt                           [Project System Architecture & Routing Map]
+│
+├── backend/                                   [Node.js / Express REST API Server]
+│   ├── .env                                   [Environment Configuration Variables]
+│   ├── .env.example                           [Sample Environment Variables Template]
+│   ├── .gitignore                             [Git Exclusion Rules for Backend]
+│   ├── package.json                           [Backend Dependencies & npm Scripts]
+│   ├── package-lock.json                      [Backend Dependency Lockfile]
+│   ├── prisma.config.ts                       [Prisma CLI Configuration]
+│   ├── test_conn.js                           [Database Connection Test Script]
+│   │
+│   ├── prisma/                                [Database Schema & Migrations]
+│   │   ├── schema.prisma                      [Prisma PostgreSQL Schema Definitions & Models]
+│   │   ├── schema.sql                         [Raw SQL Schema Script]
+│   │   ├── seed.js                            [Database Seeding Script (JS)]
+│   │   └── seed.sql                           [Database Seeding Data (SQL)]
+│   │
+│   └── src/                                   [Application Source Code]
+│       ├── server.js                          [Application Entry Point - Starts HTTP Server on Port 8000]
+│       ├── app.js                             [Express App Setup, Global Middleware & Route Registration]
+│       │
+│       ├── controllers/                       [HTTP Controller Handlers]
+│       │   ├── analyticsController.js         [Handles platform statistics, chart metrics & aggregations]
+│       │   ├── authController.js              [Handles admin login, JWT sign, token refresh & logout]
+│       │   ├── kaamCardController.js          [Handles listing, worker card fetch & card revocation]
+│       │   ├── scoringController.js           [Handles 3-signal execution, Groq submission & fusion score]
+│       │   ├── testController.js              [Handles trade test creation, listing & deletion]
+│       │   └── workerController.js            [Handles worker CRUD operations & photo uploads]
+│       │
+│       ├── middleware/                        [Express Custom Middleware]
+│       │   ├── auth.js                        [JWT Token Verification Middleware]
+│       │   └── validate.js                    [Request Payload Validation Middleware]
+│       │
+│       ├── routes/                            [Express Route Definitions]
+│       │   ├── analytics.js                   [/api/v1/analytics - Platform analytics endpoints]
+│       │   ├── auth.js                        [/api/v1/auth - Authentication endpoints]
+│       │   ├── kaamcards.js                   [/api/v1/kaamcards - KaamCard management endpoints]
+│       │   ├── mobile.js                      [/api/v1/mobile - Customer & mobile app integration endpoints]
+│       │   ├── scoring.js                     [/api/v1/workers/:id/... - 3-signal scoring & card issuance]
+│       │   ├── tests.js                       [/api/v1/tests - Trade test endpoints]
+│       │   ├── verify.js                      [/api/v1/verify - Public QR token verification]
+│       │   └── workers.js                     [/api/v1/workers - Worker CRUD endpoints]
+│       │
+│       ├── services/                          [Business Logic & Third-Party Services]
+│       │   ├── groqEvaluator.js               [Groq Cloud LLM Integration (llama-3.1-8b-instant grading)]
+│       │   ├── kaamCardGenerator.js           [PDF Card Generator using pdf-lib]
+│       │   ├── qrService.js                   [QR Code Image Data URI Generator]
+│       │   ├── scoringEngine.js               [3-Signal Weighted Score Calculation & Tier Assignment]
+│       │   └── supabaseStorage.js             [Supabase Storage Service for uploading photos/videos]
+│       │
+│       └── utils/                             [Helper Utilities]
+│           ├── hash.js                        [SHA-256 Hashing Utility (for Aadhaar anonymization)]
+│           └── prisma.js                      [Singleton Prisma Client Instance]
+│
+└── dashboard/                                 [Next.js 14 App Router Frontend]
+    ├── .env.local                             [Local Frontend Environment Variables]
+    ├── .eslintrc.json                         [ESLint Rules Configuration]
+    ├── .gitignore                             [Git Exclusion Rules for Frontend]
+    ├── next.config.mjs                        [Next.js Configuration Options]
+    ├── next-env.d.ts                          [TypeScript Next.js Declaration Types]
+    ├── package.json                           [Frontend Dependencies & Scripts]
+    ├── package-lock.json                      [Frontend Lockfile]
+    ├── postcss.config.mjs                     [PostCSS Tailwind Plugins Config]
+    ├── README.md                              [Frontend Setup Documentation]
+    ├── tailwind.config.ts                     [Tailwind CSS Theme & Style Rules]
+    ├── tsconfig.json                          [TypeScript Compiler Options]
+    │
+    ├── app/                                   [Next.js App Router Page Tree]
+    │   ├── favicon.ico                        [Application Favicon]
+    │   ├── globals.css                        [Global Stylesheet & Tailwind Directives]
+    │   ├── layout.tsx                         [Root HTML Layout & Font Providers]
+    │   ├── page.tsx                           [Root Landing Route (Redirects to /dashboard)]
+    │   ├── providers.tsx                      [React Query Client & State Providers Wrapper]
+    │   │
+    │   ├── analytics/                         [Analytics Dashboard Section]
+    │   │   ├── layout.tsx                     [Analytics Dashboard Layout]
+    │   │   └── page.tsx                       [Analytics Page with Recharts Charts]
+    │   │
+    │   ├── dashboard/                         [Main Admin Dashboard]
+    │   │   ├── layout.tsx                     [Dashboard Shell Layout]
+    │   │   └── page.tsx                       [Overview Stats, Metrics & Quick Action Widgets]
+    │   │
+    │   ├── kaamcards/                         [KaamCards Management Section]
+    │   │   ├── layout.tsx                     [KaamCards Layout]
+    │   │   └── page.tsx                       [KaamCards Table, View QR & Revoke Actions]
+    │   │
+    │   ├── login/                             [Authentication Page]
+    │   │   └── page.tsx                       [Admin Login Form & JWT Handler]
+    │   │
+    │   ├── settings/                          [Platform Settings Section]
+    │   │   ├── layout.tsx                     [Settings Layout]
+    │   │   └── page.tsx                       [System Settings & API Key Configuration]
+    │   │
+    │   ├── tests/                             [Trade Assessment Tests Section]
+    │   │   ├── layout.tsx                     [Tests Layout]
+    │   │   ├── page.tsx                       [Trade Tests Bank List & Filter]
+    │   │   └── new/                           [Create Test Section]
+    │   │       └── page.tsx                   [New Trade Assessment Test Creation Form]
+    │   │
+    │   └── workers/                           [Worker Directory & Evaluation Section]
+    │       ├── layout.tsx                     [Workers Section Layout]
+    │       ├── page.tsx                       [Workers Directory Table & Filter Controls]
+    │       ├── new/                           [Worker Registration Section]
+    │       │   ├── hashUtils.ts               [Client-side Aadhaar Hashing Helper]
+    │       │   └── page.tsx                   [New Worker Registration Form]
+    │       └── [id]/                          [Worker Profile & 3-Signal Scoring Section]
+    │           └── page.tsx                   [Worker Profile, AI Scoring Pipeline & KaamCard Issuer]
+    │
+    ├── components/                            [Reusable UI Components]
+    │   └── layout/                            [Layout Shell Components]
+    │       ├── DashboardShell.tsx             [Main Administrative App Shell]
+    │       ├── Sidebar.tsx                    [Navigation Sidebar with Route Links]
+    │       └── Topbar.tsx                     [Header Bar with Admin User Menu & Notifications]
+    │
+    ├── lib/                                   [Frontend Core Libraries & API Clients]
+    │   ├── api.ts                             [Axios Instance with Interceptors for JWT & Auto-Refresh]
+    │   ├── queryClient.ts                     [TanStack React Query Client Config]
+    │   ├── store.ts                           [Zustand Global App State Store]
+    │   └── utils.ts                           [Class Merging (clsx/tailwind-merge) & Formatters]
+    │
+    └── types/                                 [TypeScript Interfaces & Enums]
+        └── index.ts                           [Shared Data Interfaces (Worker, Trade, KaamCard, Test, etc.)]
+
+================================================================================
+5. END-TO-END DATA & VERIFICATION FLOW
+================================================================================
+1. Worker Onboarding:
+   • Operator submits worker info + photo via Next.js `/workers/new`.
+   • Backend hashes Aadhaar (`SHA-256`), stores profile photo via `supabaseStorage.js`, and creates record in PostgreSQL with `status: PENDING`.
+
+2. 3-Signal Certification Pipeline (`/workers/[id]`):
+   • Signal 1 (Video): Operator uploads video of worker performing trade task. Evaluated and scored (35% weight).
+   • Signal 2 (Trade Test): Worker answers trade assessment questions. Express backend calls `groqEvaluator.js` using Groq API (`llama-3.1-8b-instant`) to score answers and return detailed feedback (45% weight).
+   • Signal 3 (Work History): Employment entries & ratings are added and scored (20% weight).
+   • Final Computation: Backend runs `scoringEngine.js`, calculates `finalScore`, assigns `tier` (EXPERT/GOLD/SILVER/BRONZE), and updates worker status to `ACTIVE`.
+
+3. KaamCard Issuance & Verification:
+   • Backend generates a PDF credential (`kaamCardGenerator.js`) and a unique QR Token (`qrService.js`).
+   • Public users or employers scanning the QR code hit `GET /api/v1/verify/:qrToken` or mobile endpoint `GET /api/v1/mobile/workers/:id/public` to confirm certificate authenticity in real time.
+================================================================================

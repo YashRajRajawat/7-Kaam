@@ -44,7 +44,7 @@ export default function KaamCardsPage() {
 
   return (
     <DashboardShell>
-      <div className="space-y-6 fade-in">
+      <div className="max-w-7xl mx-auto space-y-6 fade-in">
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-[#e0e3e5] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export default function KaamCardsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e0e3e5] bg-[#f2f4f6]">
-                  {['Worker Name', 'Skilled Trade', 'Final Score', 'Tier', 'Issue Date', 'Expiry Date', 'Status', 'Actions'].map(h => (
+                  {['Worker Name', 'Skilled Trade', 'Final Score', 'Tier', 'Issue Date', 'Status', 'Actions'].map(h => (
                     <th key={h} className="px-6 py-3.5 text-left text-xs font-bold text-[#767586] uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -77,11 +77,11 @@ export default function KaamCardsPage() {
                 {isLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      {Array.from({ length: 8 }).map((_, j) => <td key={j} className="px-6 py-4"><div className="h-3 bg-[#f2f4f6] rounded w-3/4" /></td>)}
+                      {Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-6 py-4"><div className="h-3 bg-[#f2f4f6] rounded w-3/4" /></td>)}
                     </tr>
                   ))
                 ) : cards?.length === 0 ? (
-                  <tr><td colSpan={8} className="text-center py-12 text-[#767586] text-xs">No KaamCards issued yet.</td></tr>
+                  <tr><td colSpan={7} className="text-center py-12 text-[#767586] text-xs">No KaamCards issued yet.</td></tr>
                 ) : (
                   cards?.map(card => {
                     const status = cardStatus(card);
@@ -101,7 +101,6 @@ export default function KaamCardsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-xs text-[#767586]">{formatDate(card.issuedAt)}</td>
-                        <td className="px-6 py-4 text-xs text-[#767586]">{formatDate(card.expiresAt)}</td>
                         <td className="px-6 py-4">
                           <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold border', statusStyle[status])}>
                             ● {status}

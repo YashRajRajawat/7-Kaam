@@ -45,7 +45,7 @@ export default function WorkersPage() {
 
   return (
     <DashboardShell>
-      <div className="space-y-6 fade-in">
+      <div className="max-w-7xl mx-auto space-y-6 fade-in">
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-[#e0e3e5] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-3">

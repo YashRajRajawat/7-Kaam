@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell>
-      <div className="space-y-6 fade-in">
+      <div className="max-w-7xl mx-auto space-y-6 fade-in">
         {/* Welcome Banner Card (Stitch Spec) */}
         <div className="bg-white border border-[#e0e3e5] rounded-xl shadow-sm p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
