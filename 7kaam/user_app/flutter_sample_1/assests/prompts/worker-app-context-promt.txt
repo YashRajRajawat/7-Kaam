@@ -1,0 +1,360 @@
+You are a senior Flutter developer. Build a complete Flutter mobile 
+application called "7 Kaam — Worker App" from scratch.
+
+## OVERVIEW
+7 Kaam is an AI-powered skill certification platform for blue-collar 
+workers in India. This app is for WORKERS — electricians, plumbers, 
+carpenters, AC technicians, painters, welders.
+
+Workers use this app to:
+- Register themselves OR login if already onboarded by admin
+- Complete their certification pipeline (video + trade test)
+- View and share their KaamCard
+- Track their score and tier
+- Manage their profile and work history
+
+## BACKEND
+The backend is already built — Node.js + Express REST API.
+Base URL: http://localhost:8000/api/v1  (update to production URL later)
+
+All API calls use JWT Bearer token in Authorization header.
+Token is stored in Flutter SecureStorage after login.
+
+## EXISTING BACKEND ENDPOINTS TO USE
+
+Auth:
+POST /api/v1/workers/register     → self-register new worker
+POST /api/v1/auth/worker/login    → phone number + OTP login
+POST /api/v1/auth/refresh         → refresh JWT token
+
+Worker Profile:
+GET  /api/v1/workers/:id          → get full worker profile
+PATCH /api/v1/workers/:id         → update profile
+
+Scoring Pipeline:
+POST /api/v1/workers/:id/upload-video      → get presigned URL, upload video
+POST /api/v1/workers/:id/score-video       → trigger video scoring
+POST /api/v1/workers/:id/submit-test       → submit trade test answers
+POST /api/v1/workers/:id/add-work-history  → add employer entry
+POST /api/v1/workers/:id/compute-score     → compute final score
+POST /api/v1/workers/:id/issue-kaamcard    → issue KaamCard
+
+Trade Tests:
+GET  /api/v1/tests?trade=ELECTRICIAN&language=HINDI → get available tests
+
+KaamCard:
+GET  /api/v1/kaamcards/:workerId  → get worker's KaamCard
+GET  /api/v1/verify/:qrToken      → public verify (no auth)
+
+Work History:
+POST /api/v1/workers/:id/add-work-history
+
+## FLUTTER PACKAGES TO USE
+- dio: HTTP client with interceptors
+- flutter_secure_storage: JWT token storage
+- provider or riverpod: state management (use Riverpod)
+- go_router: navigation
+- image_picker: profile photo and video upload
+- camera: in-app camera for 60-sec video recording
+- qr_flutter: display QR code on KaamCard screen
+- flutter_animate: smooth animations
+- google_fonts: use Poppins font
+- cached_network_image: worker photos
+- shimmer: loading skeletons
+- file_picker: document uploads
+- permission_handler: camera and storage permissions
+- intl: date formatting
+
+## COLOUR PALETTE
+Primary Teal: #0F6E56
+Navy: #1A3557
+Gold: #C8922A
+White: #FFFFFF
+Background: #F4F7FA
+Dark text: #1A1A1A
+Gray text: #555555
+
+## APP STRUCTURE
+
+lib/
+├── main.dart
+├── core/
+│   ├── constants/
+│   │   ├── api_constants.dart       ← base URL, endpoints
+│   │   └── app_colors.dart          ← colour palette
+│   ├── network/
+│   │   ├── dio_client.dart          ← Dio setup with JWT interceptor
+│   │   └── api_service.dart         ← all API call methods
+│   ├── storage/
+│   │   └── secure_storage.dart      ← token read/write/delete
+│   └── router/
+│       └── app_router.dart          ← GoRouter all routes
+├── models/
+│   ├── worker_model.dart
+│   ├── kaam_card_model.dart
+│   ├── trade_test_model.dart
+│   ├── work_history_model.dart
+│   └── score_breakdown_model.dart
+├── providers/
+│   ├── auth_provider.dart
+│   ├── worker_provider.dart
+│   ├── test_provider.dart
+│   └── kaam_card_provider.dart
+├── screens/
+│   ├── splash/
+│   │   └── splash_screen.dart
+│   ├── onboarding/
+│   │   └── onboarding_screen.dart   ← 3 swipeable intro slides
+│   ├── auth/
+│   │   ├── login_screen.dart        ← phone number + OTP
+│   │   └── register_screen.dart     ← self-registration form
+│   ├── home/
+│   │   └── home_screen.dart         ← bottom nav shell
+│   ├── dashboard/
+│   │   └── dashboard_screen.dart    ← worker's main screen
+│   ├── pipeline/
+│   │   ├── pipeline_screen.dart     ← certification progress
+│   │   ├── video_upload_screen.dart ← record + upload 60-sec video
+│   │   └── trade_test_screen.dart   ← take the test
+│   ├── kaam_card/
+│   │   └── kaam_card_screen.dart    ← view + share KaamCard
+│   ├── profile/
+│   │   ├── profile_screen.dart
+│   │   └── work_history_screen.dart ← add/view employer history
+│   └── verify/
+│       └── verify_screen.dart       ← public QR scan result
+└── widgets/
+    ├── score_ring.dart              ← circular SVG score widget
+    ├── tier_badge.dart              ← BRONZE/SILVER/GOLD/EXPERT
+    ├── pipeline_tracker.dart        ← step progress UI
+    ├── kaam_card_widget.dart        ← visual KaamCard card
+    └── custom_button.dart
+
+## SCREENS — DETAILED REQUIREMENTS
+
+### Splash Screen
+- Show 7 Kaam logo (large "7" + "Kaam" text) on teal background
+- Check if JWT token exists in secure storage
+- If yes → go to Dashboard
+- If no → go to Onboarding
+- 2 second delay with fade animation
+
+### Onboarding Screen (3 slides, swipeable)
+Slide 1: 
+  Illustration of a worker with a certificate
+  Title: "Get Certified"
+  Subtitle: "Take an AI-powered skill test and earn your KaamCard"
+
+Slide 2:
+  Illustration of a phone with QR code
+  Title: "Build Trust"
+  Subtitle: "Share your verified score with any customer or employer"
+
+Slide 3:
+  Illustration of a worker getting booked
+  Title: "Get More Work"
+  Subtitle: "Certified workers get discovered first on 7 Kaam"
+
+Bottom: Skip button, Next button, and dot indicators
+Last slide: "Get Started" button → Login screen
+
+### Login Screen
+- 7 Kaam logo at top
+- "Welcome Back" heading
+- Phone number input field (India format, +91 prefix shown)
+- "Send OTP" button (teal)
+- OTP input (6 boxes, auto-focus next box on input)
+- "Verify & Login" button
+- Divider "OR"
+- "Register as a new worker" text link → Register screen
+
+Note: For now OTP can be a fixed 4-digit code (1234) 
+since SMS is not integrated yet. Add a comment // TODO: integrate SMS OTP
+
+### Register Screen
+Step 1 — Personal Info:
+  - Full Name (text field)
+  - Phone Number (+91 prefix)
+  - Trade dropdown (ELECTRICIAN/PLUMBER/CARPENTER/
+    AC_TECHNICIAN/PAINTER/WELDER) with icons for each
+  - City (text field with suggestions: Bangalore, Mumbai, Delhi, 
+    Hyderabad, Chennai)
+  - Locality (optional text field)
+
+Step 2 — Identity:
+  - Aadhaar number field (masked XXXX-XXXX-XXXX format)
+  - Note: "Your Aadhaar number is never stored. Only a secure 
+    hash is used for identity verification."
+  - Profile photo upload (from gallery or camera)
+
+Step 3 — Confirmation:
+  - Show summary of all entered details
+  - "Submit Registration" button
+  - On success → show success screen → go to Dashboard
+
+Show progress indicator (Step 1 of 3) at top
+
+### Dashboard Screen (Home tab)
+Header:
+  - "Namaste, [First Name] 👋" greeting
+  - Trade badge + City
+  - Notification bell icon
+
+Certification Status Card (most prominent):
+  If not certified yet:
+    - "Complete Your Certification" title
+    - Pipeline tracker showing current step
+    - "Continue Pipeline" CTA button (teal, full width)
+    - Percentage completion (e.g. "60% complete")
+
+  If certified:
+    - Mini KaamCard preview (score ring + tier badge)
+    - "View Full KaamCard" button
+    - "Share Certificate" button
+
+Quick Stats Row (3 small cards):
+  - Current Score (or "Pending")
+  - Tier (or "Not yet")  
+  - Tests Taken
+
+Recent Activity:
+  - List of last 5 scoring events from ScoringLog
+  - Each shows: signal type icon, score, date
+
+### Pipeline Screen (Certify tab)
+Title: "Your Certification Journey"
+
+5-step vertical pipeline tracker:
+Each step shows:
+  - Step number circle (filled teal if complete, outlined if pending)
+  - Connecting line between steps
+  - Step title and description
+  - Status chip: Complete / In Progress / Locked
+
+Step 1: Profile Setup
+  Status based on whether worker has photo + Aadhaar hash
+  CTA: "Complete Profile" if incomplete
+
+Step 2: Upload Skill Video
+  "Record a 60-second video of yourself doing your trade work"
+  CTA: "Record Video" → opens VideoUploadScreen
+  If complete: show video thumbnail + "Re-record" option
+
+Step 3: Take Trade Test
+  "Answer 10 questions about your trade in your language"
+  Language selector: English / Hindi / Kannada / Tamil
+  CTA: "Start Test" → opens TradeTestScreen
+  If complete: show score chip
+
+Step 4: Work History
+  "Add your past employers and their ratings"
+  CTA: "Add Employers" → opens WorkHistoryScreen
+  Shows count of entries added
+
+Step 5: Get KaamCard
+  Enabled only when steps 1-4 are complete
+  CTA: "Issue My KaamCard" (calls compute-score then issue-kaamcard)
+  Loading state while processing: "AI is computing your score..."
+
+### Video Upload Screen
+- Full screen camera preview (use camera package)
+- 60-second countdown timer (red when < 10 sec)
+- Record button (large red circle, press to start/stop)
+- After recording:
+  - Video preview player
+  - "Looks Good — Upload" button
+  - "Re-record" button
+- Upload progress bar while uploading to Supabase via presigned URL
+- On success: "Video uploaded! Admin will score it shortly." 
+- Note: CV scoring is triggered by admin from dashboard
+
+### Trade Test Screen
+Header: Test title + trade + language chip
+Progress bar: Question X of 10
+
+For each question:
+  - Question text (large, readable)
+  - 4 option buttons (tap to select, teal border when selected)
+  - "Next" button (disabled until option selected)
+  - "Previous" button
+
+After last question:
+  - Review screen showing all answers
+  - "Submit Test" button
+  - Confirmation dialog "Are you sure you want to submit?"
+
+After submission:
+  - Loading: "Groq AI is evaluating your answers..."
+  - Results screen:
+    - Total score out of 100
+    - Per-question breakdown (question, your answer, score, AI feedback)
+    - Overall feedback from AI
+    - "Back to Pipeline" button
+
+### KaamCard Screen (My Card tab)
+If no KaamCard yet:
+  - Illustration
+  - "Complete your certification to get your KaamCard"
+  - "Go to Pipeline" button
+
+If KaamCard exists:
+  Visual KaamCard (looks like a real certificate card):
+    - 7 Kaam logo top left
+    - "Verified Skill Certificate" top right
+    - Worker photo (circular) + Name + Trade + City
+    - Large score out of 100
+    - Tier badge (colour coded)
+    - Three sub-score bars (Video / Test / Work History)
+    - Aadhaar Verified tag
+    - Issue date + Expiry date
+    - QR code (bottom right, generated from qrToken)
+    - Certificate ID (first 8 chars)
+
+  Buttons below the card:
+    - "Download PDF" (calls kaamCardUrl from backend)
+    - "Share Certificate" (Flutter Share to WhatsApp/other apps)
+    - "Copy Verification Link" (copies 7kaam.in/verify/:qrToken)
+
+### Profile Screen (Profile tab)
+  - Worker photo (circular, tappable to change)
+  - Name, Trade badge, City
+  - Phone number (non-editable)
+  - Edit Profile button → edit name, city, locality
+  - Work History section → list of employers with ratings
+  - "Add Work History" button
+
+Bottom navigation (4 tabs):
+  Tab 1: Home (house icon) → Dashboard
+  Tab 2: Certify (certificate icon) → Pipeline
+  Tab 3: My Card (card icon) → KaamCard
+  Tab 4: Profile (person icon) → Profile
+
+## UI REQUIREMENTS
+- Use Poppins font throughout
+- Teal (#0F6E56) as primary action colour
+- All screens have a white/light gray (#F4F7FA) background
+- Cards have subtle shadow (elevation 2) and rounded corners (12px)
+- All buttons are rounded (borderRadius: 12)
+- Loading states use Shimmer skeleton matching the screen layout
+- All API errors show a Snackbar at the bottom with red background
+- Smooth page transitions using flutter_animate
+
+## BUILD ORDER
+1. pubspec.yaml with all dependencies
+2. Core: colours, API constants, Dio client with JWT interceptor, 
+   secure storage, router
+3. All models with fromJson/toJson
+4. All Riverpod providers
+5. Splash screen
+6. Onboarding screen
+7. Login + Register screens
+8. Dashboard screen
+9. Pipeline screen
+10. Video upload screen
+11. Trade test screen
+12. KaamCard screen
+13. Profile + Work history screen
+14. All shared widgets (score ring, tier badge, pipeline tracker)
+
+Start with step 1. After each step show me what was built 
+and ask before proceeding.

@@ -1,0 +1,258 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/constants/app_colors.dart';
+import '../../providers/worker_provider.dart';
+import '../../widgets/custom_button.dart';
+
+class VideoUploadScreen extends ConsumerStatefulWidget {
+  const VideoUploadScreen({super.key});
+
+  @override
+  ConsumerState<VideoUploadScreen> createState() => _VideoUploadScreenState();
+}
+
+class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
+  bool _isRecording = false;
+  bool _recordingFinished = false;
+  int _secondsRemaining = 60;
+  Timer? _timer;
+
+  void _toggleRecording() {
+    if (_isRecording) {
+      // Stop recording
+      _timer?.cancel();
+      setState(() {
+        _isRecording = false;
+        _recordingFinished = true;
+      });
+    } else {
+      // Start recording
+      setState(() {
+        _isRecording = true;
+        _recordingFinished = false;
+        _secondsRemaining = 60;
+      });
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_secondsRemaining > 0) {
+          setState(() {
+            _secondsRemaining--;
+          });
+        } else {
+          _timer?.cancel();
+          setState(() {
+            _isRecording = false;
+            _recordingFinished = true;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _uploadRecordedVideo() async {
+    // Generate simulated 60-sec video bytes
+    final dummyBytes = List<int>.generate(1024 * 10, (index) => index % 256);
+    final fileName = 'worker_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+    final success = await ref
+        .read(workerProvider.notifier)
+        .uploadVideoAndTriggerScore(dummyBytes, fileName);
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Video uploaded! Admin will score it shortly.'),
+          backgroundColor: AppColors.successGreen,
+        ),
+      );
+      context.pop();
+    } else if (mounted) {
+      final error = ref.read(workerProvider).errorMessage ?? 'Upload failed';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.errorRed),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final workerState = ref.watch(workerProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Record 60s Skill Video',
+          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Instructions & Countdown Timer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              color: Colors.black87,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isRecording ? 'Recording Work Demonstration...' : 'Position camera at your work area',
+                    style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _secondsRemaining < 10 ? AppColors.errorRed : AppColors.primaryTeal,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.timer, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_secondsRemaining}s',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Camera Viewfinder Simulation
+            Expanded(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    color: Colors.grey.shade900,
+                    child: Center(
+                      child: _recordingFinished
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: AppColors.gold, size: 80),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Video Recorded (60 Seconds)',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Ready to upload for AI & Admin trade evaluation',
+                                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                                ),
+                              ],
+                            )
+                          : Icon(
+                              _isRecording ? Icons.videocam : Icons.camera_front,
+                              size: 100,
+                              color: _isRecording ? AppColors.errorRed : Colors.white38,
+                            ),
+                    ),
+                  ),
+
+                  // Recording progress bar indicator
+                  if (workerState.isLoading)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      color: Colors.black87,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          LinearProgressIndicator(
+                            value: workerState.videoUploadProgress,
+                            backgroundColor: Colors.grey.shade800,
+                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gold),
+                            minHeight: 8,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Uploading video to cloud server...',
+                            style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Bottom Actions (Record Button / Upload / Re-record)
+            Container(
+              padding: const EdgeInsets.all(24),
+              color: Colors.black,
+              child: _recordingFinished
+                  ? Column(
+                      children: [
+                        CustomButton(
+                          text: 'Looks Good — Upload',
+                          isLoading: workerState.isLoading,
+                          onPressed: _uploadRecordedVideo,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomButton(
+                          text: 'Re-record',
+                          isOutlined: true,
+                          backgroundColor: Colors.white,
+                          onPressed: () {
+                            setState(() {
+                              _recordingFinished = false;
+                              _secondsRemaining = 60;
+                            });
+                          },
+                        ),
+                      ],
+                    )
+                  : GestureDetector(
+                      onTap: _toggleRecording,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                        ),
+                        child: Center(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: _isRecording ? 36 : 64,
+                            height: _isRecording ? 36 : 64,
+                            decoration: BoxDecoration(
+                              color: AppColors.errorRed,
+                              borderRadius: BorderRadius.circular(_isRecording ? 8 : 40),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
