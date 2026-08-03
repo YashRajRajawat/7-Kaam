@@ -83,7 +83,7 @@ class DashboardScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(Icons.location_on, size: 14, color: AppColors.grayText),
+                            const Icon(Icons.location_on, size: 14, color: AppColors.grayText),
                             const SizedBox(width: 2),
                             Text(
                               city,

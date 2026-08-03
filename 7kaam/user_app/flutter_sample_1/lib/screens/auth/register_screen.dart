@@ -69,6 +69,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to pick image: $e')),
       );
@@ -119,7 +120,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'city': _cityController.text.trim(),
       'locality': _localityController.text.trim().isNotEmpty ? _localityController.text.trim() : null,
       'aadhaarHash': aadhaarHash,
-      'profilePhotoUrl': _profileImage != null ? _profileImage!.path : null,
+      'profilePhotoUrl': _profileImage?.path,
     };
 
     final success = await ref.read(authProvider.notifier).registerWorker(registrationData);
@@ -412,11 +413,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               LengthLimitingTextInputFormatter(12),
               _AadhaarFormatter(),
             ],
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.badge, color: AppColors.primaryTeal),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.badge, color: AppColors.primaryTeal),
               hintText: 'XXXX-XXXX-XXXX',
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             ),
           ),
         ),

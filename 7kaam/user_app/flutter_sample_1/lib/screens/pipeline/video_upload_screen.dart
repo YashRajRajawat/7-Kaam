@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:camera/camera.dart';
 import '../../core/constants/app_colors.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../widgets/custom_button.dart';
 
@@ -15,51 +18,125 @@ class VideoUploadScreen extends ConsumerStatefulWidget {
 }
 
 class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
+  CameraController? _cameraController;
+  bool _isCameraInitialized = false;
   bool _isRecording = false;
   bool _recordingFinished = false;
   int _secondsRemaining = 60;
   Timer? _timer;
+  XFile? _recordedVideoFile;
 
-  void _toggleRecording() {
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isNotEmpty) {
+        final camera = cameras.firstWhere(
+          (c) => c.lensDirection == CameraLensDirection.back,
+          orElse: () => cameras.first,
+        );
+        _cameraController = CameraController(
+          camera,
+          ResolutionPreset.high,
+          enableAudio: true,
+        );
+        await _cameraController!.initialize();
+        if (mounted) {
+          setState(() {
+            _isCameraInitialized = true;
+          });
+        }
+      }
+    } catch (_) {
+      // Fallback mode for environments without camera access
+    }
+  }
+
+  Future<void> _toggleRecording() async {
     if (_isRecording) {
       // Stop recording
       _timer?.cancel();
-      setState(() {
-        _isRecording = false;
-        _recordingFinished = true;
-      });
+      XFile? file;
+      if (_cameraController != null && _cameraController!.value.isRecordingVideo) {
+        try {
+          file = await _cameraController!.stopVideoRecording();
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _recordingFinished = true;
+          _recordedVideoFile = file;
+        });
+      }
     } else {
       // Start recording
+      if (_cameraController != null && _cameraController!.value.isInitialized) {
+        try {
+          await _cameraController!.startVideoRecording();
+        } catch (_) {}
+      }
+
       setState(() {
         _isRecording = true;
         _recordingFinished = false;
         _secondsRemaining = 60;
       });
 
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
         if (_secondsRemaining > 0) {
-          setState(() {
-            _secondsRemaining--;
-          });
+          if (mounted) {
+            setState(() {
+              _secondsRemaining--;
+            });
+          }
         } else {
           _timer?.cancel();
-          setState(() {
-            _isRecording = false;
-            _recordingFinished = true;
-          });
+          XFile? file;
+          if (_cameraController != null && _cameraController!.value.isRecordingVideo) {
+            try {
+              file = await _cameraController!.stopVideoRecording();
+            } catch (_) {}
+          }
+          if (mounted) {
+            setState(() {
+              _isRecording = false;
+              _recordingFinished = true;
+              _recordedVideoFile = file;
+            });
+          }
         }
       });
     }
   }
 
   Future<void> _uploadRecordedVideo() async {
-    // Generate simulated 60-sec video bytes
-    final dummyBytes = List<int>.generate(1024 * 10, (index) => index % 256);
+    final currentWorker = ref.read(workerProvider).worker ?? ref.read(authProvider).currentWorker;
+    if (currentWorker != null) {
+      ref.read(workerProvider.notifier).setWorker(currentWorker);
+    }
+
+    List<int> bytes;
+    if (_recordedVideoFile != null) {
+      try {
+        bytes = await File(_recordedVideoFile!.path).readAsBytes();
+      } catch (_) {
+        bytes = List<int>.generate(1024 * 10, (index) => index % 256);
+      }
+    } else {
+      bytes = List<int>.generate(1024 * 10, (index) => index % 256);
+    }
+
     final fileName = 'worker_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
 
     final success = await ref
         .read(workerProvider.notifier)
-        .uploadVideoAndTriggerScore(dummyBytes, fileName);
+        .uploadVideoAndTriggerScore(bytes, fileName, fallbackWorker: currentWorker);
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +157,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _cameraController?.dispose();
     super.dispose();
   }
 
@@ -137,7 +215,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
               ),
             ),
 
-            // Camera Viewfinder Simulation
+            // Camera Viewfinder Screen
             Expanded(
               child: Stack(
                 alignment: Alignment.center,
@@ -145,9 +223,9 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                   Container(
                     width: double.infinity,
                     color: Colors.grey.shade900,
-                    child: Center(
-                      child: _recordingFinished
-                          ? Column(
+                    child: _recordingFinished
+                        ? Center(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.check_circle_outline, color: AppColors.gold, size: 80),
@@ -166,16 +244,23 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                                   style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
                                 ),
                               ],
-                            )
-                          : Icon(
-                              _isRecording ? Icons.videocam : Icons.camera_front,
-                              size: 100,
-                              color: _isRecording ? AppColors.errorRed : Colors.white38,
                             ),
-                    ),
+                          )
+                        : (_isCameraInitialized && _cameraController != null
+                            ? AspectRatio(
+                                aspectRatio: _cameraController!.value.aspectRatio,
+                                child: CameraPreview(_cameraController!),
+                              )
+                            : Center(
+                                child: Icon(
+                                  _isRecording ? Icons.videocam : Icons.camera_front,
+                                  size: 100,
+                                  color: _isRecording ? AppColors.errorRed : Colors.white38,
+                                ),
+                              )),
                   ),
 
-                  // Recording progress bar indicator
+                  // Upload Progress Indicator
                   if (workerState.isLoading)
                     Container(
                       padding: const EdgeInsets.all(24),
@@ -201,7 +286,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
               ),
             ),
 
-            // Bottom Actions (Record Button / Upload / Re-record)
+            // Bottom Actions
             Container(
               padding: const EdgeInsets.all(24),
               color: Colors.black,
@@ -222,6 +307,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                             setState(() {
                               _recordingFinished = false;
                               _secondsRemaining = 60;
+                              _recordedVideoFile = null;
                             });
                           },
                         ),

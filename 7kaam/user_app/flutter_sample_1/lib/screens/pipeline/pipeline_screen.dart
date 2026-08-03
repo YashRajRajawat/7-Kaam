@@ -20,6 +20,8 @@ class PipelineScreen extends ConsumerWidget {
     final kaamCardState = ref.watch(kaamCardProvider);
 
     final worker = workerState.worker ?? authState.currentWorker;
+    final isCertified = worker?.isCertified ?? false;
+    final testScore = worker?.testScore ?? testState.result?.totalScore ?? 90;
 
     // Evaluate completion of steps 1-4
     final isStep1Done = worker != null &&
@@ -61,7 +63,7 @@ class PipelineScreen extends ConsumerWidget {
         isComplete: isStep3Done,
         isInProgress: isStep2Done && !isStep3Done,
         isLocked: !isStep2Done,
-        statusText: isStep3Done ? 'Score: ${worker.testScore?.toInt() ?? testState.result?.totalScore.toInt() ?? 90}' : null,
+        statusText: isStep3Done ? 'Score: ${testScore.toInt()}' : null,
         ctaText: isStep3Done ? 'View Results' : 'Start Test',
         onTap: () => context.push('/pipeline/trade-test'),
       ),
@@ -79,9 +81,9 @@ class PipelineScreen extends ConsumerWidget {
         stepNumber: 5,
         title: 'Get KaamCard',
         description: 'AI computes final composite score and issues official KaamCard.',
-        isComplete: (worker?.isCertified ?? false) || kaamCardState.kaamCard != null,
-        isInProgress: canIssueKaamCard && (worker?.isCertified ?? false) != true,
-        isLocked: !canIssueKaamCard && (worker?.isCertified ?? false) != true,
+        isComplete: isCertified || kaamCardState.kaamCard != null,
+        isInProgress: canIssueKaamCard && !isCertified,
+        isLocked: !canIssueKaamCard && !isCertified,
         ctaText: 'Issue My KaamCard',
         onTap: () async {
           if (worker == null) return;

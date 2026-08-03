@@ -107,9 +107,9 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
 
     final test = testState.currentTest;
     if (test == null || test.questions.isEmpty) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppColors.background,
-        body: const Center(child: Text('No questions loaded')),
+        body: Center(child: Text('No questions loaded')),
       );
     }
 

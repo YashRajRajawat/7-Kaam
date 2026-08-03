@@ -84,37 +84,47 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     }
   }
 
-  Future<bool> uploadVideoAndTriggerScore(List<int> videoBytes, String fileName) async {
-    if (state.worker == null) return false;
-    state = state.copyWith(isLoading: true, videoUploadProgress: 0.2, errorMessage: null);
+  Future<bool> uploadVideoAndTriggerScore(List<int> videoBytes, String fileName, {WorkerModel? fallbackWorker}) async {
+    final targetWorker = state.worker ?? fallbackWorker;
+    if (targetWorker == null) return false;
+
+    state = state.copyWith(
+      isLoading: true,
+      videoUploadProgress: 0.2,
+      worker: targetWorker,
+      errorMessage: null,
+    );
+
     try {
-      // Step 1: get presigned URL
+      // Step 1: get presigned URL from backend
       String videoUrl = 'https://supabase.co/storage/v1/object/public/videos/$fileName';
       try {
-        final presignedRes = await _apiService.getUploadVideoPresignedUrl(state.worker!.id, fileName);
+        final presignedRes = await _apiService.getUploadVideoPresignedUrl(targetWorker.id, fileName);
         if (presignedRes.statusCode == 200 && presignedRes.data != null) {
-          final presignedUrl = presignedRes.data['presignedUrl'] ?? presignedRes.data['url'];
-          videoUrl = presignedRes.data['publicUrl'] ?? videoUrl;
+          final signedUrl = presignedRes.data['signedUrl'] ?? presignedRes.data['presignedUrl'] ?? presignedRes.data['url'];
+          videoUrl = presignedRes.data['videoUrl'] ?? presignedRes.data['publicUrl'] ?? videoUrl;
           state = state.copyWith(videoUploadProgress: 0.5);
 
-          // Step 2: upload bytes to S3/Supabase URL
-          await _apiService.uploadVideoToUrl(presignedUrl, videoBytes, 'video/mp4');
+          if (signedUrl != null && signedUrl.toString().isNotEmpty) {
+            // Step 2: upload bytes to S3/Supabase presigned URL
+            await _apiService.uploadVideoToUrl(signedUrl.toString(), videoBytes, 'video/mp4');
+          }
           state = state.copyWith(videoUploadProgress: 0.8);
         }
       } catch (_) {
-        // Dev fallback simulate upload progress
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Dev fallback simulate upload progress when backend storage is offline
+        await Future.delayed(const Duration(milliseconds: 600));
         state = state.copyWith(videoUploadProgress: 0.8);
       }
 
       // Step 3: Trigger video scoring backend endpoint
       try {
-        await _apiService.scoreVideo(state.worker!.id, videoUrl);
+        await _apiService.scoreVideo(targetWorker.id, videoUrl);
       } catch (_) {}
 
-      // Update worker pipeline step
-      final nextStep = state.worker!.pipelineStep < 3 ? 3 : state.worker!.pipelineStep;
-      final updatedWorker = state.worker!.copyWith(
+      // Update worker model and pipeline step
+      final nextStep = targetWorker.pipelineStep < 3 ? 3 : targetWorker.pipelineStep;
+      final updatedWorker = targetWorker.copyWith(
         videoUrl: videoUrl,
         videoStatus: 'PENDING_ADMIN_SCORING',
         pipelineStep: nextStep,
