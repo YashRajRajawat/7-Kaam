@@ -103,4 +103,32 @@ class ApiService {
   Future<Response> verifyQrToken(String qrToken) async {
     return await _dio.get(ApiConstants.verifyQr(qrToken));
   }
+
+  // Skill Certificates
+  Future<Response> getWorkerCertificates(String workerId) async {
+    return await _dio.get('/workers/$workerId/certificates');
+  }
+
+  Future<Response> getCertificateDetail(String certId) async {
+    return await _dio.get('/certificates/$certId');
+  }
+
+  // Catalogue
+  Future<Response> getTestCatalogue({
+    required String trade,
+    String? category,
+    String? difficulty,
+    String? language,
+    String? search,
+    String? workerId,
+  }) async {
+    final queryParams = <String, dynamic>{'trade': trade};
+    if (category != null) queryParams['category'] = category;
+    if (difficulty != null) queryParams['difficulty'] = difficulty;
+    if (language != null) queryParams['language'] = language;
+    if (search != null) queryParams['search'] = search;
+    if (workerId != null) queryParams['workerId'] = workerId;
+
+    return await _dio.get('/tests/catalogue', queryParameters: queryParams);
+  }
 }

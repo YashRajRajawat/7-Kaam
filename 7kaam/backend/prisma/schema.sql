@@ -15,7 +15,7 @@ CREATE TYPE "SignalType" AS ENUM ('VIDEO', 'TEST', 'WORK_HISTORY', 'FINAL');
 CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 
 -- CreateTable
-CREATE TABLE "Worker" (
+CREATE TABLE IF NOT EXISTS "Worker" (
     "id" TEXT NOT NULL,
     "aadhaarHash" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE "Worker" (
     CONSTRAINT "Worker_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "Admin" (
+CREATE TABLE IF NOT EXISTS "Admin" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE "Admin" (
     CONSTRAINT "Admin_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "TradeTest" (
+CREATE TABLE IF NOT EXISTS "TradeTest" (
     "id" TEXT NOT NULL,
     "trade" "Trade" NOT NULL,
     "language" "TestLanguage" NOT NULL,
@@ -60,11 +60,14 @@ CREATE TABLE "TradeTest" (
     "questions" JSONB NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdBy" TEXT,
+    "prerequisiteTestId" TEXT,
+    "difficulty" TEXT NOT NULL DEFAULT 'BEGINNER',
+    "isFirstTest" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "TradeTest_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "TestSubmission" (
+CREATE TABLE IF NOT EXISTS "TestSubmission" (
     "id" TEXT NOT NULL,
     "workerId" TEXT NOT NULL,
     "testId" TEXT NOT NULL,
@@ -76,21 +79,39 @@ CREATE TABLE "TestSubmission" (
     CONSTRAINT "TestSubmission_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "WorkHistory" (
+CREATE TABLE IF NOT EXISTS "SkillCertificate" (
     "id" TEXT NOT NULL,
     "workerId" TEXT NOT NULL,
-    "employerName" TEXT NOT NULL,
-    "employerPhone" TEXT,
-    "role" TEXT NOT NULL,
+    "testId" TEXT NOT NULL,
+    "testTitle" TEXT NOT NULL,
+    "trade" "Trade" NOT NULL,
+    "score" DOUBLE PRECISION NOT NULL,
+    "issuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "pdfUrl" TEXT,
+    CONSTRAINT "SkillCertificate_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "WorkHistory" (
+    "id" TEXT NOT NULL,
+    "workerId" TEXT NOT NULL,
+    "clientName" TEXT NOT NULL,
+    "clientType" TEXT NOT NULL DEFAULT 'HOUSEHOLD',
+    "clientPhone" TEXT,
+    "clientCity" TEXT NOT NULL,
+    "projectTitle" TEXT NOT NULL,
+    "projectDescription" TEXT NOT NULL,
+    "trade" "Trade" NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3),
-    "rating" INTEGER NOT NULL,
-    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "durationMonths" INTEGER NOT NULL DEFAULT 0,
+    "projectScale" TEXT NOT NULL DEFAULT 'SMALL',
+    "photoUrls" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "WorkHistory_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "KaamCard" (
+CREATE TABLE IF NOT EXISTS "KaamCard" (
     "id" TEXT NOT NULL,
     "workerId" TEXT NOT NULL,
     "scoreBreakdown" JSONB NOT NULL,
@@ -104,7 +125,19 @@ CREATE TABLE "KaamCard" (
     CONSTRAINT "KaamCard_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "ScoringLog" (
+CREATE TABLE IF NOT EXISTS "KaamCardHistory" (
+    "id" TEXT NOT NULL,
+    "kaamCardId" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "finalScore" DOUBLE PRECISION NOT NULL,
+    "videoScore" DOUBLE PRECISION NOT NULL,
+    "testScore" DOUBLE PRECISION NOT NULL,
+    "workHistoryScore" DOUBLE PRECISION NOT NULL,
+    "recordedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "KaamCardHistory_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "ScoringLog" (
     "id" TEXT NOT NULL,
     "workerId" TEXT NOT NULL,
     "signalType" "SignalType" NOT NULL,
@@ -115,7 +148,7 @@ CREATE TABLE "ScoringLog" (
     CONSTRAINT "ScoringLog_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "Customer" (
+CREATE TABLE IF NOT EXISTS "Customer" (
     "id" TEXT NOT NULL,
     "phoneNumber" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
@@ -124,7 +157,7 @@ CREATE TABLE "Customer" (
     CONSTRAINT "Customer_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "Booking" (
+CREATE TABLE IF NOT EXISTS "Booking" (
     "id" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
     "workerId" TEXT NOT NULL,

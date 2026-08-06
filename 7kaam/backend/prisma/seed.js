@@ -3,11 +3,9 @@ const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
-
 
 function hashAadhaar(aadhaar) {
   return crypto.createHash('sha256').update(aadhaar).digest('hex');
@@ -26,14 +24,17 @@ async function main() {
   console.log('✅ Admin created:', admin.email);
 
   // ── Trade Tests ──────────────────────────────────────────────────────────────
-  const test1 = await prisma.tradeTest.upsert({
+  // Electrician Tests (Beginner, Intermediate, Advanced)
+  const testElec1 = await prisma.tradeTest.upsert({
     where: { id: 'test-electrician-001' },
-    update: {},
+    update: { difficulty: 'BEGINNER', isFirstTest: true },
     create: {
       id: 'test-electrician-001',
       trade: 'ELECTRICIAN',
       language: 'ENGLISH',
-      title: 'Electrician Safety Fundamentals',
+      title: 'Electrical Safety Fundamentals',
+      difficulty: 'BEGINNER',
+      isFirstTest: true,
       createdBy: admin.id,
       questions: [
         { question: 'What is the standard household voltage in India?', correctAnswer: '230V AC', options: ['110V AC', '230V AC', '440V AC', '12V DC'] },
@@ -45,14 +46,61 @@ async function main() {
     },
   });
 
-  const test2 = await prisma.tradeTest.upsert({
+  const testElec2 = await prisma.tradeTest.upsert({
+    where: { id: 'test-electrician-002' },
+    update: { difficulty: 'INTERMEDIATE', prerequisiteTestId: 'test-electrician-001', isFirstTest: false },
+    create: {
+      id: 'test-electrician-002',
+      trade: 'ELECTRICIAN',
+      language: 'ENGLISH',
+      title: 'Wiring & Circuit Installation',
+      difficulty: 'INTERMEDIATE',
+      isFirstTest: false,
+      prerequisiteTestId: 'test-electrician-001',
+      createdBy: admin.id,
+      questions: [
+        { question: 'What size wire is recommended for a 1.5 Ton Split AC?', correctAnswer: '4.0 sq mm copper', options: ['1.5 sq mm copper', '2.5 sq mm copper', '4.0 sq mm copper', '6.0 sq mm copper'] },
+        { question: 'An RCD/ELCB protects primarily against:', correctAnswer: 'Earth leakage & electric shock', options: ['Overload', 'Short circuit', 'Earth leakage & electric shock', 'Voltage spikes'] },
+        { question: 'In a 3-phase supply, what is the phase-to-phase voltage?', correctAnswer: '415V AC', options: ['230V AC', '415V AC', '440V AC', '500V AC'] },
+        { question: 'What tool measures electrical continuity and resistance?', correctAnswer: 'Multimeter / Megger', options: ['Tester pen', 'Multimeter / Megger', 'Wire stripper', 'Crimp tool'] },
+        { question: 'Proper earthing resistance for residential installations should be below:', correctAnswer: '5 Ohms', options: ['5 Ohms', '25 Ohms', '50 Ohms', '100 Ohms'] },
+      ],
+    },
+  });
+
+  const testElec3 = await prisma.tradeTest.upsert({
+    where: { id: 'test-electrician-003' },
+    update: { difficulty: 'ADVANCED', prerequisiteTestId: 'test-electrician-002', isFirstTest: false },
+    create: {
+      id: 'test-electrician-003',
+      trade: 'ELECTRICIAN',
+      language: 'ENGLISH',
+      title: 'High Voltage & Industrial Automation',
+      difficulty: 'ADVANCED',
+      isFirstTest: false,
+      prerequisiteTestId: 'test-electrician-002',
+      createdBy: admin.id,
+      questions: [
+        { question: 'What type of starter is used for heavy 3-phase induction motors above 5HP?', correctAnswer: 'Star-Delta Starter', options: ['DOL Starter', 'Star-Delta Starter', 'Auto-Transformer Starter', 'Direct Plug'] },
+        { question: 'What is the purpose of a capacitor bank in industrial panels?', correctAnswer: 'Power Factor Correction', options: ['Voltage Boosting', 'Power Factor Correction', 'Current Limiting', 'Phase Conversion'] },
+        { question: 'Which instrument is used to test high voltage insulation resistance?', correctAnswer: 'Megger (Insulation Tester)', options: ['Clamp Meter', 'Megger (Insulation Tester)', 'Tachometer', 'Lux Meter'] },
+        { question: 'In a 3-phase DB board, color coding for phases (RYB) stands for:', correctAnswer: 'Red, Yellow, Blue', options: ['Red, Yellow, Blue', 'Red, Yellow, Black', 'Red, White, Blue', 'Red, Green, Blue'] },
+        { question: 'What safety relay prevents single phasing in 3-phase motors?', correctAnswer: 'Single Phase Preventer (SPP)', options: ['Overload Relay', 'Single Phase Preventer (SPP)', 'Thermal Relay', 'Time Delay Relay'] },
+      ],
+    },
+  });
+
+  // Plumber Tests
+  const testPlumb1 = await prisma.tradeTest.upsert({
     where: { id: 'test-plumber-001' },
-    update: {},
+    update: { difficulty: 'BEGINNER', isFirstTest: true },
     create: {
       id: 'test-plumber-001',
       trade: 'PLUMBER',
       language: 'HINDI',
       title: 'Plumbing Fundamentals (Hindi)',
+      difficulty: 'BEGINNER',
+      isFirstTest: true,
       createdBy: admin.id,
       questions: [
         { question: 'पानी के पाइप में लीक को ठीक करने के लिए क्या उपयोग करते हैं?', correctAnswer: 'PTFE टेप', options: ['सीमेंट', 'PTFE टेप', 'फेविकोल', 'सिलिकॉन'] },
@@ -64,7 +112,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Trade tests created');
+  console.log('✅ Trade tests created (Beginner, Intermediate, Advanced)');
 
   // ── Workers ──────────────────────────────────────────────────────────────────
   const workerData = [
@@ -139,93 +187,98 @@ async function main() {
   await prisma.workHistory.createMany({
     skipDuplicates: true,
     data: [
-      { workerId: 'worker-ravi-001', employerName: 'Bangalore Electricals Pvt Ltd', role: 'Senior Electrician', startDate: new Date('2022-03-01'), endDate: new Date('2024-12-31'), rating: 5, verified: true },
-      { workerId: 'worker-ravi-001', employerName: 'HomeServ India', role: 'Lead Technician', startDate: new Date('2021-01-01'), endDate: new Date('2022-02-28'), rating: 4, verified: true },
-      { workerId: 'worker-sunita-001', employerName: 'PipeRight Contractors', role: 'Plumber', startDate: new Date('2023-06-01'), endDate: null, rating: 4, verified: true },
-      { workerId: 'worker-sunita-001', employerName: 'AquaFix Services', role: 'Junior Plumber', startDate: new Date('2021-08-01'), endDate: new Date('2023-05-31'), rating: 3, verified: false },
-      { workerId: 'worker-mohan-001', employerName: 'WoodCraft Interiors', role: 'Carpenter', startDate: new Date('2024-01-01'), endDate: null, rating: 3, verified: false },
+      {
+        workerId: 'worker-ravi-001',
+        clientName: 'Bangalore Electricals Pvt Ltd',
+        clientType: 'COMPANY',
+        clientPhone: '+919880011223',
+        clientCity: 'Bangalore',
+        projectTitle: 'Full Apartment Complex DB Board & Concealed Wiring',
+        projectDescription: 'Completed full concealed conduit wiring, 3-phase DB panel setup, and 120 power points across 12 luxury apartments.',
+        trade: 'ELECTRICIAN',
+        startDate: new Date('2022-03-01'),
+        endDate: new Date('2024-12-31'),
+        durationMonths: 34,
+        projectScale: 'LARGE',
+        isVerified: true,
+      },
+      {
+        workerId: 'worker-ravi-001',
+        clientName: 'Suresh Menon (Household)',
+        clientType: 'HOUSEHOLD',
+        clientPhone: '+919845012345',
+        clientCity: 'Bangalore',
+        projectTitle: 'Full Villa Electrical Renovation — 4BHK',
+        projectDescription: 'Rewired 4BHK villa in Indiranagar, installed modular switches, LED cove lighting, inverter backup system, and heavy AC sockets.',
+        trade: 'ELECTRICIAN',
+        startDate: new Date('2021-01-01'),
+        endDate: new Date('2022-02-28'),
+        durationMonths: 14,
+        projectScale: 'MEDIUM',
+        isVerified: true,
+      },
+      {
+        workerId: 'worker-sunita-001',
+        clientName: 'PipeRight Contractors',
+        clientType: 'CONTRACTOR',
+        clientPhone: '+919741002233',
+        clientCity: 'Bangalore',
+        projectTitle: 'Commercial Building Sanitary & Pipeline Plumbing',
+        projectDescription: 'Installed CPVC pressure lines, SWR drainage lines, overhead water tank manifolds, and hydro-pneumatic pump fittings.',
+        trade: 'PLUMBER',
+        startDate: new Date('2023-06-01'),
+        endDate: null,
+        durationMonths: 14,
+        projectScale: 'MEDIUM',
+        isVerified: true,
+      },
     ],
   });
   console.log('✅ Work histories created');
 
-  // ── KaamCards ────────────────────────────────────────────────────────────────
+  // ── KaamCards & KaamCardHistories ─────────────────────────────────────────────
   const kaamCardData = [
     {
       id: 'kc-ravi-001',
       workerId: 'worker-ravi-001',
       qrToken: 'ravi-qr-token-001',
+      version: 2,
       expiresAt: new Date('2027-01-17'),
       pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/kaamcards/worker-ravi-001/kc-ravi-001.pdf',
       scoreBreakdown: { videoScore: 88, testScore: 86, workHistoryScore: 87.5, finalScore: 87, tier: 'EXPERT' },
-    },
-    {
-      id: 'kc-sunita-001',
-      workerId: 'worker-sunita-001',
-      qrToken: 'sunita-qr-token-001',
-      expiresAt: new Date('2027-01-22'),
-      pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/kaamcards/worker-sunita-001/kc-sunita-001.pdf',
-      scoreBreakdown: { videoScore: 75, testScore: 70, workHistoryScore: 72.5, finalScore: 72, tier: 'GOLD' },
-    },
-    {
-      id: 'kc-mohan-001',
-      workerId: 'worker-mohan-001',
-      qrToken: 'mohan-qr-token-001',
-      expiresAt: new Date('2027-02-03'),
-      pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/kaamcards/worker-mohan-001/kc-mohan-001.pdf',
-      scoreBreakdown: { videoScore: 58, testScore: 44, workHistoryScore: 37.5, finalScore: 48, tier: 'SILVER' },
     },
   ];
 
   for (const card of kaamCardData) {
     await prisma.kaamCard.upsert({ where: { id: card.id }, update: {}, create: card });
   }
-  console.log('✅ KaamCards created');
 
-  // Update workers with kaamCardUrl
-  await prisma.worker.update({ where: { id: 'worker-ravi-001' }, data: { kaamCardUrl: kaamCardData[0].pdfUrl } });
-  await prisma.worker.update({ where: { id: 'worker-sunita-001' }, data: { kaamCardUrl: kaamCardData[1].pdfUrl } });
-  await prisma.worker.update({ where: { id: 'worker-mohan-001' }, data: { kaamCardUrl: kaamCardData[2].pdfUrl } });
+  await prisma.kaamCardHistory.createMany({
+    skipDuplicates: true,
+    data: [
+      { kaamCardId: 'kc-ravi-001', version: 1, finalScore: 82.0, videoScore: 80.0, testScore: 82.0, workHistoryScore: 85.0, recordedAt: new Date('2026-01-15') },
+      { kaamCardId: 'kc-ravi-001', version: 2, finalScore: 87.0, videoScore: 88.0, testScore: 86.0, workHistoryScore: 87.5, recordedAt: new Date('2026-01-17') },
+    ],
+  });
+  console.log('✅ KaamCards & histories created');
 
-  // ── Scoring Logs ─────────────────────────────────────────────────────────────
-  const logs = [
-    { workerId: 'worker-ravi-001', signalType: 'VIDEO', outputScore: 88, scoredAt: new Date('2026-01-15'), notes: 'Mock CV model' },
-    { workerId: 'worker-ravi-001', signalType: 'TEST', outputScore: 86, scoredAt: new Date('2026-01-16'), notes: 'Groq LLaMA 3' },
-    { workerId: 'worker-ravi-001', signalType: 'WORK_HISTORY', outputScore: 87.5, scoredAt: new Date('2026-01-16'), notes: '2 verified entries' },
-    { workerId: 'worker-ravi-001', signalType: 'FINAL', outputScore: 87, scoredAt: new Date('2026-01-17'), notes: 'Tier: EXPERT' },
-    { workerId: 'worker-sunita-001', signalType: 'VIDEO', outputScore: 75, scoredAt: new Date('2026-01-20'), notes: 'Mock CV model' },
-    { workerId: 'worker-sunita-001', signalType: 'TEST', outputScore: 70, scoredAt: new Date('2026-01-21'), notes: 'Groq LLaMA 3' },
-    { workerId: 'worker-sunita-001', signalType: 'FINAL', outputScore: 72, scoredAt: new Date('2026-01-22'), notes: 'Tier: GOLD' },
-    { workerId: 'worker-mohan-001', signalType: 'VIDEO', outputScore: 58, scoredAt: new Date('2026-02-01'), notes: 'Mock CV model' },
-    { workerId: 'worker-mohan-001', signalType: 'TEST', outputScore: 44, scoredAt: new Date('2026-02-02'), notes: 'Groq LLaMA 3' },
-    { workerId: 'worker-mohan-001', signalType: 'FINAL', outputScore: 48, scoredAt: new Date('2026-02-03'), notes: 'Tier: SILVER' },
-  ];
-
-  await prisma.scoringLog.createMany({ data: logs, skipDuplicates: true });
-  console.log('✅ Scoring logs created');
-
-  // ── Test Submissions ─────────────────────────────────────────────────────────
-  await prisma.testSubmission.createMany({
+  // ── Skill Certificates ────────────────────────────────────────────────────────
+  await prisma.skillCertificate.createMany({
     skipDuplicates: true,
     data: [
       {
+        id: 'cert-ravi-001',
         workerId: 'worker-ravi-001',
         testId: 'test-electrician-001',
-        answers: ['230V AC', 'Green', 'Miniature Circuit Breaker', '3450W', 'Switch off the main breaker and use insulated tools'],
-        rawScore: 86,
-        status: 'COMPLETED',
-        aiEvaluation: { totalScore: 86, overallFeedback: 'Excellent knowledge of electrical safety fundamentals.' },
-      },
-      {
-        workerId: 'worker-sunita-001',
-        testId: 'test-plumber-001',
-        answers: ['PTFE टेप', 'PVC सॉल्वेंट सीमेंट', '25.4 मिमी', 'PSI या बार', 'फ्लोट वाल्व में'],
-        rawScore: 70,
-        status: 'COMPLETED',
-        aiEvaluation: { totalScore: 70, overallFeedback: 'Good understanding of plumbing basics.' },
+        testTitle: 'Electrical Safety Fundamentals',
+        trade: 'ELECTRICIAN',
+        score: 86.0,
+        issuedAt: new Date('2026-01-16'),
+        pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/certificates/worker-ravi-001_test-electrician-001.pdf',
       },
     ],
   });
-  console.log('✅ Test submissions created');
+  console.log('✅ Skill certificates created');
 
   console.log('\n🎉 Seed complete! Login: admin@7kaam.in / Admin@7kaam');
 }
