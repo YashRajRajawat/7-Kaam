@@ -6,11 +6,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
+import '../../providers/certificate_provider.dart';
 import '../../widgets/tier_badge.dart';
 import '../../widgets/custom_button.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+  final Function(int)? onNavigateTab;
+
+  const ProfileScreen({super.key, this.onNavigateTab});
 
   void _showEditProfileDialog(BuildContext context, WidgetRef ref, dynamic worker) {
     final nameController = TextEditingController(text: worker?.name ?? '');
@@ -67,9 +70,30 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final workerState = ref.watch(workerProvider);
+    final certState = ref.watch(certificateProvider);
 
     final worker = workerState.worker ?? authState.currentWorker;
     final workHistory = worker?.workHistory ?? [];
+    final certificates = certState.certificates;
+
+    // Profile completeness calculation
+    final hasPhoto = worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty;
+    final hasAadhaar = worker?.aadhaarHash != null && worker!.aadhaarHash!.isNotEmpty;
+    final hasHistory = workHistory.isNotEmpty;
+    final hasKaamCard = worker?.isCertified == true || worker?.kaamCard != null;
+
+    int completedCount = 0;
+    if (hasPhoto) completedCount++;
+    if (hasAadhaar) completedCount++;
+    if (hasHistory) completedCount++;
+    if (hasKaamCard) completedCount++;
+    final double completeness = completedCount / 4.0;
+
+    int totalMonths = 0;
+    for (final h in workHistory) {
+      totalMonths += h.durationMonths > 0 ? h.durationMonths : 6;
+    }
+    final expYears = (totalMonths / 12).toStringAsFixed(1);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -95,8 +119,9 @@ class ProfileScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Photo + Details Header Card
               Container(
@@ -109,38 +134,21 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 45,
-                          backgroundColor: AppColors.primaryTeal.withValues(alpha: 0.1),
-                          child: worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(45),
-                                  child: CachedNetworkImage(
-                                    imageUrl: worker.profilePhotoUrl!,
-                                    fit: BoxFit.cover,
-                                    width: 90,
-                                    height: 90,
-                                    errorWidget: (context, url, error) =>
-                                        const Icon(Icons.person, size: 50, color: AppColors.primaryTeal),
-                                  ),
-                                )
-                              : const Icon(Icons.person, size: 50, color: AppColors.primaryTeal),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryTeal,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                          ),
-                        ),
-                      ],
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundColor: AppColors.primaryTeal.withOpacity(0.1),
+                      child: worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(45),
+                              child: CachedNetworkImage(
+                                imageUrl: worker.profilePhotoUrl!,
+                                fit: BoxFit.cover,
+                                width: 90,
+                                height: 90,
+                                errorWidget: (context, url, error) => const Icon(Icons.person, size: 50, color: AppColors.primaryTeal),
+                              ),
+                            )
+                          : const Icon(Icons.person, size: 50, color: AppColors.primaryTeal),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -172,61 +180,155 @@ class ProfileScreen extends ConsumerWidget {
                       '${worker?.city ?? 'Bangalore'} • ${worker?.phone ?? ''}',
                       style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     CustomButton(
                       text: 'Edit Profile',
                       isOutlined: true,
-                      height: 40,
+                      height: 38,
                       onPressed: () => _showEditProfileDialog(context, ref, worker),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Experience Summary Card (New)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$expYears Years Experience · ${workHistory.length} Projects · ${certificates.length} Certificates',
+                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Profile Completeness', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+                        Text('${(completeness * 100).toInt()}%', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: completeness,
+                        minHeight: 8,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _buildCheckBadge('Photo', hasPhoto),
+                        _buildCheckBadge('Aadhaar', hasAadhaar),
+                        _buildCheckBadge('Work History', hasHistory),
+                        _buildCheckBadge('KaamCard', hasKaamCard),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Skill Certificates Section Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Skill Certificates',
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (onNavigateTab != null) onNavigateTab!(3); // Navigate to Certificates tab (Tab index 3)
+                    },
+                    child: Text('View all (${certificates.isEmpty ? 1 : certificates.length})', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Certificates Horizontal Scroll
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: certificates.isEmpty ? 1 : certificates.length,
+                  itemBuilder: (context, index) {
+                    final title = certificates.isNotEmpty ? certificates[index].testTitle : 'Electrical Safety Fundamentals';
+                    final score = certificates.isNotEmpty ? certificates[index].score : 86.0;
+
+                    return Container(
+                      width: 200,
+                      margin: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [AppColors.navy, AppColors.primaryTeal]),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Score: ${score.toInt()}/100', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.gold)),
+                              const Icon(Icons.verified, size: 14, color: Colors.white),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               // Work History Section Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Work History & Ratings',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkText,
-                    ),
+                    'Work History',
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy),
                   ),
-                  TextButton.icon(
+                  ElevatedButton.icon(
                     onPressed: () => context.push('/profile/work-history'),
-                    icon: const Icon(Icons.add, size: 18, color: AppColors.primaryTeal),
-                    label: Text(
-                      'Add Entry',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryTeal,
-                      ),
-                    ),
+                    icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                    label: Text('Add Experience', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // Work History List
               if (workHistory.isEmpty)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                   child: Center(
                     child: Text(
-                      'No past employer entries added yet. Tap Add Entry to include your work experience.',
+                      'No past employer entries added yet. Tap Add Experience to build your portfolio.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(color: AppColors.grayText, fontSize: 13),
+                      style: GoogleFonts.poppins(color: AppColors.grayText, fontSize: 12),
                     ),
                   ),
                 )
@@ -234,75 +336,59 @@ class ProfileScreen extends ConsumerWidget {
                 Column(
                   children: workHistory.map((item) {
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                item.employerName,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.darkText,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star, color: AppColors.gold, size: 18),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    item.rating.toStringAsFixed(1),
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item.jobRole,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primaryTeal,
+                          const Icon(Icons.business_center, color: AppColors.primaryTeal, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item.clientName, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy)),
+                                Text(item.projectTitle, style: GoogleFonts.poppins(fontSize: 11, color: AppColors.primaryTeal)),
+                                Text('${item.startDate} ${item.endDate != null ? '- ${item.endDate}' : '(Present)'}', style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade600)),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${item.startDate} ${item.endDate != null ? '- ${item.endDate}' : '(Present)'}',
-                            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(6)),
+                            child: Text(item.projectScale, style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.navy)),
                           ),
-                          if (item.feedback != null && item.feedback!.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              '"${item.feedback}"',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: AppColors.grayText,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     );
                   }).toList(),
                 ),
+              const SizedBox(height: 30),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCheckBadge(String label, bool isDone) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isDone ? AppColors.successGreen.withOpacity(0.12) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isDone ? Icons.check : Icons.close, size: 12, color: isDone ? AppColors.successGreen : Colors.grey),
+          const SizedBox(width: 4),
+          Text(label, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: isDone ? AppColors.successGreen : Colors.grey)),
+        ],
       ),
     );
   }

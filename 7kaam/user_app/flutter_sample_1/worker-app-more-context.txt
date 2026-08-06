@@ -1,0 +1,652 @@
+I have a working Flutter worker app for 7 Kaam. I need to completely 
+redesign the certification experience to work like Coursera / Infosys 
+Springboard — a continuous learning and certification ecosystem for 
+blue-collar workers, not a one-time pipeline.
+
+DO NOT rebuild from scratch. Enhance what exists.
+
+═══════════════════════════════════════════════════════════════
+THE CORE IDEA SHIFT
+═══════════════════════════════════════════════════════════════
+
+OLD THINKING (wrong):
+  Worker → one video → one test → KaamCard → done
+
+NEW THINKING (correct):
+  Worker joins → browses a catalogue of assessments like Coursera
+  → attempts any test or video assessment they want
+  → earns individual Skill Certificates for each passed assessment
+  → KaamCard is a GPA-style summary that gets smarter 
+    and more credible as they attempt more assessments
+  → the more assessments taken, the more trustworthy the score
+  → workers can see how many others attempted each test
+    (like Coursera showing "47,000 learners enrolled")
+
+═══════════════════════════════════════════════════════════════
+PART 1 — BACKEND: DATABASE CHANGES
+═══════════════════════════════════════════════════════════════
+
+Update Prisma schema with these changes:
+
+1. UPDATE TradeTest model:
+  model TradeTest {
+    id                String       @id @default(uuid())
+    trade             Trade
+    language          TestLanguage
+    title             String
+    description       String       ← NEW: "Learn and prove your 
+                                    knowledge of basic electrical 
+                                    safety practices"
+    category          String       ← NEW: e.g. "Safety", "Installation",
+                                    "Maintenance", "Theory", "Advanced"
+    difficulty        Difficulty   ← NEW enum: BEGINNER/INTERMEDIATE/ADVANCED
+    estimatedMinutes  Int          ← NEW: e.g. 15 (how long test takes)
+    passingScore      Int          ← NEW: default 60
+    totalAttempts     Int          @default(0) ← NEW: platform-wide count
+    questions         Json
+    isActive          Boolean      @default(true)
+    isVideoAssessment Boolean      @default(false) ← NEW: true = video 
+                                                    rubric assessment
+    rubrics           Json?        ← NEW: for video assessments, 
+                                    scoring rubric criteria
+    createdBy         String?
+    createdAt         DateTime     @default(now())
+    admin             Admin?       @relation(...)
+    submissions       TestSubmission[]
+    certificates      SkillCertificate[]
+  }
+
+  enum Difficulty {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+  }
+
+2. UPDATE TestSubmission model:
+  model TestSubmission {
+    id             String           @id @default(uuid())
+    workerId       String
+    testId         String
+    answers        Json
+    rawScore       Float?
+    aiEvaluation   Json?
+    timeTakenSecs  Int?             ← NEW: how long worker took
+    attemptNumber  Int   @default(1)← NEW: which attempt this is
+    status         SubmissionStatus @default(SUBMITTED)
+    submittedAt    DateTime         @default(now())
+    worker         Worker           @relation(...)
+    test           TradeTest        @relation(...)
+    certificate    SkillCertificate? ← NEW: link to certificate if earned
+  }
+
+3. ADD SkillCertificate model:
+  model SkillCertificate {
+    id             String    @id @default(uuid())
+    workerId       String
+    testId         String
+    submissionId   String    @unique
+    title          String    ← copy of test title at time of issue
+    trade          Trade
+    category       String
+    difficulty     Difficulty
+    score          Float
+    passingScore   Int
+    issuedAt       DateTime  @default(now())
+    pdfUrl         String?
+    certificateNo  String    @unique ← "7K-ELEC-2025-XXXXX"
+    worker         Worker    @relation(...)
+    test           TradeTest @relation(...)
+    submission     TestSubmission @relation(...)
+  }
+
+4. UPDATE VideoAssessment (rename from existing video approach):
+  Instead of one videoUrl on Worker model, create:
+  
+  model VideoAssessment {
+    id              String   @id @default(uuid())
+    workerId        String
+    testId          String   ← links to a TradeTest where 
+                               isVideoAssessment = true
+    videoUrl        String
+    score           Float?
+    rubricScores    Json?    ← { safety: 85, technique: 72, 
+                                 tool_handling: 90, ... }
+    feedback        String?
+    status          String   @default("PENDING")
+                             ← PENDING/SCORED/FAILED
+    attemptNumber   Int      @default(1)
+    submittedAt     DateTime @default(now())
+    scoredAt        DateTime?
+    worker          Worker   @relation(...)
+    test            TradeTest @relation(...)
+  }
+
+5. UPDATE KaamCard model — add credibility fields:
+  model KaamCard {
+    ...existing fields...
+    totalTestsTaken      Int   @default(0) ← NEW
+    totalVideosTaken     Int   @default(0) ← NEW
+    certificatesEarned   Int   @default(0) ← NEW
+    credibilityLevel     String ← NEW: "EMERGING" (1-3 assessments)
+                                        "ESTABLISHED" (4-8)
+                                        "EXPERT" (9+)
+    lastUpdatedAt        DateTime @updatedAt ← NEW
+  }
+
+6. ADD KaamCardHistory model:
+  model KaamCardHistory {
+    id               String   @id @default(uuid())
+    kaamCardId       String
+    version          Int
+    finalScore       Float
+    videoScore       Float
+    testScore        Float
+    workHistoryScore Float
+    totalTests       Int
+    totalVideos      Int
+    recordedAt       DateTime @default(now())
+    kaamCard         KaamCard @relation(...)
+  }
+
+═══════════════════════════════════════════════════════════════
+PART 2 — BACKEND: UPDATED SCORING LOGIC
+═══════════════════════════════════════════════════════════════
+
+UPDATE compute-score endpoint logic:
+
+videoScore:
+  = average of ALL VideoAssessment scores for this worker
+    where status = SCORED
+  If no videos scored yet = 0
+
+testScore:
+  = average of ALL TestSubmission rawScores for this worker
+    where status = COMPLETED
+  Each test counts once as its BEST score (if retaken, 
+  use highest score for that testId)
+
+workHistoryScore:
+  = computed from WorkHistory entries (existing logic)
+
+finalScore:
+  = (videoScore × 0.35) + (testScore × 0.45) 
+    + (workHistoryScore × 0.20)
+
+credibilityLevel:
+  totalAssessments = totalTestsTaken + totalVideosTaken
+  1-3   → EMERGING
+  4-8   → ESTABLISHED
+  9+    → EXPERT (credibility level, different from tier)
+
+KaamCard update logic:
+  - NEVER delete old KaamCard
+  - UPDATE existing KaamCard with new scores
+  - CREATE KaamCardHistory entry for every update
+  - Increment version number
+
+Auto-trigger compute-score when:
+  - A VideoAssessment is scored by admin
+  - A TestSubmission is completed (after Groq evaluation)
+  So worker never has to manually click "compute score" —
+  KaamCard updates automatically in the background
+
+UPDATE submit-test endpoint:
+  After Groq evaluation completes:
+  1. Save TestSubmission with score
+  2. Increment TradeTest.totalAttempts by 1 (platform counter)
+  3. If score >= passingScore (default 60):
+     - Create SkillCertificate
+     - Generate certificate PDF
+     - Generate certificateNo: "7K-[TRADE]-[YEAR]-[5DIGITS]"
+       e.g. "7K-ELEC-2025-00142"
+  4. Trigger compute-score in background (async)
+  5. Check if this is first passing test AND worker has 
+     at least one video → if so, issue KaamCard if not exists
+  6. Return: { score, certificateEarned, certificate, 
+               kaamCardUpdated, newKaamCardScore }
+
+NEW endpoints needed:
+  GET /api/v1/tests/catalogue
+    Query: trade, category, difficulty, language, search
+    Returns: tests grouped by category with:
+      { category, tests: [ { ...test, 
+        workerBestScore, workerAttempts, certificateEarned,
+        totalAttempts (platform-wide) } ] }
+
+  GET /api/v1/workers/:id/certificates
+    Returns all SkillCertificates for worker
+
+  GET /api/v1/workers/:id/video-assessments
+    Returns all VideoAssessment records for worker
+
+  GET /api/v1/workers/:id/kaamcard/history
+    Returns KaamCardHistory entries for score progression chart
+
+═══════════════════════════════════════════════════════════════
+PART 3 — SEED DATA: RICH CATALOGUE
+═══════════════════════════════════════════════════════════════
+
+Create a proper test catalogue. Add these to seed file:
+
+ELECTRICIAN TRADE TESTS:
+Category: Safety (3 tests)
+  - "Electrical Safety Fundamentals" BEGINNER EN+HI 10Q
+    description: "Core safety practices every electrician must know"
+    estimatedMinutes: 12, passingScore: 60, totalAttempts: 1247
+    
+  - "PPE and Hazard Identification" BEGINNER EN+HI 10Q
+    estimatedMinutes: 10, passingScore: 60, totalAttempts: 893
+    
+  - "High Voltage Safety Protocols" ADVANCED EN 15Q
+    estimatedMinutes: 20, passingScore: 70, totalAttempts: 234
+
+Category: Installation (3 tests)
+  - "Residential Wiring Basics" BEGINNER EN+HI+KN 10Q
+    totalAttempts: 2103
+    
+  - "Distribution Board Setup" INTERMEDIATE EN+HI 12Q
+    totalAttempts: 567
+    
+  - "Three-Phase Industrial Wiring" ADVANCED EN 15Q
+    totalAttempts: 128
+
+Category: Maintenance (2 tests)
+  - "Fault Detection and Troubleshooting" INTERMEDIATE EN+HI 10Q
+    totalAttempts: 445
+    
+  - "Meter Reading and Load Calculation" BEGINNER EN+HI+KN+TA 8Q
+    totalAttempts: 1892
+
+Category: Theory (2 tests)
+  - "Ohm's Law and Circuit Theory" BEGINNER EN+HI 10Q
+    totalAttempts: 3421
+    
+  - "AC/DC Current Fundamentals" INTERMEDIATE EN 12Q
+    totalAttempts: 678
+
+VIDEO ASSESSMENTS for Electrician (isVideoAssessment: true):
+  - "Basic Wiring Technique Assessment" BEGINNER
+    rubrics: { safety_compliance: 30, technique_accuracy: 40, 
+               tool_handling: 30 }
+    description: "Record yourself performing basic wire 
+                  stripping, joining, and insulation"
+    totalAttempts: 342
+    
+  - "Distribution Board Wiring Assessment" INTERMEDIATE
+    rubrics: { safety_compliance: 25, technique_accuracy: 45,
+               tool_handling: 20, work_quality: 10 }
+    totalAttempts: 89
+
+PLUMBER TRADE TESTS:
+Category: Safety (2 tests)
+  - "Plumbing Safety and PPE" BEGINNER EN+HI 10Q
+    totalAttempts: 567
+  - "Chemical Handling in Plumbing" INTERMEDIATE EN+HI 10Q
+    totalAttempts: 123
+
+Category: Installation (3 tests)
+  - "Pipe Fitting Fundamentals" BEGINNER EN+HI+KN 10Q
+    totalAttempts: 892
+  - "Bathroom and Kitchen Fitting" INTERMEDIATE EN+HI 12Q
+    totalAttempts: 334
+  - "Underground Pipe Laying" ADVANCED EN 15Q
+    totalAttempts: 67
+
+Category: Maintenance (2 tests)
+  - "Leak Detection and Repair" BEGINNER EN+HI 10Q
+    totalAttempts: 1102
+  - "Water Pressure Testing" INTERMEDIATE EN 10Q
+    totalAttempts: 289
+
+VIDEO ASSESSMENTS for Plumber:
+  - "Pipe Joint and Fitting Assessment" BEGINNER
+    rubrics: { joint_quality: 40, tool_usage: 30, 
+               leak_prevention: 30 }
+    totalAttempts: 156
+
+CARPENTER TRADE TESTS: (add 6 tests across Safety, 
+Woodwork, Furniture categories)
+
+AC TECHNICIAN TRADE TESTS: (add 6 tests across Safety,
+Installation, Gas Handling categories)
+
+For ALL tests write realistic, actual knowledge-based questions
+(not dummy text). Each question must have 4 options and 
+one correct answer that a real tradesperson would know.
+
+═══════════════════════════════════════════════════════════════
+PART 4 — FLUTTER: DISCOVER/CERTIFY TAB REDESIGN
+═══════════════════════════════════════════════════════════════
+
+Completely redesign the Certify tab to work like Coursera:
+
+CERTIFY TAB — NEW STRUCTURE:
+
+Top Section — KaamCard GPA Card:
+  Large card (teal gradient):
+    Left: Circular score ring with finalScore/100
+    Right top: "KaamCard Score" label
+    Right middle: Credibility chip:
+      EMERGING (gray) / ESTABLISHED (blue) / EXPERT (teal)
+    Right bottom: "[X] tests · [Y] videos · [Z] certificates"
+  
+  Expandable breakdown (tap to expand like accordion):
+    "Score Breakdown"
+    📝 Trade Tests: XX/100 (avg of X tests)
+    🎥 Video Assessments: XX/100 (avg of Y videos)
+    💼 Work History: XX/100
+    Weights: Tests 45% · Video 35% · History 20%
+    
+    Mini line chart (fl_chart):
+      Score history over last 10 updates
+      X-axis: dates, Y-axis: score
+      Label: "Your score is trending ↑"
+
+Sub-tabs below the KaamCard card:
+  [All Tests] [Video Assessments] [My Progress]
+
+═══════════════════════════════════════
+ALL TESTS SUB-TAB (Coursera catalogue style):
+═══════════════════════════════════════
+
+Search bar at top:
+  "Search assessments..." with filter icon
+
+Filter row (horizontal scroll chips):
+  Category: All | Safety | Installation | Maintenance | Theory
+  Difficulty: All | Beginner | Intermediate | Advanced
+
+Results grouped by category:
+  Each category section has a header:
+    "⚡ Safety  ·  3 assessments"
+    [See all] button if more than 3
+
+  Test Card (for each test):
+  ┌─────────────────────────────────────┐
+  │ [Difficulty chip] [Category chip]   │
+  │ Test Title (bold, 2 lines max)      │
+  │ Description (gray, 1 line)          │
+  │                                     │
+  │ ⏱ 12 min  · 👥 1,247 attempted     │
+  │ 📊 Pass score: 60/100               │
+  │                                     │
+  │ If attempted:                       │
+  │   Your best: 78/100 ✓ Certified    │
+  │   Attempted 2 times                 │
+  │ If not attempted:                   │
+  │   "Not attempted yet"               │
+  │                                     │
+  │ [Start Test] or [Retake] button     │
+  └─────────────────────────────────────┘
+
+  Difficulty chip colours:
+    BEGINNER: green background
+    INTERMEDIATE: orange background  
+    ADVANCED: red background
+
+  When [Start Test] tapped → open TestDetailScreen (new)
+
+═══════════════════════════════════════
+VIDEO ASSESSMENTS SUB-TAB:
+═══════════════════════════════════════
+
+Same catalogue layout as tests but for video assessments:
+
+  Video Assessment Card:
+  ┌─────────────────────────────────────┐
+  │ 🎥 VIDEO ASSESSMENT [Difficulty]    │
+  │ Assessment Title (bold)             │
+  │ Description (1 line)               │
+  │                                     │
+  │ Scoring Rubric (expandable):        │
+  │   Safety Compliance    30%          │
+  │   Technique Accuracy   40%          │  
+  │   Tool Handling        30%          │
+  │                                     │
+  │ 👥 342 submitted · ⏱ ~3 min video  │
+  │                                     │
+  │ If submitted and scored:            │
+  │   Your score: 82/100               │
+  │   [Safety: 88] [Tech: 79] [Tool: 82]│
+  │   Admin feedback: "..."             │
+  │   Submitted X times                 │
+  │ If pending:                         │
+  │   "⏳ Awaiting admin scoring"       │
+  │ If not submitted:                   │
+  │   "Not submitted yet"               │
+  │                                     │
+  │ [Record Video] or [Resubmit] button │
+  └─────────────────────────────────────┘
+
+═══════════════════════════════════════
+MY PROGRESS SUB-TAB:
+═══════════════════════════════════════
+
+Stats row (3 cards):
+  Tests Attempted | Certificates Earned | Avg Score
+
+Progress by Category (for worker's trade):
+  Each category shows a progress bar:
+  Safety:       ████░░  2/3 completed
+  Installation: ██░░░░  1/3 completed
+  Maintenance:  ░░░░░░  0/2 completed
+
+Recent Activity (last 10 events):
+  Each item:
+    Icon (📝 or 🎥) + Test name + Score + Date
+    "Earned certificate" badge if applicable
+
+═══════════════════════════════════════════════════════════════
+PART 5 — NEW SCREEN: TestDetailScreen
+═══════════════════════════════════════════════════════════════
+
+When worker taps a test card → opens TestDetailScreen:
+(Similar to Coursera course detail page before enrolling)
+
+Header:
+  Trade chip + Category chip + Difficulty chip
+  Test title (large bold)
+  Description (full text)
+
+Stats row:
+  👥 [X] people attempted this test
+  ⏱ ~[X] minutes
+  📊 Pass with [X]/100
+
+What you'll be tested on (bullet points from questions preview):
+  • Electrical safety PPE requirements
+  • Hazard identification techniques
+  • Emergency response procedures
+  (show topic areas, not actual questions)
+
+Your history (if attempted before):
+  Attempt 1: 54/100 — Failed — 12 Jan 2025
+  Attempt 2: 71/100 — Passed ✓ — 28 Jan 2025
+  Best score: 71/100
+  Certificate: Earned ✓
+
+Language selector:
+  Available in: [English] [Hindi] [Kannada] [Tamil]
+  (show only languages available for this test)
+  Selected language highlighted
+
+Start button:
+  If never attempted: "Start Assessment" (teal full width)
+  If failed before:   "Retake Assessment" (teal full width)
+  If passed:          "Retake to Improve Score" (outlined)
+                      + "View Certificate" button
+
+═══════════════════════════════════════════════════════════════
+PART 6 — CERTIFICATES TAB (new 5th tab)
+═══════════════════════════════════════════════════════════════
+
+Bottom nav becomes 5 tabs:
+  🏠 Home | 📋 Certify | 🪪 KaamCard | 🏆 Certificates | 👤 Profile
+
+CERTIFICATES SCREEN:
+
+Header stats card:
+  [X] Certificates Earned
+  Breakdown: [X] Beginner · [X] Intermediate · [X] Advanced
+
+Filter chips: All | Safety | Installation | Maintenance | Theory
+Trade filter: All | Electrician | Plumber | ...
+
+Certificate Grid (2 columns, staggered):
+  Each certificate card:
+  ┌──────────────────┐
+  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │ ← gradient (teal→navy for trade colour)
+  │  7 KAAM          │
+  │  ───────────     │
+  │  [Test Title]    │
+  │  [Trade] [Cat]   │
+  │                  │
+  │  Score: 78/100   │
+  │  [INTERMEDIATE]  │
+  │  #7K-ELEC-00142  │
+  │  Jan 2025        │
+  │                  │
+  │  [↓] [↗]        │ ← Download | Share
+  └──────────────────┘
+
+Empty state:
+  Trophy icon illustration
+  "No certificates yet"
+  "Pass any assessment with 60+ to earn your first certificate"
+  [Browse Assessments] button → goes to Certify tab
+
+Certificate tap → bottom sheet detail:
+  Full certificate visual (same as card but larger)
+  Test name, trade, category, difficulty
+  Your score: 78/100 (pass score was 60)
+  Certificate number: #7K-ELEC-2025-00142
+  Issued: 15 January 2025
+  
+  Expandable: "View your performance"
+    Per-question breakdown from AI evaluation
+    Overall AI feedback text
+  
+  [Download PDF] full width button
+  [Share on WhatsApp] button
+  "Share link: 7kaam.in/cert/7K-ELEC-2025-00142"
+
+═══════════════════════════════════════════════════════════════
+PART 7 — KAAMCARD SCREEN UPDATE
+═══════════════════════════════════════════════════════════════
+
+Update KaamCard screen to show credibility:
+
+Visual KaamCard (existing card but enhanced):
+  Add below score ring:
+    "Based on [X] tests + [Y] videos"
+    Credibility chip: EMERGING / ESTABLISHED / EXPERT
+  
+  Score breakdown section (expandable accordion):
+    📝 Trade Tests: XX/100
+       "Average of X test attempts"
+    🎥 Video: XX/100  
+       "Average of Y video submissions"
+    💼 Work History: XX/100
+       "X years · X projects"
+    
+    Weights shown: "45% · 35% · 20%"
+
+  Score History section (below card):
+    "Score Progression"
+    fl_chart LineChart:
+      Shows score at each KaamCard version update
+      X: date, Y: score (0-100)
+      Teal line with dot markers
+      Tooltip on tap showing score + date + "Version X"
+    
+    If only 1 data point:
+      "Give more assessments to see your score trend"
+
+  Certificates count:
+    "[X] Skill Certificates earned"
+    Horizontal scroll of certificate mini-cards
+    [View all] → Certificates tab
+
+═══════════════════════════════════════════════════════════════
+PART 8 — DASHBOARD SCREEN UPDATE
+═══════════════════════════════════════════════════════════════
+
+Update dashboard home screen:
+
+If no KaamCard yet:
+  Replace pipeline tracker with:
+  "Start Your Certification Journey"
+  Two CTA cards:
+    Card 1: "📝 Take a Trade Test"
+             "Choose from [X] available assessments"
+             [Browse Tests] button
+    Card 2: "🎥 Submit a Video"
+             "Record yourself doing your trade work"
+             [Record Video] button
+  
+  "Complete at least 1 test + 1 video to get your KaamCard"
+
+If KaamCard exists:
+  Mini GPA card (same as certify tab top card but compact):
+    Score / 100 · Credibility chip · [X] assessments
+  
+  "Keep improving" section:
+    "You haven't tried these yet:"
+    2-3 test cards not yet attempted (random from catalogue)
+    [Browse all assessments] button
+
+Quick stats row:
+  Tests Done | Videos Done | Certificates | KaamCard Score
+
+═══════════════════════════════════════════════════════════════
+PART 9 — PACKAGES TO ADD
+═══════════════════════════════════════════════════════════════
+
+Add to pubspec.yaml:
+  fl_chart: ^0.68.0
+  share_plus: ^9.0.0
+  flutter_staggered_grid_view: ^0.7.0
+  cached_network_image: ^3.3.1
+
+═══════════════════════════════════════════════════════════════
+PART 10 — BUILD ORDER
+═══════════════════════════════════════════════════════════════
+
+Follow this exact sequence:
+
+BACKEND FIRST:
+1. Update Prisma schema with all new models and fields
+2. Run: npx prisma migrate dev --name coursera_redesign
+3. Update seed file with rich test catalogue 
+   (all trades, all categories, realistic questions)
+4. Run: npx prisma db seed
+5. Update submit-test endpoint (auto-certificate + auto KaamCard)
+6. Update compute-score endpoint (rolling average, credibility)
+7. Add GET /tests/catalogue endpoint with grouping
+8. Add GET /workers/:id/certificates endpoint
+9. Add GET /workers/:id/video-assessments endpoint
+10. Add GET /workers/:id/kaamcard/history endpoint
+
+FLUTTER AFTER BACKEND:
+11. Add new packages to pubspec.yaml + pub get
+12. Add Difficulty enum and update TradeTest model
+13. Add SkillCertificate model and VideoAssessment model
+14. Add KaamCardHistory model
+15. Update workerProvider (rolling average awareness)
+16. Update kaamCardProvider (history, credibility)
+17. Add certificateProvider
+18. Add catalogueProvider (test browsing + filtering)
+19. Build TestDetailScreen (Coursera course page style)
+20. Redesign Certify tab completely (3 sub-tabs)
+21. Build Certificates tab (wallet grid)
+22. Update KaamCard screen (score history chart + credibility)
+23. Update Dashboard screen (new CTAs)
+24. Update bottom navigation to 5 tabs
+25. Test full flow: browse → attempt test → 
+    earn certificate → KaamCard auto-updates
+
+After each step confirm and show what was built 
+before moving to the next step.
+
+Start with Step 1 — show me the complete updated 
+Prisma schema first.

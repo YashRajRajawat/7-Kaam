@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../pipeline/pipeline_screen.dart';
 import '../kaam_card/kaam_card_screen.dart';
+import '../certificates/certificates_screen.dart';
 import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,7 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
       DashboardScreen(onNavigateTab: _onTabTapped),
       const PipelineScreen(),
       KaamCardScreen(onNavigateTab: _onTabTapped),
-      const ProfileScreen(),
+      const CertificatesScreen(),
+      ProfileScreen(onNavigateTab: _onTabTapped),
     ];
 
     return Scaffold(
@@ -51,8 +53,8 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primaryTeal,
         unselectedItemColor: Colors.grey.shade500,
-        selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 12),
+        selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
         elevation: 8,
         items: const [
           BottomNavigationBarItem(
@@ -69,6 +71,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.badge_outlined),
             activeIcon: Icon(Icons.badge),
             label: 'My Card',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.workspace_premium_outlined),
+            activeIcon: Icon(Icons.workspace_premium),
+            label: 'Certificates',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

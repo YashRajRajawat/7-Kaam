@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 enum Trade {
   ELECTRICIAN
   PLUMBER
@@ -21,6 +20,12 @@ enum Tier {
   SILVER
   GOLD
   EXPERT
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
 }
 
 enum WorkerStatus {
@@ -89,11 +94,13 @@ model Worker {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  testSubmissions TestSubmission[]
-  workHistories   WorkHistory[]
-  kaamCards       KaamCard[]
-  scoringLogs     ScoringLog[]
-  bookings        Booking[]
+  testSubmissions   TestSubmission[]
+  videoAssessments  VideoAssessment[]
+  workHistories     WorkHistory[]
+  kaamCards         KaamCard[]
+  scoringLogs       ScoringLog[]
+  bookings          Booking[]
+  skillCertificates SkillCertificate[]
 }
 
 model Admin {
@@ -108,61 +115,142 @@ model Admin {
 }
 
 model TradeTest {
-  id        String       @id @default(uuid())
-  trade     Trade
-  language  TestLanguage
-  title     String
-  questions Json
-  isActive  Boolean      @default(true)
-  createdBy String?
-  createdAt DateTime     @default(now())
+  id                 String       @id @default(uuid())
+  trade              Trade
+  language           TestLanguage
+  title              String
+  description        String       @default("")
+  category           String       @default("General")
+  difficulty         Difficulty   @default(BEGINNER)
+  estimatedMinutes   Int          @default(15)
+  passingScore       Int          @default(60)
+  totalAttempts      Int          @default(0)
+  questions          Json
+  isActive           Boolean      @default(true)
+  isVideoAssessment  Boolean      @default(false)
+  rubrics            Json?
+  createdBy          String?
+  prerequisiteTestId String?
+  isFirstTest        Boolean      @default(false)
+  createdAt          DateTime     @default(now())
 
-  admin       Admin?          @relation(fields: [createdBy], references: [id])
-  submissions TestSubmission[]
+  admin             Admin?             @relation(fields: [createdBy], references: [id])
+  prerequisite      TradeTest?         @relation("TestPrerequisites", fields: [prerequisiteTestId], references: [id])
+  dependentTests    TradeTest[]        @relation("TestPrerequisites")
+  submissions       TestSubmission[]
+  videoAssessments  VideoAssessment[]
+  skillCertificates SkillCertificate[]
 }
 
 model TestSubmission {
-  id           String           @id @default(uuid())
-  workerId     String
-  testId       String
-  answers      Json
-  rawScore     Float?
-  aiEvaluation Json?
-  status       SubmissionStatus @default(SUBMITTED)
-  submittedAt  DateTime         @default(now())
+  id            String           @id @default(uuid())
+  workerId      String
+  testId        String
+  answers       Json
+  rawScore      Float?
+  aiEvaluation  Json?
+  timeTakenSecs Int?
+  attemptNumber Int              @default(1)
+  status        SubmissionStatus @default(SUBMITTED)
+  submittedAt   DateTime         @default(now())
+
+  worker      Worker            @relation(fields: [workerId], references: [id])
+  test        TradeTest         @relation(fields: [testId], references: [id])
+  certificate SkillCertificate?
+}
+
+model SkillCertificate {
+  id            String     @id @default(uuid())
+  workerId      String
+  testId        String
+  submissionId  String?    @unique
+  title         String
+  trade         Trade
+  category      String     @default("General")
+  difficulty    Difficulty @default(BEGINNER)
+  score         Float
+  passingScore  Int        @default(60)
+  issuedAt      DateTime   @default(now())
+  pdfUrl        String?
+  certificateNo String     @unique @default(uuid())
+
+  worker     Worker          @relation(fields: [workerId], references: [id])
+  test       TradeTest       @relation(fields: [testId], references: [id])
+  submission TestSubmission? @relation(fields: [submissionId], references: [id])
+}
+
+model VideoAssessment {
+  id            String    @id @default(uuid())
+  workerId      String
+  testId        String
+  videoUrl      String
+  score         Float?
+  rubricScores  Json?
+  feedback      String?
+  status        String    @default("PENDING")
+  attemptNumber Int       @default(1)
+  submittedAt   DateTime  @default(now())
+  scoredAt      DateTime?
 
   worker Worker    @relation(fields: [workerId], references: [id])
   test   TradeTest @relation(fields: [testId], references: [id])
 }
 
 model WorkHistory {
-  id            String    @id @default(uuid())
-  workerId      String
-  employerName  String
-  employerPhone String?
-  role          String
-  startDate     DateTime
-  endDate       DateTime?
-  rating        Int
-  verified      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
+  id                 String    @id @default(uuid())
+  workerId           String
+  clientName         String
+  clientType         String    @default("HOUSEHOLD")
+  clientPhone        String?
+  clientCity         String
+  projectTitle       String
+  projectDescription String
+  trade              Trade
+  startDate          DateTime
+  endDate            DateTime?
+  durationMonths     Int       @default(0)
+  projectScale       String    @default("SMALL")
+  photoUrls          String[]  @default([])
+  isVerified         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
 
   worker Worker @relation(fields: [workerId], references: [id])
 }
 
 model KaamCard {
-  id             String   @id @default(uuid())
-  workerId       String
-  scoreBreakdown Json
-  qrToken        String   @unique
-  pdfUrl         String?
-  version        Int      @default(1)
-  issuedAt       DateTime @default(now())
-  expiresAt      DateTime
-  isRevoked      Boolean  @default(false)
-  revokedReason  String?
+  id                 String            @id @default(uuid())
+  workerId           String
+  scoreBreakdown     Json
+  qrToken            String            @unique
+  pdfUrl             String?
+  version            Int               @default(1)
+  totalTestsTaken    Int               @default(0)
+  totalVideosTaken   Int               @default(0)
+  certificatesEarned Int               @default(0)
+  credibilityLevel   String            @default("EMERGING")
+  issuedAt           DateTime          @default(now())
+  expiresAt          DateTime
+  lastUpdatedAt      DateTime          @default(now()) @updatedAt
+  isRevoked          Boolean           @default(false)
+  revokedReason      String?
 
-  worker Worker @relation(fields: [workerId], references: [id])
+  worker    Worker            @relation(fields: [workerId], references: [id])
+  histories KaamCardHistory[]
+}
+
+model KaamCardHistory {
+  id               String   @id @default(uuid())
+  kaamCardId       String
+  version          Int
+  finalScore       Float
+  videoScore       Float
+  testScore        Float
+  workHistoryScore Float
+  totalTests       Int      @default(0)
+  totalVideos      Int      @default(0)
+  recordedAt       DateTime @default(now())
+
+  kaamCard KaamCard @relation(fields: [kaamCardId], references: [id], onDelete: Cascade)
 }
 
 model ScoringLog {

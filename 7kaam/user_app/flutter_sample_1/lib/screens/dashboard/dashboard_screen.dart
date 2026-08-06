@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
+import '../../providers/kaam_card_provider.dart';
+import '../../providers/certificate_provider.dart';
 import '../../widgets/score_ring.dart';
-import '../../widgets/tier_badge.dart';
 import '../../widgets/custom_button.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -18,8 +20,12 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final workerState = ref.watch(workerProvider);
+    final kaamCardState = ref.watch(kaamCardProvider);
+    final certState = ref.watch(certificateProvider);
 
     final worker = workerState.worker ?? authState.currentWorker;
+    final card = kaamCardState.kaamCard ?? worker?.kaamCard;
+    final certificates = certState.certificates;
 
     if (workerState.isLoading && worker == null) {
       return _buildSkeletonLoader();
@@ -28,11 +34,12 @@ class DashboardScreen extends ConsumerWidget {
     final firstName = worker?.name.split(' ').first ?? 'Worker';
     final trade = worker?.trade ?? 'ELECTRICIAN';
     final city = worker?.city ?? 'Bangalore';
-    final isCertified = worker?.isCertified ?? false;
-    final score = worker?.score ?? 0.0;
-    final tier = worker?.tier ?? 'BRONZE';
-    final pipelineStep = worker?.pipelineStep ?? 1;
-    final completionPct = (pipelineStep / 5.0 * 100).toInt();
+    final isCertified = worker?.isCertified == true || card != null;
+    final score = card?.score ?? worker?.score ?? 0.0;
+    final cred = card?.credibilityLevel ?? 'EMERGING';
+    final tTests = card?.totalTestsTaken ?? (worker?.testCompleted == true ? 1 : 0);
+    final tVideos = card?.totalVideosTaken ?? (worker?.videoUrl != null ? 1 : 0);
+    final tCerts = certificates.length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -41,11 +48,12 @@ class DashboardScreen extends ConsumerWidget {
           onRefresh: () async {
             if (worker != null) {
               await ref.read(workerProvider.notifier).fetchWorkerProfile(worker.id);
+              await ref.read(certificateProvider.notifier).fetchCertificates();
             }
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -70,7 +78,7 @@ class DashboardScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryTeal.withValues(alpha: 0.15),
+                                color: AppColors.primaryTeal.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -107,60 +115,60 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
 
-                // Certification Status Card (Most Prominent)
+                const SizedBox(height: 20),
+
+                // Certification Section
                 !isCertified
-                    ? _buildUncertifiedCard(context, pipelineStep, completionPct)
-                    : _buildCertifiedCard(context, score, tier),
+                    ? _buildUncertifiedSection(context)
+                    : _buildCertifiedSection(context, score, cred, tTests, tVideos, tCerts),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Quick Stats Row (3 small cards)
+                // Quick Stats Row (4 small cards)
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Current Score',
-                        isCertified ? '${score.toInt()}/100' : 'Pending',
-                        Icons.speed,
-                        AppColors.primaryTeal,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Tier',
-                        isCertified ? tier : 'Not yet',
-                        Icons.workspace_premium,
-                        AppColors.gold,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Tests Taken',
-                        worker?.testCompleted == true ? '1' : '0',
-                        Icons.quiz,
-                        AppColors.navy,
-                      ),
-                    ),
+                    Expanded(child: _buildStatCard('Score', isCertified ? '${score.toInt()}' : 'Pending', Icons.speed, AppColors.primaryTeal)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildStatCard('Tests', '$tTests', Icons.quiz, AppColors.navy)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildStatCard('Videos', '$tVideos', Icons.videocam, AppColors.infoBlue)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildStatCard('Certs', '$tCerts', Icons.workspace_premium, AppColors.gold)),
                   ],
                 ),
-                const SizedBox(height: 28),
 
-                // Recent Activity Section
+                const SizedBox(height: 24),
+
+                // "Keep Improving" Recommendations Section
                 Text(
-                  'Recent Activity',
+                  'Keep Improving Your Score',
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.darkText,
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  'Attempt more assessments to increase your score & credibility',
+                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600),
+                ),
                 const SizedBox(height: 12),
 
-                _buildRecentActivityList(worker),
+                _buildRecommendedTestCard('Electrical Safety Fundamentals', 'BEGINNER · Safety · 12 min', '👥 1,247 attempted'),
+                const SizedBox(height: 8),
+                _buildRecommendedTestCard('Residential Wiring Basics', 'BEGINNER · Installation · 15 min', '👥 2,103 attempted'),
+
+                const SizedBox(height: 12),
+                CustomButton(
+                  text: 'Browse All Assessments',
+                  isOutlined: true,
+                  onPressed: () {
+                    if (onNavigateTab != null) onNavigateTab!(1); // Go to Certify tab
+                  },
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -169,143 +177,115 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUncertifiedCard(BuildContext context, int step, int pct) {
+  Widget _buildUncertifiedSection(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Start Your Certification Journey',
+            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Complete at least 1 trade test + 1 video assessment to generate your living KaamCard.',
+            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Complete Your Certification',
-                style: GoogleFonts.poppins(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkText,
+              Expanded(
+                child: _buildCtaCard(
+                  '📝 Take a Trade Test',
+                  'Choose from available assessments',
+                  'Browse Tests',
+                  () => onNavigateTab?.call(1),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$pct% Complete',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gold,
-                  ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildCtaCard(
+                  '🎥 Submit a Video',
+                  'Record yourself doing your work',
+                  'Record Video',
+                  () => context.push('/pipeline/video-upload'),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: pct / 100.0,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
-            minHeight: 8,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Step $step of 5 in progress. Complete your video upload and trade test to issue your KaamCard.',
-            style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
-          ),
-          const SizedBox(height: 16),
-          CustomButton(
-            text: 'Continue Pipeline',
-            onPressed: () {
-              if (onNavigateTab != null) {
-                onNavigateTab!(1); // Go to Certify tab
-              }
-            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCertifiedCard(BuildContext context, double score, String tier) {
+  Widget _buildCtaCard(String title, String subtitle, String btnText, VoidCallback onTap) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              ScoreRing(score: score, size: 70, strokeWidth: 7),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Text(title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.navy)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade600)),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 34,
+            child: ElevatedButton(
+              onPressed: onTap,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: Text(btnText, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertifiedSection(BuildContext context, double score, String cred, int tTests, int tVideos, int tCerts) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [AppColors.primaryTeal, AppColors.navy]),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          ScoreRing(score: score, size: 60, strokeWidth: 6),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'KaamCard Active 🎉',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.darkText,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          'Verified Level: ',
-                          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
-                        ),
-                        TierBadge(tier: tier),
-                      ],
+                    Text('Living KaamCard Active 🎉', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(6)),
+                      child: Text(cred, style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.navy)),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: 'View KaamCard',
-                  height: 42,
-                  onPressed: () {
-                    if (onNavigateTab != null) {
-                      onNavigateTab!(2); // Go to My Card tab
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: CustomButton(
-                  text: 'Share',
-                  isOutlined: true,
-                  height: 42,
-                  icon: Icons.share,
-                  onPressed: () {
-                    if (onNavigateTab != null) {
-                      onNavigateTab!(2);
-                    }
-                  },
-                ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text('$tTests tests · $tVideos videos · $tCerts certificates', style: GoogleFonts.poppins(fontSize: 11, color: Colors.white70)),
+              ],
+            ),
           ),
         ],
       ),
@@ -314,106 +294,43 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.darkText,
-            ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
-          ),
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 4),
+          Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.darkText)),
+          Text(label, style: GoogleFonts.poppins(fontSize: 9, color: AppColors.grayText)),
         ],
       ),
     );
   }
 
-  Widget _buildRecentActivityList(dynamic worker) {
-    final activities = worker?.recentActivity ?? [];
-
-    if (activities.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            'No recent activity recorded yet',
-            style: GoogleFonts.poppins(color: AppColors.grayText, fontSize: 13),
+  Widget _buildRecommendedTestCard(String title, String meta, String attempts) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+      child: Row(
+        children: [
+          const Icon(Icons.quiz, color: AppColors.primaryTeal, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy)),
+                Text(meta, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade600)),
+              ],
+            ),
           ),
-        ),
-      );
-    }
-
-    return Column(
-      children: List.generate(activities.length > 5 ? 5 : activities.length, (index) {
-        final act = activities[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryTeal.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.bolt, color: AppColors.primaryTeal, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      act.signalType.toString().replaceAll('_', ' '),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkText,
-                      ),
-                    ),
-                    Text(
-                      act.date,
-                      style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '+${act.score.toInt()} pts',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.successGreen,
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
+          Text(attempts, style: GoogleFonts.poppins(fontSize: 10, fontStyle: FontStyle.italic, color: AppColors.primaryTeal)),
+        ],
+      ),
     );
   }
 
@@ -430,16 +347,6 @@ class DashboardScreen extends ConsumerWidget {
                 Container(height: 40, color: Colors.white),
                 const SizedBox(height: 20),
                 Container(height: 180, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(child: Container(height: 80, color: Colors.white)),
-                    const SizedBox(width: 10),
-                    Expanded(child: Container(height: 80, color: Colors.white)),
-                    const SizedBox(width: 10),
-                    Expanded(child: Container(height: 80, color: Colors.white)),
-                  ],
-                ),
               ],
             ),
           ),

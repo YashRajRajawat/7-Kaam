@@ -1,0 +1,535 @@
+I have a working Flutter worker app for 7 Kaam. Here is the current 
+progress report of what's already built:
+
+================================================================================
+7 KAAM — WORKER APP: COMPLETED PROGRESS & FEATURE STATUS REPORT
+================================================================================
+Application Name: 7 Kaam — Worker App
+Target Platform: Mobile (Flutter iOS & Android / Windows Desktop)
+Location: user_app/flutter_sample_1
+
+--------------------------------------------------------------------------------
+1. PROJECT ARCHITECTURE & CORE SETUP
+--------------------------------------------------------------------------------
+[x] Flutter 3.x project setup in user_app/flutter_sample_1
+[x] Design System & Color Palette:
+    - Primary Teal: #0F6E56
+    - Navy: #1A3557
+    - Gold: #C8922A
+    - Background: #F4F7FA
+    - Typography: Google Fonts Poppins theme
+[x] Core Network Layer:
+    - ApiConstants: Base URL (http://localhost:8000/api/v1) and 14 backend REST endpoints
+    - DioClient: Dio HTTP client with automatic JWT Bearer token header injection and 401 auto-clear
+    - SecureStorage: FlutterSecureStorage for JWT & Refresh tokens and workerId
+[x] Navigation & Routing:
+    - GoRouter config with 9 routes (/splash, /onboarding, /login, /register, /home, /pipeline/video-upload, /pipeline/trade-test, /profile/work-history, /verify/:qrToken)
+
+--------------------------------------------------------------------------------
+2. DATA MODELS (JSON Serialization & Deserialization)
+--------------------------------------------------------------------------------
+[x] WorkerModel: full profile, trade, city, locality, aadhaarHash, photo, score, tier, pipelineStep, videoUrl, videoStatus, testCompleted, testScore, workHistory, recentActivity, kaamCard
+[x] KaamCardModel: certificate details, workerId, score, tier, sub-scores, issueDate, expiryDate, qrToken, certificateId, kaamCardUrl
+[x] TradeTestModel & QuestionModel: questions, options, trade, language
+[x] TradeTestResultModel & QuestionResultModel: Groq AI feedback & per-question breakdown
+[x] WorkHistoryModel: employer name, job role, dates, rating (1-5 stars), feedback
+[x] ScoreBreakdownModel: video score, test score, work history score, composite score
+
+--------------------------------------------------------------------------------
+3. STATE MANAGEMENT (Riverpod Providers)
+--------------------------------------------------------------------------------
+[x] authProvider: checkAuthStatus, sendOtp, verifyOtpAndLogin (OTP 1234 test code), registerWorker, logout
+[x] workerProvider: fetchWorkerProfile, updateProfile, uploadVideoAndTriggerScore (with fallback worker sync), addWorkHistory
+[x] testProvider: fetchTradeTest, setLanguage (English, Hindi, Kannada, Tamil), option selection, navigation, submitTest with Groq AI breakdown
+[x] kaamCardProvider: fetchKaamCard, computeScoreAndIssueKaamCard, verifyQrToken
+
+--------------------------------------------------------------------------------
+4. SCREENS & FEATURES IMPLEMENTED
+--------------------------------------------------------------------------------
+[x] 1. Splash Screen:
+    - 7 Kaam logo on teal background with fade/scale animation
+    - Token validation in secure storage -> auto routes to /home or /onboarding
+[x] 2. Onboarding Screen:
+    - 3 swipeable slides ("Get Certified", "Build Trust", "Get More Work")
+    - Skip button, Next button, dot indicators, "Get Started" button -> Login
+[x] 3. Login Screen:
+    - Logo, "Welcome Back" heading
+    - Phone number field (+91 prefix, 10-digit validation)
+    - OTP 6-box input with auto-focus next box
+    - "Send OTP" & "Verify & Login" buttons (test code: 1234)
+    - Link to self-registration screen
+[x] 4. Register Screen (3-Step Wizard):
+    - Step 1: Full name, phone (+91), trade dropdown (Electrician, Plumber, Carpenter, AC Tech, Painter, Welder) with icons, city text field with quick chips (Bangalore, Mumbai, Delhi, Hyderabad, Chennai), locality
+    - Step 2: Aadhaar 12-digit formatter (XXXX-XXXX-XXXX), client-side SHA-256 hashing (raw Aadhaar never stored), profile photo picker (camera/gallery)
+    - Step 3: Summary confirmation card, registration submit API call -> success dialog -> Dashboard
+[x] 5. Dashboard Screen (Home Tab):
+    - Greeting ("Namaste, [First Name] 👋") with trade badge & city
+    - Uncertified banner: progress bar (e.g. 60%), current step indicator, "Continue Pipeline" CTA
+    - Certified banner: mini KaamCard preview, score ring, tier badge, "View KaamCard" & "Share" buttons
+    - Quick Stats row: Current Score, Tier, Tests Taken
+    - Recent Activity list: last scoring events with icons, score additions, dates
+    - Pull-to-refresh integration
+[x] 6. Pipeline Screen (Certify Tab):
+    - 5-step vertical pipeline tracker with status chips (Complete / In Progress / Locked)
+    - Language selector dropdown (English, Hindi, Kannada, Tamil)
+    - Step 1: Profile Setup CTA
+    - Step 2: Skill Video upload CTA ("Record Video" / "Re-record")
+    - Step 3: Trade Test CTA ("Start Test" / "View Results")
+    - Step 4: Work History CTA ("Add Employers")
+    - Step 5: Issue KaamCard CTA (triggers backend compute-score & issue-kaamcard with AI processing loader)
+[x] 7. Video Upload Screen:
+    - Camera package integration with live CameraPreview and fallback mode
+    - 60-second countdown timer (turns red under 10 seconds)
+    - Record button (large red circle, press start/stop)
+    - Recorded video preview state
+    - Upload progress bar to cloud storage via presigned URL
+    - Trigger video scoring backend call on upload complete
+[x] 8. Trade Test Screen:
+    - Header with test title, trade, and language chip
+    - Progress bar (Question X of 10)
+    - Question text & 4 option buttons with selection highlight (teal border)
+    - Previous and Next buttons (Next disabled until option selected)
+    - Answer Review screen prior to submission with confirmation modal
+    - Groq AI Evaluation Result screen: total score / 100, overall feedback, per-question breakdown
+[x] 9. KaamCard Screen (My Card Tab):
+    - Visual certificate card: 7 Kaam logo, "Verified Certificate" tag, worker photo, name, trade, city, large score out of 100, tier badge (BRONZE/SILVER/GOLD/EXPERT), 3 sub-score bars (Video/Test/Work History), Aadhaar Verified tag, issue & expiry dates, QR code, Certificate ID
+    - Action buttons: "Download PDF", "Share Certificate" (WhatsApp link), "Copy Verification Link"
+[x] 10. Profile Screen (Profile Tab):
+    - Photo, name, trade badge, city, phone number
+    - "Edit Profile" modal dialog (edit name, city, locality)
+    - Work History section showing past employers, job roles, ratings, feedback notes
+    - "Add Work History" button -> Work History Screen
+    - Logout button in AppBar
+[x] 11. Work History Screen:
+    - Form: Employer name, job role/trade task, start date, end date, rating slider (1.0 to 5.0 stars with gold label), client feedback
+    - Save entry API call & state update
+[x] 12. Verify Screen (Public QR Verification):
+    - Accepts qrToken from URL (/verify/:qrToken)
+    - Calls GET /api/v1/verify/:qrToken
+    - Displays official verified KaamCard or invalid/expired card warning
+
+--------------------------------------------------------------------------------
+5. SHARED CUSTOM WIDGETS
+--------------------------------------------------------------------------------
+[x] ScoreRing: custom circular SVG paint score indicator
+[x] TierBadge: color-coded badge widget for BRONZE, SILVER, GOLD, EXPERT
+[x] PipelineTracker: vertical 5-step progress tracker widget
+[x] KaamCardWidget: visual certificate card widget
+[x] CustomButton: reusable teal/outlined button with loading spinner state
+
+--------------------------------------------------------------------------------
+6. CODE QUALITY & ANALYSIS STATUS
+--------------------------------------------------------------------------------
+[x] flutter analyze result: 0 errors, 0 warnings, 0 info lints (No issues found!)
+[x] Backend connectivity & fallback mode fully tested and operational
+
+================================================================================
+END OF PROGRESS REPORT
+================================================================================
+
+I need you to enhance this app significantly. Do NOT rebuild from 
+scratch — build ON TOP of what exists. Here are all the changes needed:
+
+═══════════════════════════════════════════════════════════════
+PART 1 — KAAMCARD: LIVING SCORE SYSTEM
+═══════════════════════════════════════════════════════════════
+
+CURRENT BEHAVIOUR (wrong):
+Worker gives one video + one test → KaamCard issued → done.
+
+NEW BEHAVIOUR:
+- First video upload + first trade test → KaamCard is issued 
+  (initial certification, this stays the same)
+- Every SUBSEQUENT video/test attempt → rolling average 
+  updates the KaamCard score automatically
+- KaamCard score = rolling average of ALL video attempts (35%) 
+  + rolling average of ALL test attempts (45%) 
+  + work history score (20%)
+- KaamCard UI should show:
+  - Current score (always up to date)
+  - "Based on X video assessments + Y test attempts"
+  - Score history: small line chart showing score progression 
+    over time (use fl_chart package)
+  - "Improve Your Score" CTA button if score < 80
+
+BACKEND CHANGES NEEDED:
+Update POST /api/v1/workers/:id/compute-score to:
+  videoScore = average of ALL videoScore entries in ScoringLog 
+               where signalType = VIDEO for this worker
+  testScore = average of ALL rawScore entries in TestSubmission 
+              for this worker
+  workHistoryScore = computed from work history entries
+  finalScore = (videoScore × 0.35) + (testScore × 0.45) 
+               + (workHistoryScore × 0.20)
+  
+Update KaamCard: instead of creating a new KaamCard each time,
+UPDATE the existing KaamCard with new scores and increment version.
+Add a KaamCardHistory table to track score at each version:
+  model KaamCardHistory {
+    id          String   @id @default(uuid())
+    kaamCardId  String
+    version     Int
+    finalScore  Float
+    videoScore  Float
+    testScore   Float
+    workHistoryScore Float
+    recordedAt  DateTime @default(now())
+    kaamCard    KaamCard @relation(...)
+  }
+
+═══════════════════════════════════════════════════════════════
+PART 2 — SKILL CERTIFICATES (separate from KaamCard)
+═══════════════════════════════════════════════════════════════
+
+CONCEPT:
+Every time a worker PASSES a trade test (score >= 60), they 
+automatically earn a Skill Certificate for that specific test.
+This is SEPARATE from the KaamCard.
+
+Examples:
+  - "Electrical Safety Fundamentals" → Certificate earned ✓
+  - "Wiring & Circuit Basics" → Certificate earned ✓  
+  - "High Voltage Safety" → Locked (complete previous first)
+  - "Solar Panel Installation" → Open (can attempt anytime)
+
+BACKEND CHANGES NEEDED:
+Add SkillCertificate model to Prisma schema:
+  model SkillCertificate {
+    id          String    @id @default(uuid())
+    workerId    String
+    testId      String
+    testTitle   String
+    trade       Trade
+    score       Float
+    issuedAt    DateTime  @default(now())
+    pdfUrl      String?
+    worker      Worker    @relation(...)
+    test        TradeTest @relation(...)
+  }
+
+Add to TradeTest model:
+  prerequisiteTestId  String?   (null = open, set = locked until 
+                                 prerequisite is completed)
+  difficulty          String    (BEGINNER / INTERMEDIATE / ADVANCED)
+  isFirstTest         Boolean   @default(false)
+  (the first test for each trade is what triggers KaamCard issuance)
+
+Update POST /api/v1/workers/:id/submit-test:
+  After Groq evaluation:
+  - If score >= 60 → automatically create SkillCertificate record
+  - Generate a certificate PDF (similar to KaamCard but smaller, 
+    says "Skill Certificate" not "KaamCard")
+  - Upload PDF to Supabase Storage
+  - If this is the worker's FIRST passed test for their trade 
+    AND they have uploaded at least one video → trigger KaamCard issuance
+  - Return: { ...existingResponse, certificateEarned: true/false, 
+              certificateId: '...' }
+
+New endpoints needed:
+  GET /api/v1/workers/:id/certificates  
+    → list all SkillCertificates for a worker
+  GET /api/v1/certificates/:id          
+    → get single certificate detail
+
+═══════════════════════════════════════════════════════════════
+PART 3 — CERTIFY TAB: COMPLETE REDESIGN
+═══════════════════════════════════════════════════════════════
+
+CURRENT: Linear 5-step pipeline tracker (too simple)
+
+NEW CERTIFY TAB DESIGN:
+
+Section 1 — KaamCard Status (top card):
+  If no KaamCard:
+    "Complete your first video + trade test to get your KaamCard"
+    Progress: Video uploaded? ✓/✗  |  First test passed? ✓/✗
+  If KaamCard exists:
+    Mini score ring + tier + "Last updated [date]"
+    "Based on [X] videos + [Y] tests"
+    Score trend arrow (↑ improving / → stable / ↓ declining)
+
+Section 2 — Assessments (two sub-tabs):
+
+  Sub-tab A: VIDEO ASSESSMENTS
+    Header card:
+      "Video Score: XX/100 (average of X recordings)"
+      Mini bar chart showing last 5 video scores
+      "Record New Video" button (always available after KaamCard issued)
+    
+    List of past video submissions:
+      Each entry: Date | Score | Status (Scored/Pending)
+      Pending ones show: "Waiting for admin to score"
+    
+    Note banner: "Recording more videos improves your 
+    average video score and updates your KaamCard"
+
+  Sub-tab B: TRADE TESTS
+    Organised in THREE sections:
+
+    Section A — "Start Here" (BEGINNER, isFirstTest = true):
+      These are always unlocked
+      Card for each test:
+        Test title | Difficulty chip (BEGINNER green)
+        Language selector (EN/HI/KN/TA)
+        Your best score (if attempted)
+        Certificate badge if earned ✓
+        "Start Test" or "Retake Test" button
+
+    Section B — "Build Skills" (INTERMEDIATE):
+      Shows locked/unlocked state
+      Locked test card:
+        Grayed out
+        Lock icon
+        "Complete [prerequisite test name] first"
+      Unlocked test card:
+        Same as beginner card but with INTERMEDIATE orange chip
+      
+    Section C — "Advanced" (ADVANCED):
+      Same locked/unlocked logic
+      ADVANCED red difficulty chip
+      These give highest certificate value
+
+    Each test card shows:
+      - Test title
+      - Difficulty chip (colour coded)
+      - Number of questions
+      - Language available chips
+      - Your best score (if attempted before)
+      - Certificate icon ✓ if you earned the certificate
+      - Attempts count "Attempted 2 times"
+      - "Start Test" / "Retake" / "Locked" button state
+
+═══════════════════════════════════════════════════════════════
+PART 4 — CERTIFICATES TAB (NEW TAB)
+═══════════════════════════════════════════════════════════════
+
+Add a new 5th tab to bottom navigation:
+  Tab 1: Home
+  Tab 2: Certify  
+  Tab 3: My Card (KaamCard)
+  Tab 4: Certificates (NEW — trophy/medal icon)
+  Tab 5: Profile
+
+CERTIFICATES SCREEN:
+
+Header:
+  "Your Skill Certificates"
+  "[X] certificates earned"
+  Trade filter chips (show all trades worker has attempted)
+
+Certificate Wallet (grid layout 2 columns):
+  Each certificate card:
+    - Gradient background (teal to navy)
+    - 7 Kaam logo small top right
+    - Test title (bold)
+    - Trade chip
+    - Score: XX/100
+    - Difficulty badge
+    - "Issued [date]"
+    - Small QR code or certificate ID
+    - "Download" icon button
+    - "Share" icon button
+
+Empty state:
+  Trophy illustration
+  "No certificates yet"
+  "Pass a trade test with 60+ score to earn your first certificate"
+  "Go to Certify" CTA button
+
+Certificate Detail (bottom sheet on tap):
+  Full certificate preview
+  Test title, trade, score, date, certificate ID
+  Per-question breakdown (expandable)
+  AI feedback summary
+  "Download PDF" button
+  "Share on WhatsApp" button
+
+═══════════════════════════════════════════════════════════════
+PART 5 — WORK HISTORY: COMPLETE REDESIGN
+═══════════════════════════════════════════════════════════════
+
+CURRENT: Simple employer name + rating form (too basic)
+
+NEW CONCEPT: Professional Portfolio
+Work history is the worker's career story — projects, experience, 
+tenure. Like a visual resume/portfolio inside the app.
+
+BACKEND CHANGES:
+Update WorkHistory model in Prisma:
+  model WorkHistory {
+    id              String    @id @default(uuid())
+    workerId        String
+    
+    -- Who they worked for --
+    clientName      String    (person/company/shop name)
+    clientType      String    (HOUSEHOLD / SHOP / COMPANY / CONTRACTOR)
+    clientPhone     String?   (optional, for future verification)
+    clientCity      String
+    
+    -- What they did --
+    projectTitle    String    (e.g. "Full House Wiring — 3BHK")
+    projectDescription String (e.g. "Complete electrical wiring for a 
+                               new 3BHK apartment including 
+                               distribution board setup, 15 power 
+                               points, 8 light points")
+    trade           Trade     (which trade this work was in)
+    
+    -- When --
+    startDate       DateTime
+    endDate         DateTime? (null = currently working here)
+    durationMonths  Int       (auto-computed from dates)
+    
+    -- Quality indicators --
+    projectScale    String    (SMALL / MEDIUM / LARGE)
+                              SMALL: 1 room / single task
+                              MEDIUM: full house / small office
+                              LARGE: commercial / multi-floor
+    
+    -- Evidence (future) --
+    photoUrls       String[]  (array of work photo URLs, optional)
+    
+    -- Score contribution --
+    isVerified      Boolean   @default(false)
+    
+    createdAt       DateTime  @default(now())
+    worker          Worker    @relation(...)
+  }
+
+WorkHistory Score formula update:
+  Base score components:
+  1. Total experience years (max 40 points):
+     < 1 year = 10 pts
+     1-3 years = 20 pts
+     3-5 years = 30 pts
+     5+ years = 40 pts
+     
+  2. Project scale bonus (max 30 points):
+     Each SMALL project = +3 pts (max 5 projects counted)
+     Each MEDIUM project = +5 pts (max 4 projects counted)
+     Each LARGE project = +8 pts (max 3 projects counted)
+     
+  3. Variety bonus (max 15 points):
+     Number of different clientTypes × 5 pts
+     
+  4. Verified bonus (max 15 points):
+     Each verified entry = +5 pts (max 3)
+     
+  Total capped at 100.
+
+WORK HISTORY SCREEN UI:
+
+Timeline view (like LinkedIn experience section):
+  Left side: vertical teal line
+  Each entry:
+    - Circle dot on the timeline line
+    - Client name + clientType chip (bold)
+    - Project title (medium, teal)
+    - Project description (gray, 2 lines preview, expandable)
+    - Trade badge
+    - Scale badge: SMALL/MEDIUM/LARGE
+    - Duration: "8 months · Jan 2023 – Sep 2023"
+    - "Currently working here" if endDate is null
+    - Edit / Delete icons
+
+  Header card above timeline:
+    "X years of experience"  (auto computed)
+    "X projects completed"
+    "X cities worked in"
+    Trade breakdown pills (e.g. Electrician · Plumber)
+
+ADD WORK HISTORY FORM (completely new):
+  Section 1 — Client Details:
+    - Client / Company Name (text)
+    - Client Type (4 option chips: 🏠 Household / 🏪 Shop / 
+      🏢 Company / 🔨 Contractor)
+    - Client City (text with suggestions)
+    - Client Phone (optional)
+
+  Section 2 — Project Details:
+    - Project Title (text, e.g. "Full house wiring — 3BHK")
+    - Trade (dropdown, default to worker's primary trade)
+    - Project Description (multi-line, e.g. "Installed complete 
+      electrical system including distribution board, 20 power 
+      points across 4 rooms, bathroom fittings, and kitchen 
+      appliances wiring")
+    - Project Scale (3 option chips: Small / Medium / Large)
+      With helper text:
+        Small = Single room or task
+        Medium = Full house or small office  
+        Large = Commercial building or multi-floor
+
+  Section 3 — Duration:
+    - Start Date (date picker, month + year only)
+    - End Date (date picker OR "Currently working here" toggle)
+    - Duration auto-displays: "8 months" or "2 years 3 months"
+
+  Save button → POST /api/v1/workers/:id/add-work-history
+  
+  Validation:
+    - Project description minimum 30 characters
+    - End date must be after start date
+    - Cannot add future start dates
+
+═══════════════════════════════════════════════════════════════
+PART 6 — PROFILE SCREEN ENHANCEMENTS
+═══════════════════════════════════════════════════════════════
+
+Add to Profile screen:
+
+Experience Summary card (new, below photo):
+  "X years of experience · X projects · X certificates"
+  Primary trade badge
+  Teal progress bar showing how complete their profile is:
+    Photo ✓ | Aadhaar ✓ | Work History ✓ | KaamCard ✓
+
+Certificates section (below Work History):
+  Horizontal scroll of earned certificate cards (compact)
+  "View all X certificates" → Certificates tab
+
+Work History section:
+  Shows timeline (same as Work History screen but scrollable)
+  "Add Experience" button
+
+═══════════════════════════════════════════════════════════════
+PART 7 — NEW PACKAGES TO ADD
+═══════════════════════════════════════════════════════════════
+
+Add to pubspec.yaml:
+  fl_chart: ^0.68.0        ← score history line chart
+  share_plus: ^9.0.0       ← share certificates to WhatsApp
+  month_year_picker: ^1.2.0 ← month/year date picker for work history
+  flutter_staggered_grid_view: ^0.7.0 ← certificate wallet grid
+
+═══════════════════════════════════════════════════════════════
+PART 8 — BUILD ORDER
+═══════════════════════════════════════════════════════════════
+
+Do these in this exact order:
+
+1. Backend changes first:
+   a. Update Prisma schema (add KaamCardHistory, SkillCertificate, 
+      update WorkHistory model)
+   b. Run migration: npx prisma migrate dev
+   c. Update compute-score endpoint (rolling average logic)
+   d. Update submit-test endpoint (auto-issue SkillCertificate)
+   e. Update add-work-history endpoint (new fields + new scoring)
+   f. Add GET /workers/:id/certificates endpoint
+   g. Update seed data with new fields
+
+2. Flutter changes:
+   a. Add new packages to pubspec.yaml
+   b. Update WorkHistory model (new fields)
+   c. Add SkillCertificate model
+   d. Add KaamCardHistory model
+   e. Update workerProvider (rolling average awareness)
+   f. Update kaamCardProvider (version update logic)
+   g. Add certificateProvider (new)
+   h. Redesign Work History screen (timeline UI + new form)
+   i. Redesign Certify tab (two sub-tabs + test sections)
+   j. Build Certificates tab (wallet grid)
+   k. Update KaamCard screen (score history chart)
+   l. Update Profile screen (experience summary + certificates)
+   m. Update bottom navigation (5 tabs)
+
+After each step confirm before continuing.
+Start with Step 1a — show me the updated Prisma schema first.

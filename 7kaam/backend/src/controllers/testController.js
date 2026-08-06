@@ -78,4 +78,86 @@ async function deleteTest(req, res) {
   }
 }
 
-module.exports = { createTest, listTests, getTest, updateTest, deleteTest };
+// GET /api/v1/tests/catalogue — Coursera-style test catalogue grouped by category
+async function getTestCatalogue(req, res) {
+  try {
+    const { trade = 'ELECTRICIAN', category, difficulty, language, search, workerId } = req.query;
+
+    const where = { isActive: true };
+    if (trade) where.trade = trade;
+    if (category && category !== 'All') where.category = category;
+    if (difficulty && difficulty !== 'All') where.difficulty = difficulty;
+    if (language) where.language = language;
+
+    let tests = await prisma.tradeTest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (search && search.trim().isNotEmpty) {
+      const q = search.trim().toLowerCase();
+      tests = tests.filter(t => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+    }
+
+    let workerSubmissions = [];
+    let workerCertificates = [];
+    let workerVideoAssessments = [];
+
+    if (workerId) {
+      workerSubmissions = await prisma.testSubmission.findMany({ where: { workerId } });
+      workerCertificates = await prisma.skillCertificate.findMany({ where: { workerId } });
+      workerVideoAssessments = await prisma.videoAssessment.findMany({ where: { workerId } });
+    }
+
+    const mapTestItem = (t) => {
+      let workerBestScore = null;
+      let workerAttempts = 0;
+      let certificateEarned = false;
+
+      if (t.isVideoAssessment) {
+        const attempts = workerVideoAssessments.filter(v => v.testId === t.id);
+        workerAttempts = attempts.length;
+        const scored = attempts.filter(v => v.score != null);
+        if (scored.length > 0) {
+          workerBestScore = Math.max(...scored.map(v => v.score));
+        }
+      } else {
+        const subs = workerSubmissions.filter(s => s.testId === t.id);
+        workerAttempts = subs.length;
+        const valid = subs.filter(s => s.rawScore != null);
+        if (valid.length > 0) {
+          workerBestScore = Math.max(...valid.map(s => s.rawScore));
+        }
+        certificateEarned = workerCertificates.some(c => c.testId === t.id);
+      }
+
+      return {
+        ...t,
+        workerBestScore,
+        workerAttempts,
+        certificateEarned,
+      };
+    };
+
+    const enrichedTests = tests.map(mapTestItem);
+
+    // Group tests by category
+    const categoryMap = {};
+    for (const test of enrichedTests) {
+      const cat = test.category || 'General';
+      if (!categoryMap[cat]) categoryMap[cat] = [];
+      categoryMap[cat].push(test);
+    }
+
+    const grouped = Object.entries(categoryMap).map(([category, tests]) => ({
+      category,
+      tests,
+    }));
+
+    res.json({ categories: grouped, totalCount: enrichedTests.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { createTest, listTests, getTest, updateTest, deleteTest, getTestCatalogue };

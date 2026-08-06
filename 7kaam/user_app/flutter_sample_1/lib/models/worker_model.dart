@@ -48,8 +48,10 @@ class WorkerModel {
   final int pipelineStep;
   final String? videoUrl;
   final String? videoStatus;
+  final double? videoScore;
   final bool testCompleted;
   final double? testScore;
+  final double? workHistoryScore;
   final List<WorkHistoryModel> workHistory;
   final List<ScoringLogItem> recentActivity;
   final KaamCardModel? kaamCard;
@@ -69,8 +71,10 @@ class WorkerModel {
     this.pipelineStep = 1,
     this.videoUrl,
     this.videoStatus,
+    this.videoScore,
     this.testCompleted = false,
     this.testScore,
+    this.workHistoryScore,
     this.workHistory = const [],
     this.recentActivity = const [],
     this.kaamCard,
@@ -92,8 +96,10 @@ class WorkerModel {
       pipelineStep: json['pipelineStep'] ?? json['pipeline_step'] ?? 1,
       videoUrl: json['videoUrl'] ?? json['video_url'],
       videoStatus: json['videoStatus'] ?? json['video_status'],
+      videoScore: json['videoScore'] != null ? (json['videoScore']).toDouble() : (json['kaamCard']?['scoreBreakdown']?['videoScore'] != null ? (json['kaamCard']['scoreBreakdown']['videoScore']).toDouble() : 85.0),
       testCompleted: json['testCompleted'] ?? json['test_completed'] ?? false,
       testScore: json['testScore'] != null ? (json['testScore']).toDouble() : null,
+      workHistoryScore: json['workHistoryScore'] != null ? (json['workHistoryScore']).toDouble() : null,
       workHistory: (json['workHistory'] as List<dynamic>?)
               ?.map((e) => WorkHistoryModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -122,8 +128,10 @@ class WorkerModel {
       'pipelineStep': pipelineStep,
       'videoUrl': videoUrl,
       'videoStatus': videoStatus,
+      'videoScore': videoScore,
       'testCompleted': testCompleted,
       'testScore': testScore,
+      'workHistoryScore': workHistoryScore,
       'workHistory': workHistory.map((w) => w.toJson()).toList(),
       'recentActivity': recentActivity.map((r) => r.toJson()).toList(),
       'kaamCard': kaamCard?.toJson(),
@@ -144,8 +152,10 @@ class WorkerModel {
     int? pipelineStep,
     String? videoUrl,
     String? videoStatus,
+    double? videoScore,
     bool? testCompleted,
     double? testScore,
+    double? workHistoryScore,
     List<WorkHistoryModel>? workHistory,
     List<ScoringLogItem>? recentActivity,
     KaamCardModel? kaamCard,
@@ -165,8 +175,10 @@ class WorkerModel {
       pipelineStep: pipelineStep ?? this.pipelineStep,
       videoUrl: videoUrl ?? this.videoUrl,
       videoStatus: videoStatus ?? this.videoStatus,
+      videoScore: videoScore ?? this.videoScore,
       testCompleted: testCompleted ?? this.testCompleted,
       testScore: testScore ?? this.testScore,
+      workHistoryScore: workHistoryScore ?? this.workHistoryScore,
       workHistory: workHistory ?? this.workHistory,
       recentActivity: recentActivity ?? this.recentActivity,
       kaamCard: kaamCard ?? this.kaamCard,

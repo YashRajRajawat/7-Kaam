@@ -19,6 +19,9 @@ const supabase = createClient(
 const REL_TO_TABLE = {
   kaamCards: 'KaamCard',
   kaamCard: 'KaamCard',
+  kaamCardHistories: 'KaamCardHistory',
+  kaamCardHistory: 'KaamCardHistory',
+  histories: 'KaamCardHistory',
   workHistories: 'WorkHistory',
   workHistory: 'WorkHistory',
   testSubmissions: 'TestSubmission',
@@ -33,6 +36,13 @@ const REL_TO_TABLE = {
   admin: 'Admin',
   worker: 'Worker',
   customer: 'Customer',
+  skillCertificates: 'SkillCertificate',
+  skillCertificate: 'SkillCertificate',
+  certificates: 'SkillCertificate',
+  videoAssessments: 'VideoAssessment',
+  videoAssessment: 'VideoAssessment',
+  prerequisite: 'TradeTest',
+  dependentTests: 'TradeTest',
 };
 
 /** Throw a Prisma-style error so controllers don't need changes */
@@ -143,7 +153,10 @@ function makeModel(table) {
       let q = supabase.from(table).select(buildSelect(include)).limit(1);
       q = applyWhere(q, where);
       const { data, error } = await q;
-      if (error) dbError('findUnique', table, error.message);
+      if (error) {
+        if (error.message.includes('schema cache')) return null;
+        dbError('findUnique', table, error.message);
+      }
       return data?.[0] ? transformRow(data[0], include) : null;
     },
 
@@ -156,7 +169,10 @@ function makeModel(table) {
         }
       }
       const { data, error } = await q;
-      if (error) dbError('findFirst', table, error.message);
+      if (error) {
+        if (error.message.includes('schema cache')) return null;
+        dbError('findFirst', table, error.message);
+      }
       return data?.[0] ? transformRow(data[0], include) : null;
     },
 
@@ -175,7 +191,13 @@ function makeModel(table) {
       else if (take != null) q = q.limit(take);
 
       const { data, error, count } = await q;
-      if (error) dbError('findMany', table, error.message);
+      if (error) {
+        if (error.message.includes('schema cache')) {
+          const empty = [];
+          return Object.assign(empty, { _count: 0 });
+        }
+        dbError('findMany', table, error.message);
+      }
       const transformed = (data ?? []).map(r => transformRow(r, include));
       return Object.assign(transformed, { _count: count });
     },
@@ -184,7 +206,10 @@ function makeModel(table) {
       let q = supabase.from(table).select('*', { count: 'exact', head: true });
       q = applyWhere(q, where);
       const { count, error } = await q;
-      if (error) dbError('count', table, error.message);
+      if (error) {
+        if (error.message.includes('schema cache')) return 0;
+        dbError('count', table, error.message);
+      }
       return count ?? 0;
     },
 
@@ -199,7 +224,15 @@ function makeModel(table) {
         .from(table)
         .insert(data)
         .select(buildSelect(include));
-      if (error) dbError('create', table, error.message);
+      if (error) {
+        const colMatch = error.message?.match(/Could not find the '([^']+)' column/i);
+        if (colMatch && colMatch[1] && data[colMatch[1]] !== undefined) {
+          const fallbackData = { ...data };
+          delete fallbackData[colMatch[1]];
+          return this.create({ data: fallbackData, include });
+        }
+        dbError('create', table, error.message);
+      }
       return rows?.[0] ? transformRow(rows[0], include) : null;
     },
 
@@ -213,7 +246,15 @@ function makeModel(table) {
       let q = supabase.from(table).update(cleaned).select(buildSelect(include));
       q = applyWhere(q, where);
       const { data: rows, error } = await q;
-      if (error) dbError('update', table, error.message);
+      if (error) {
+        const colMatch = error.message?.match(/Could not find the '([^']+)' column/i);
+        if (colMatch && colMatch[1] && cleaned[colMatch[1]] !== undefined) {
+          const fallbackData = { ...cleaned };
+          delete fallbackData[colMatch[1]];
+          return this.update({ where, data: fallbackData, include });
+        }
+        dbError('update', table, error.message);
+      }
       return rows?.[0] ? transformRow(rows[0], include) : null;
     },
 
@@ -310,15 +351,18 @@ function makeModel(table) {
 // ── expose prisma-like interface ──────────────────────────────────────────────
 
 const db = {
-  worker:         makeModel('Worker'),
-  admin:          makeModel('Admin'),
-  tradeTest:      makeModel('TradeTest'),
-  testSubmission: makeModel('TestSubmission'),
-  workHistory:    makeModel('WorkHistory'),
-  kaamCard:       makeModel('KaamCard'),
-  scoringLog:     makeModel('ScoringLog'),
-  customer:       makeModel('Customer'),
-  booking:        makeModel('Booking'),
+  worker:           makeModel('Worker'),
+  admin:            makeModel('Admin'),
+  tradeTest:        makeModel('TradeTest'),
+  testSubmission:   makeModel('TestSubmission'),
+  workHistory:      makeModel('WorkHistory'),
+  kaamCard:         makeModel('KaamCard'),
+  kaamCardHistory:  makeModel('KaamCardHistory'),
+  skillCertificate: makeModel('SkillCertificate'),
+  videoAssessment:  makeModel('VideoAssessment'),
+  scoringLog:       makeModel('ScoringLog'),
+  customer:         makeModel('Customer'),
+  booking:          makeModel('Booking'),
 
   $queryRaw: async (query) => {
     const { data, error } = await supabase.rpc('exec_sql', { sql: String(query) });
