@@ -1,0 +1,332 @@
+You are a senior Flutter developer. Build a complete Flutter mobile 
+application called "7 Kaam — Customer App" from scratch.
+
+## OVERVIEW
+7 Kaam is an AI-powered skill certification platform for India.
+This app is for CUSTOMERS — people who want to find, verify, 
+and book certified blue-collar workers (electricians, plumbers, 
+carpenters, AC technicians, painters, welders) near them.
+
+Design inspiration: Airbnb (discovery + map toggle) and 
+Zomato (list cards, filters, smooth UX). 
+India-first design — clean, fast, works on mid-range Android phones.
+
+## BACKEND
+Base URL: http://localhost:8000/api/v1
+JWT Bearer token in Authorization header after login.
+
+## BACKEND ENDPOINTS TO USE
+
+Auth:
+POST /api/v1/mobile/customers/register  → register customer
+POST /api/v1/auth/customer/login        → phone + OTP login
+
+Discovery:
+GET /api/v1/mobile/workers/nearby
+  Query params: 
+    trade (optional), tier (optional), 
+    city (required), search (optional),
+    page, limit
+  Returns: list of workers with scores and KaamCard info
+
+Worker Profile (public):
+GET /api/v1/mobile/workers/:id/public
+  Returns: worker name, trade, city, score, tier, 
+           scoreBreakdown, kaamCardUrl, qrToken, 
+           workHistories (employer names + ratings only)
+
+KaamCard Verify (public, no auth):
+GET /api/v1/verify/:qrToken
+
+Bookings:
+POST /api/v1/mobile/bookings            → create booking
+GET  /api/v1/mobile/bookings/:id        → get booking detail
+GET  /api/v1/mobile/customers/:id/bookings → customer's bookings
+
+## FLUTTER PACKAGES
+- dio: HTTP client
+- flutter_secure_storage: token storage
+- riverpod: state management
+- go_router: navigation
+- google_maps_flutter: map view
+- geolocator: device GPS location
+- qr_code_scanner: scan QR codes
+- cached_network_image: worker photos
+- flutter_animate: animations
+- google_fonts: Poppins font
+- shimmer: loading skeletons
+- intl: date formatting
+- url_launcher: open KaamCard PDF
+
+## COLOUR PALETTE
+Primary Teal: #0F6E56
+Navy: #1A3557
+Gold: #C8922A
+White: #FFFFFF
+Background: #F4F7FA
+Card White: #FFFFFF
+Dark text: #1A1A1A
+Gray text: #555555
+
+## APP STRUCTURE
+
+lib/
+├── main.dart
+├── core/
+│   ├── constants/
+│   │   ├── api_constants.dart
+│   │   └── app_colors.dart
+│   ├── network/
+│   │   ├── dio_client.dart
+│   │   └── api_service.dart
+│   ├── storage/
+│   │   └── secure_storage.dart
+│   └── router/
+│       └── app_router.dart
+├── models/
+│   ├── customer_model.dart
+│   ├── worker_public_model.dart
+│   ├── booking_model.dart
+│   └── kaam_card_model.dart
+├── providers/
+│   ├── auth_provider.dart
+│   ├── discovery_provider.dart
+│   └── booking_provider.dart
+├── screens/
+│   ├── splash/
+│   │   └── splash_screen.dart
+│   ├── onboarding/
+│   │   └── onboarding_screen.dart
+│   ├── auth/
+│   │   ├── login_screen.dart
+│   │   └── register_screen.dart
+│   ├── home/
+│   │   └── home_screen.dart        ← bottom nav shell
+│   ├── discover/
+│   │   ├── discover_screen.dart    ← main discovery (list + map toggle)
+│   │   ├── worker_card.dart        ← worker list card widget
+│   │   └── map_view.dart           ← Google Maps view
+│   ├── worker_detail/
+│   │   └── worker_detail_screen.dart
+│   ├── booking/
+│   │   ├── booking_form_screen.dart
+│   │   ├── booking_confirm_screen.dart
+│   │   └── my_bookings_screen.dart
+│   ├── verify/
+│   │   └── qr_scan_screen.dart     ← scan QR to verify KaamCard
+│   └── profile/
+│       └── profile_screen.dart
+└── widgets/
+    ├── tier_badge.dart
+    ├── score_bar.dart
+    ├── worker_card_skeleton.dart
+    └── custom_button.dart
+
+## SCREENS — DETAILED REQUIREMENTS
+
+### Splash Screen
+- 7 Kaam logo on teal background
+- Check JWT → home or onboarding
+- 2 second fade animation
+
+### Onboarding (3 swipeable slides)
+Slide 1:
+  Title: "Find Verified Workers"
+  Subtitle: "Every worker on 7 Kaam is AI-certified with a score out of 100"
+
+Slide 2:
+  Title: "See Their Score Before You Hire"
+  Subtitle: "View skill scores, sub-skill breakdown, and employer ratings"
+
+Slide 3:
+  Title: "Book with Confidence"
+  Subtitle: "Scan their QR code to instantly verify their certificate"
+
+### Login Screen
+- Phone number + OTP (same as worker app)
+- OTP fixed as 1234 for now // TODO: SMS integration
+- "New to 7 Kaam?" → Register screen
+
+### Register Screen
+- Full name
+- Phone number
+- City (dropdown: Bangalore, Mumbai, Delhi, Hyderabad, Chennai)
+- On success → Discover screen
+
+### Discover Screen (main screen — Airbnb + Zomato inspired)
+
+TOP SECTION (sticky):
+  Search bar:
+    - Placeholder: "Search electricians, plumbers..."
+    - Tappable → opens search with live results
+  
+  Filter chips (horizontal scroll, below search bar):
+    All | Electrician | Plumber | Carpenter | 
+    AC Technician | Painter | Welder
+  
+  Secondary filter row:
+    Tier: Any | SILVER+ | GOLD+ | EXPERT only
+    Sort: Best Score | Nearest | Most Reviews
+
+  View toggle (top right):
+    List icon | Map icon
+    (Airbnb-style toggle between list and map)
+
+LIST VIEW (default):
+  Results count: "23 verified workers in Bangalore"
+  
+  Worker Cards (vertical scroll):
+    Each card (white, rounded 12px, shadow):
+      Left: Worker photo (circular, 56px) with tier badge overlay
+      Right top: Worker name (bold) + Trade chip
+      Right middle: 
+        Star-style score display: ★ 87/100
+        Tier badge: EXPERT (teal) / GOLD (gold) / SILVER (gray)
+      Right bottom: City + Locality · "2.3 km away"
+      Bottom bar: 
+        Three mini score pills: 
+          🎥 82  📝 91  💼 78
+        "Book Now" button (teal, small, right aligned)
+    
+    On tap → Worker Detail Screen
+
+MAP VIEW (toggle):
+  Full screen Google Map
+  Custom map markers showing worker tier:
+    EXPERT → teal pin
+    GOLD → gold pin
+    SILVER → gray pin
+    BRONZE → brown pin
+  
+  Bottom sheet (draggable, like Airbnb):
+    Shows list of workers visible in current map area
+    Horizontal scroll of worker cards (compact version)
+    Tap a pin → highlights that worker card in bottom sheet
+    Tap bottom sheet card → Worker Detail Screen
+
+  Map centers on user's current GPS location on load
+
+### Worker Detail Screen
+Opened when tapping a worker card.
+
+HEADER:
+  - Worker photo (large circular, 80px) with verified badge
+  - Name (large bold)
+  - Trade chip + City
+  - Aadhaar Verified tag (green ✓)
+
+SCORE SECTION:
+  - Large circular score ring showing XX/100 (teal SVG)
+  - Tier badge below (colour coded)
+  - Three horizontal bars:
+    🎥 Skill Video: XX/100
+    📝 Trade Test: XX/100
+    💼 Work History: XX/100
+
+ABOUT SECTION:
+  - Trade: [trade name with icon]
+  - Location: [city, locality]
+  - Certificate valid until: [date]
+  - Member since: [joined date]
+
+WORK HISTORY SECTION:
+  - List of past employers (name + role + rating stars)
+  - Verified employers show a ✓ badge
+
+VERIFY SECTION:
+  - "Scan QR to Verify Certificate" button
+    → Opens QR scanner screen showing live KaamCard verification
+  - OR "View Certificate" button → opens /verify/:qrToken in webview
+
+BOOKING SECTION (bottom, sticky):
+  - Price range: "₹200 – ₹500 / hour" (hardcoded estimate by trade)
+  - "Book Now" button (full width teal)
+  → Opens Booking Form Screen
+
+### Booking Form Screen
+  - Worker summary card at top (photo, name, trade, score)
+  - Date picker: "Select Date"
+  - Time picker: "Select Time"  
+  - Address field: "Service Address" (text area)
+  - Notes field: "Any special requirements?" (optional)
+  - Trade (pre-filled, non-editable)
+  - Price estimate: "Estimated ₹400–₹800 for 2 hours"
+  - "Confirm Booking" button
+
+  On confirm → POST /api/v1/mobile/bookings
+  On success → Booking Confirmation Screen
+
+### Booking Confirmation Screen
+  - Large green checkmark animation
+  - "Booking Confirmed!" title
+  - Booking summary (worker, date, time, address)
+  - Booking ID
+  - "View My Bookings" button
+  - "Back to Discover" button
+
+### My Bookings Screen (Bookings tab)
+  List of all bookings:
+    Each booking card:
+      - Worker name + trade + photo
+      - Date and time
+      - Address (truncated)
+      - Status chip: PENDING (gray) / CONFIRMED (blue) / 
+        IN_PROGRESS (orange) / COMPLETED (green) / CANCELLED (red)
+    
+  Filter tabs: All | Upcoming | Completed | Cancelled
+  
+  Empty state: "No bookings yet. Discover workers to book one."
+
+### QR Scan Screen
+  - Full screen camera with QR scanning overlay (square frame)
+  - "Point your camera at the worker's KaamCard QR code"
+  - On scan → calls GET /api/v1/verify/:qrToken
+  - Shows result inline (no navigation):
+    ✓ VERIFIED — worker name, trade, score, tier, valid until
+    ✗ REVOKED — red, revocation reason
+    ✗ EXPIRED — orange, expired date
+    ✗ NOT FOUND — gray
+
+### Profile Screen (Profile tab)
+  - Customer name + phone
+  - City
+  - Edit Profile button
+  - My Bookings shortcut
+  - Logout button
+
+Bottom Navigation (4 tabs):
+  Tab 1: Discover (search icon)
+  Tab 2: Bookings (calendar icon)
+  Tab 3: Scan QR (QR icon) → QR Scan Screen
+  Tab 4: Profile (person icon)
+
+## UI STYLE — AIRBNB + ZOMATO INSPIRED
+- Poppins font throughout
+- White cards with 12px border radius and subtle shadow
+- Teal as the only action colour (buttons, active states, 
+  selected filters)
+- Filter chips: unselected = white with gray border, 
+  selected = teal with white text
+- Map markers are custom coloured by tier
+- Bottom sheets are draggable (DraggableScrollableSheet)
+- Smooth transitions between list and map view
+- Skeleton loaders while API is fetching
+- Pull to refresh on discover screen
+
+## BUILD ORDER
+1. pubspec.yaml with all dependencies
+2. Core setup (colours, API constants, Dio, router, storage)
+3. All models with fromJson/toJson
+4. All Riverpod providers
+5. Splash + Onboarding
+6. Login + Register
+7. Discover screen — list view first
+8. Discover screen — map view + toggle
+9. Worker detail screen
+10. Booking form + confirmation
+11. My bookings screen
+12. QR scan screen
+13. Profile screen
+14. All shared widgets
+
+Start with step 1. After each step confirm before continuing.
