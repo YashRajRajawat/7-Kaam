@@ -35,57 +35,85 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
     final card = kaamCardState.kaamCard ?? worker?.kaamCard;
     final certificates = certState.certificates;
 
-    if (card == null || worker?.isCertified == false) {
+    if (card == null || worker?.hasKaamCard != true) {
+      final assessmentCount = (worker?.testScore != null ? 1 : 0) + (worker?.videoScore != null ? 1 : 0);
+      final scoreEstimate = worker?.finalScore;
+
       return Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryTeal.withOpacity(0.1),
-                    shape: BoxShape.circle,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              if (worker != null) {
+                await ref.read(workerProvider.notifier).fetchWorkerProfile(worker.id);
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 24),
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTeal.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.badge_outlined,
+                      size: 70,
+                      color: AppColors.primaryTeal,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.badge_outlined,
-                    size: 70,
-                    color: AppColors.primaryTeal,
+                  const SizedBox(height: 24),
+                  Text(
+                    'Awaiting Admin Review',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.darkText,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Profile Listed with Score',
-                  style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                  const SizedBox(height: 12),
+                  Text(
+                    'Our team reviews your assessments and issues your KaamCard. Keep taking tests to improve your chances!',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppColors.grayText,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Your profile and score are LIVE for nearby customers to contact you! Your official digital KaamCard is currently under Admin Review.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.grayText,
-                    height: 1.5,
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Text(
+                      scoreEstimate != null
+                          ? '$assessmentCount assessment${assessmentCount == 1 ? '' : 's'} completed · current score estimate: ${scoreEstimate.toInt()}/100'
+                          : 'No assessments completed yet',
+                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.navy),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                CustomButton(
-                  text: 'Browse Assessments',
-                  onPressed: () {
-                    if (widget.onNavigateTab != null) {
-                      widget.onNavigateTab!(1); // Go to Certify tab
-                    }
-                  },
-                ),
-              ],
+                  const SizedBox(height: 32),
+                  CustomButton(
+                    text: 'Browse Assessments',
+                    onPressed: () {
+                      if (widget.onNavigateTab != null) {
+                        widget.onNavigateTab!(1); // Go to Certify tab
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -175,11 +203,11 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                       const SizedBox(height: 10),
                       const Divider(height: 1),
                       const SizedBox(height: 10),
-                      _buildBreakdownRow('📝 Trade Tests (45%)', '${scoreBreakdown?.testScore.toInt() ?? 86}/100', 'Average of $testCount test attempts'),
+                      _buildBreakdownRow('📝 Trade Tests (45%)', _fmtScore(scoreBreakdown?.testScore ?? worker?.testScore), 'Average of $testCount test attempts'),
                       const SizedBox(height: 6),
-                      _buildBreakdownRow('🎥 Video (35%)', '${scoreBreakdown?.videoScore.toInt() ?? 85}/100', 'Average of $videoCount video submissions'),
+                      _buildBreakdownRow('🎥 Video (35%)', _fmtScore(scoreBreakdown?.videoScore ?? worker?.videoScore), 'Average of $videoCount video submissions'),
                       const SizedBox(height: 6),
-                      _buildBreakdownRow('💼 Work History (20%)', '${scoreBreakdown?.workHistoryScore.toInt() ?? 78}/100', 'Portfolio duration & client scale'),
+                      _buildBreakdownRow('💼 Work History (20%)', _fmtScore(scoreBreakdown?.workHistoryScore ?? worker?.workHistoryScore), 'Portfolio duration & client scale'),
                     ],
                   ],
                 ),
@@ -187,75 +215,79 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
 
               const SizedBox(height: 20),
 
-              // Score Progression Line Chart (fl_chart)
+              // Score Progression Line Chart (fl_chart) — real KaamCard version history
               Text(
                 'Score History Progression',
                 style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy),
               ),
               const SizedBox(height: 10),
-              Container(
-                height: 180,
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 20, 20, 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 30,
-                          getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              if (kaamCardState.history.length < 2)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Text(
+                    'Not enough history yet — this chart fills in as your score is recomputed over time.',
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 20, 20, 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(show: false),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ),
                         ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (val, meta) {
-                            switch (val.toInt()) {
-                              case 0:
-                                return const Text('v1', style: TextStyle(fontSize: 10));
-                              case 1:
-                                return const Text('v2', style: TextStyle(fontSize: 10));
-                              case 2:
-                                return const Text('v3', style: TextStyle(fontSize: 10));
-                              default:
-                                return const Text('');
-                            }
-                          },
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (val, meta) => Text('v${val.toInt() + 1}', style: const TextStyle(fontSize: 10)),
+                          ),
                         ),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      borderData: FlBorderData(show: false),
+                      minY: 0,
+                      maxY: 100,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            for (int i = 0; i < kaamCardState.history.length; i++)
+                              FlSpot(i.toDouble(), kaamCardState.history[i].finalScore),
+                          ],
+                          isCurved: true,
+                          color: AppColors.primaryTeal,
+                          barWidth: 3,
+                          dotData: const FlDotData(show: true),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: AppColors.primaryTeal.withOpacity(0.12),
+                          ),
+                        ),
+                      ],
                     ),
-                    borderData: FlBorderData(show: false),
-                    minY: 40,
-                    maxY: 100,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: const [
-                          FlSpot(0, 75),
-                          FlSpot(1, 82),
-                          FlSpot(2, 87),
-                        ],
-                        isCurved: true,
-                        color: AppColors.primaryTeal,
-                        barWidth: 3,
-                        dotData: const FlDotData(show: true),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          color: AppColors.primaryTeal.withOpacity(0.12),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              ),
 
               const SizedBox(height: 20),
 
@@ -264,7 +296,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${certificates.isEmpty ? 1 : certificates.length} Skill Certificates Earned',
+                    '${certificates.length} Skill Certificate${certificates.length == 1 ? '' : 's'} Earned',
                     style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.navy),
                   ),
                   TextButton(
@@ -277,41 +309,44 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
               ),
               const SizedBox(height: 8),
 
-              SizedBox(
-                height: 90,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: certificates.isEmpty ? 1 : certificates.length,
-                  itemBuilder: (context, index) {
-                    final title = certificates.isNotEmpty ? certificates[index].title : 'Electrical Safety Fundamentals';
-                    final scoreVal = certificates.isNotEmpty ? certificates[index].score : 86.0;
+              if (certificates.isEmpty)
+                Text('No certificates yet.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))
+              else
+                SizedBox(
+                  height: 90,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: certificates.length,
+                    itemBuilder: (context, index) {
+                      final title = certificates[index].title;
+                      final scoreVal = certificates[index].score;
 
-                    return Container(
-                      width: 190,
-                      margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [AppColors.navy, AppColors.primaryTeal]),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Score: ${scoreVal.toInt()}/100', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.gold)),
-                              const Icon(Icons.verified, size: 14, color: Colors.white),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                      return Container(
+                        width: 190,
+                        margin: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [AppColors.navy, AppColors.primaryTeal]),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Score: ${scoreVal.toInt()}/100', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.gold)),
+                                const Icon(Icons.verified, size: 14, color: Colors.white),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 
@@ -365,6 +400,8 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
       child: Text(cred, style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
     );
   }
+
+  String _fmtScore(double? score) => score != null ? '${score.toInt()}/100' : '—';
 
   Widget _buildBreakdownRow(String title, String val, String subtitle) {
     return Row(

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/trade_test_model.dart';
+import '../../models/kaam_card_history_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/kaam_card_provider.dart';
@@ -32,6 +33,10 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
     Future.microtask(() {
       ref.read(catalogueProvider.notifier).fetchCatalogue();
       ref.read(certificateProvider.notifier).fetchCertificates();
+      final workerId = ref.read(authProvider).currentWorker?.id;
+      if (workerId != null) {
+        ref.read(kaamCardProvider.notifier).fetchKaamCardHistory(workerId);
+      }
     });
   }
 
@@ -67,10 +72,10 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
     final kaamCard = kaamCardState.kaamCard ?? worker?.kaamCard;
     final certificates = certState.certificates;
 
-    final double score = kaamCard?.score ?? worker?.score ?? 85.0;
-    final int tTests = kaamCard?.totalTestsTaken ?? 2;
-    final int tVideos = kaamCard?.totalVideosTaken ?? 1;
-    final int tCerts = certificates.isNotEmpty ? certificates.length : (kaamCard?.certificatesEarned ?? 1);
+    final double score = kaamCard?.score ?? worker?.finalScore ?? 0.0;
+    final int tTests = kaamCard?.totalTestsTaken ?? (worker?.testScore != null ? 1 : 0);
+    final int tVideos = kaamCard?.totalVideosTaken ?? (worker?.videoScore != null ? 1 : 0);
+    final int tCerts = certificates.isNotEmpty ? certificates.length : (kaamCard?.certificatesEarned ?? 0);
     final String cred = kaamCard?.credibilityLevel ?? ((tTests + tVideos) >= 9 ? 'EXPERT' : ((tTests + tVideos) >= 4 ? 'ESTABLISHED' : 'EMERGING'));
 
     return Scaffold(
@@ -87,7 +92,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
         child: Column(
           children: [
             // Top Section — Large KaamCard GPA Card (Teal gradient)
-            _buildTopGpaCard(score, cred, tTests, tVideos, tCerts, kaamCard),
+            _buildTopGpaCard(score, cred, tTests, tVideos, tCerts, worker, kaamCardState.history),
 
             // 3 Sub-tabs
             Container(
@@ -115,10 +120,10 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
                   _buildAllTestsSubTab(catalogueState),
 
                   // Sub-tab 2: VIDEO ASSESSMENTS
-                  _buildVideoAssessmentsSubTab(worker),
+                  _buildVideoAssessmentsSubTab(catalogueState),
 
                   // Sub-tab 3: MY PROGRESS
-                  _buildMyProgressSubTab(worker, tTests, tCerts, score, certificates),
+                  _buildMyProgressSubTab(worker, catalogueState, tTests, tCerts, score, certificates),
                 ],
               ),
             ),
@@ -128,7 +133,8 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
     );
   }
 
-  Widget _buildTopGpaCard(double score, String cred, int tTests, int tVideos, int tCerts, dynamic kaamCard) {
+  Widget _buildTopGpaCard(double score, String cred, int tTests, int tVideos, int tCerts, dynamic worker, List<KaamCardHistoryModel> histories) {
+    final hasTrend = histories.length >= 2;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
@@ -209,45 +215,54 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildBreakdownCol('📝 Tests (45%)', '86/100'),
-                _buildBreakdownCol('🎥 Video (35%)', '85/100'),
-                _buildBreakdownCol('💼 History (20%)', '78/100'),
+                _buildBreakdownCol('📝 Test (45%)', worker?.testScore != null ? '${(worker.testScore as double).toInt()}/100' : '—'),
+                _buildBreakdownCol('🎥 Video (35%)', worker?.videoScore != null ? '${(worker.videoScore as double).toInt()}/100' : '—'),
+                _buildBreakdownCol('💼 History (20%)', worker?.workHistoryScore != null ? '${(worker.workHistoryScore as double).toInt()}/100' : '—'),
               ],
             ),
 
             const SizedBox(height: 12),
-            // Mini Line Chart
-            Container(
-              height: 90,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(show: false),
-                  titlesData: const FlTitlesData(show: false),
-                  borderData: FlBorderData(show: false),
-                  minY: 50,
-                  maxY: 100,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: const [FlSpot(0, 75), FlSpot(1, 82), FlSpot(2, 87)],
-                      isCurved: true,
-                      color: AppColors.gold,
-                      barWidth: 2.5,
-                      dotData: const FlDotData(show: true),
-                    ),
-                  ],
+            if (hasTrend) ...[
+              // Mini Line Chart — real KaamCard score history
+              Container(
+                height: 90,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: LineChart(
+                  LineChartData(
+                    gridData: const FlGridData(show: false),
+                    titlesData: const FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    minY: 0,
+                    maxY: 100,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: [
+                          for (int i = 0; i < histories.length; i++)
+                            FlSpot(i.toDouble(), histories[i].finalScore),
+                        ],
+                        isCurved: true,
+                        color: AppColors.gold,
+                        barWidth: 2.5,
+                        dotData: const FlDotData(show: true),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Your score is trending ↑',
-              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.greenAccent),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                histories.last.finalScore >= histories.first.finalScore ? 'Your score is trending ↑' : 'Your score is trending ↓',
+                style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.greenAccent),
+              ),
+            ] else
+              Text(
+                'Not enough history yet to show a trend — keep taking assessments.',
+                style: GoogleFonts.poppins(fontSize: 10, color: Colors.white70),
+              ),
           ],
         ],
       ),
@@ -452,7 +467,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
               children: [
                 Text('⏱ ${test.estimatedMinutes} min', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
                 const SizedBox(width: 12),
-                Text('👥 ${test.totalAttempts > 0 ? test.totalAttempts : 890} attempted', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
+                Text('👥 ${test.totalAttempts} attempted', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
                 const SizedBox(width: 12),
                 Text('📊 Pass: ${test.passingScore}/100', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
               ],
@@ -490,43 +505,11 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
   }
 
   // ── SUB-TAB 2: VIDEO ASSESSMENTS ─────────────────────────────────────────────
-  Widget _buildVideoAssessmentsSubTab(dynamic worker) {
-    final videoAssessments = [
-      TradeTestModel(
-        id: 'test-elec-video-001',
-        title: 'Basic Wiring Technique Assessment',
-        description: 'Record yourself performing basic wire stripping, joining, and insulation tapping',
-        trade: worker?.trade ?? 'ELECTRICIAN',
-        language: 'ENGLISH',
-        questions: [],
-        category: 'Video Assessments',
-        difficulty: 'BEGINNER',
-        estimatedMinutes: 3,
-        passingScore: 60,
-        totalAttempts: 342,
-        isVideoAssessment: true,
-        rubrics: {'Safety Compliance': 30, 'Technique Accuracy': 40, 'Tool Handling': 30},
-        workerBestScore: 85.0,
-        workerAttempts: 1,
-      ),
-      TradeTestModel(
-        id: 'test-elec-video-002',
-        title: 'Distribution Board Wiring Assessment',
-        description: 'Record yourself installing an MCB and dressing wires in a DB board',
-        trade: worker?.trade ?? 'ELECTRICIAN',
-        language: 'ENGLISH',
-        questions: [],
-        category: 'Video Assessments',
-        difficulty: 'INTERMEDIATE',
-        estimatedMinutes: 5,
-        passingScore: 65,
-        totalAttempts: 89,
-        isVideoAssessment: true,
-        rubrics: {'Safety Compliance': 25, 'Technique Accuracy': 45, 'Tool Handling': 20, 'Work Quality': 10},
-        workerBestScore: null,
-        workerAttempts: 0,
-      ),
-    ];
+  Widget _buildVideoAssessmentsSubTab(CatalogueState catalogueState) {
+    final videoAssessments = catalogueState.categoryGroups
+        .expand((g) => g.tests)
+        .where((t) => t.isVideoAssessment)
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -535,10 +518,20 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
         children: [
           Text('Video Rubric Assessments', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy)),
           const SizedBox(height: 4),
-          Text('Record practical demonstrations evaluated by AI computer vision & admin master tradesmen.', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
+          Text('Record practical demonstrations evaluated by admin master tradesmen.', style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600)),
           const SizedBox(height: 14),
 
-          ...videoAssessments.map((v) => _buildVideoAssessmentCard(v)),
+          if (catalogueState.isLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primaryTeal)))
+          else if (videoAssessments.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text('No video assessments available for your trade yet.', style: GoogleFonts.poppins(color: Colors.grey.shade600)),
+              ),
+            )
+          else
+            ...videoAssessments.map((v) => _buildVideoAssessmentCard(v)),
         ],
       ),
     );
@@ -616,7 +609,25 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
   }
 
   // ── SUB-TAB 3: MY PROGRESS ────────────────────────────────────────────────────
-  Widget _buildMyProgressSubTab(dynamic worker, int tTests, int tCerts, double avgScore, List<dynamic> certificates) {
+  Widget _buildMyProgressSubTab(dynamic worker, CatalogueState catalogueState, int tTests, int tCerts, double avgScore, List<dynamic> certificates) {
+    // Real per-category completion, derived from the already-fetched catalogue.
+    final categoryRows = catalogueState.categoryGroups.map((g) {
+      final nonVideo = g.tests.where((t) => !t.isVideoAssessment).toList();
+      final completed = nonVideo.where((t) => t.certificateEarned).length;
+      final total = nonVideo.length;
+      return (
+        category: g.category,
+        fraction: total > 0 ? completed / total : 0.0,
+        label: '$completed/$total completed',
+      );
+    }).where((r) => r.label != '0/0 completed').toList();
+
+    final activity = (worker?.recentActivity as List<dynamic>? ?? [])
+        .toList()
+        .reversed
+        .take(5)
+        .toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -638,21 +649,21 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
           // Category Progress Bars
           Text('Progress by Category', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy)),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
-            child: Column(
-              children: [
-                _buildCategoryProgressRow('Safety', 0.66, '2/3 completed'),
-                const SizedBox(height: 10),
-                _buildCategoryProgressRow('Installation', 0.33, '1/3 completed'),
-                const SizedBox(height: 10),
-                _buildCategoryProgressRow('Maintenance', 0.0, '0/2 completed'),
-                const SizedBox(height: 10),
-                _buildCategoryProgressRow('Theory', 0.50, '1/2 completed'),
-              ],
+          if (categoryRows.isEmpty)
+            Text('No categories loaded yet.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))
+          else
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
+              child: Column(
+                children: [
+                  for (int i = 0; i < categoryRows.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 10),
+                    _buildCategoryProgressRow(categoryRows[i].category, categoryRows[i].fraction, categoryRows[i].label),
+                  ],
+                ],
+              ),
             ),
-          ),
 
           const SizedBox(height: 20),
 
@@ -660,9 +671,15 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
           Text('Recent Learning Activity', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.navy)),
           const SizedBox(height: 10),
 
-          _buildActivityItem('Electrical Safety Fundamentals', '86/100', '16 Jan 2026', true),
-          _buildActivityItem('Basic Wiring Technique Video', '85/100', '15 Jan 2026', false),
-          _buildActivityItem('Residential Wiring Basics', '78/100', '10 Jan 2026', true),
+          if (activity.isEmpty)
+            Text('No activity yet — take an assessment to get started.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))
+          else
+            ...activity.map((a) => _buildActivityItem(
+                  a.signalType.toString().replaceAll('_', ' '),
+                  '${a.score.toInt()}/100',
+                  a.date.toString().isNotEmpty ? a.date.toString().substring(0, 10) : '',
+                  a.signalType == 'TEST',
+                )),
         ],
       ),
     );

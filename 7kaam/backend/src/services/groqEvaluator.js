@@ -61,19 +61,12 @@ Return this exact JSON:
     const evaluation = JSON.parse(jsonStr);
     return evaluation;
   } catch (err) {
-    console.error('Groq evaluation failed, using mock:', err.message);
-    // Fallback mock evaluation
-    return {
-      totalScore: Math.floor(Math.random() * 40) + 40,
-      breakdown: questions.map((q, i) => ({
-        question: q.question,
-        workerAnswer: answers[i] || '(no answer)',
-        score: Math.floor(Math.random() * 5) + 4,
-        feedback: 'Groq evaluation unavailable — mock score assigned.',
-      })),
-      overallFeedback:
-        'NOTE: This is a mock evaluation because Groq API was unavailable. Real scores may differ.',
-    };
+    console.error('Groq evaluation failed:', err.message);
+    // No mock fallback — a failed evaluation must surface as a real error,
+    // not a fabricated score. Caller is responsible for returning a 502.
+    const evalError = new Error(`Groq evaluation failed: ${err.message}`);
+    evalError.code = 'GROQ_EVALUATION_FAILED';
+    throw evalError;
   }
 }
 

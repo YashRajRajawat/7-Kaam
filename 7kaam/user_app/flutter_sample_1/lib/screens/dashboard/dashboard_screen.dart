@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/kaam_card_provider.dart';
 import '../../providers/certificate_provider.dart';
+import '../../providers/catalogue_provider.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/custom_button.dart';
 
@@ -22,6 +23,7 @@ class DashboardScreen extends ConsumerWidget {
     final workerState = ref.watch(workerProvider);
     final kaamCardState = ref.watch(kaamCardProvider);
     final certState = ref.watch(certificateProvider);
+    final catalogueState = ref.watch(catalogueProvider);
 
     final worker = workerState.worker ?? authState.currentWorker;
     final card = kaamCardState.kaamCard ?? worker?.kaamCard;
@@ -31,15 +33,21 @@ class DashboardScreen extends ConsumerWidget {
       return _buildSkeletonLoader();
     }
 
-    final firstName = worker?.name.split(' ').first ?? 'Worker';
+    final firstName = worker?.fullName.split(' ').first ?? 'Worker';
     final trade = worker?.trade ?? 'ELECTRICIAN';
     final city = worker?.city ?? 'Bangalore';
-    final isCertified = worker?.isCertified == true || card != null;
-    final score = card?.score ?? worker?.score ?? 0.0;
+    final isCertified = worker?.hasKaamCard == true || card != null;
+    final score = card?.score ?? worker?.finalScore ?? 0.0;
     final cred = card?.credibilityLevel ?? 'EMERGING';
-    final tTests = card?.totalTestsTaken ?? (worker?.testCompleted == true ? 1 : 0);
+    final tTests = card?.totalTestsTaken ?? (worker?.testScore != null ? 1 : 0);
     final tVideos = card?.totalVideosTaken ?? (worker?.videoUrl != null ? 1 : 0);
     final tCerts = certificates.length;
+
+    final recommended = catalogueState.categoryGroups
+        .expand((g) => g.tests)
+        .where((t) => !t.isVideoAssessment && t.workerAttempts == 0)
+        .take(2)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -156,9 +164,20 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                _buildRecommendedTestCard('Electrical Safety Fundamentals', 'BEGINNER · Safety · 12 min', '👥 1,247 attempted'),
-                const SizedBox(height: 8),
-                _buildRecommendedTestCard('Residential Wiring Basics', 'BEGINNER · Installation · 15 min', '👥 2,103 attempted'),
+                if (recommended.isEmpty)
+                  Text(
+                    catalogueState.isLoading ? 'Loading assessments...' : "You've attempted everything in the catalogue — nice work!",
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600),
+                  )
+                else
+                  for (int i = 0; i < recommended.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    _buildRecommendedTestCard(
+                      recommended[i].title,
+                      '${recommended[i].difficulty} · ${recommended[i].category} · ${recommended[i].estimatedMinutes} min',
+                      '👥 ${recommended[i].totalAttempts} attempted',
+                    ),
+                  ],
 
                 const SizedBox(height: 12),
                 CustomButton(

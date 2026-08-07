@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_service.dart';
 import '../core/storage/secure_storage.dart';
@@ -33,6 +34,14 @@ class AuthState {
   }
 }
 
+String _extractError(Object e, String fallback) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map && data['error'] != null) return data['error'].toString();
+  }
+  return fallback;
+}
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _apiService = ApiService();
 
@@ -43,102 +52,58 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final token = await SecureStorage.instance.getJwtToken();
       final workerId = await SecureStorage.instance.getWorkerId();
-      if (token != null && workerId != null) {
-        try {
-          final response = await _apiService.getWorkerProfile(workerId);
-          if (response.statusCode == 200 && response.data != null) {
-            final worker = WorkerModel.fromJson(response.data);
-            state = state.copyWith(
-              status: AuthStatus.authenticated,
-              currentWorker: worker,
-            );
-            return true;
-          }
-        } catch (_) {
-          // Token invalid or backend unreachable in dev; fallback to unauthenticated
-        }
-      }
-      state = state.copyWith(status: AuthStatus.unauthenticated);
-      return false;
-    } catch (e) {
-      state = state.copyWith(status: AuthStatus.unauthenticated, errorMessage: e.toString());
-      return false;
-    }
-  }
-
-  // TODO: integrate SMS OTP
-  Future<bool> sendOtp(String phone) async {
-    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
-    try {
-      // Simulate sending OTP (fixed OTP: 1234)
-      await Future.delayed(const Duration(milliseconds: 500));
-      state = state.copyWith(
-        status: AuthStatus.unauthenticated,
-        otpSentToPhone: phone,
-      );
-      return true;
-    } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Failed to send OTP: $e',
-      );
-      return false;
-    }
-  }
-
-  Future<bool> verifyOtpAndLogin(String phone, String otp) async {
-    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
-    try {
-      // Static OTP check for now
-      if (otp != '1234') {
-        state = state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: 'Invalid OTP. Please enter 1234',
-        );
+      if (token == null || workerId == null) {
+        state = state.copyWith(status: AuthStatus.unauthenticated);
         return false;
       }
 
-      try {
-        final response = await _apiService.loginWorker(phone, otp);
-        if (response.statusCode == 200 && response.data != null) {
-          final data = response.data;
-          final token = data['token'] ?? data['jwtToken'] ?? 'dummy_jwt_token';
-          final workerData = data['worker'] ?? data;
-          final worker = WorkerModel.fromJson(workerData);
-
-          await SecureStorage.instance.saveTokens(jwtToken: token);
-          await SecureStorage.instance.saveWorkerId(worker.id);
-
-          state = state.copyWith(
-            status: AuthStatus.authenticated,
-            currentWorker: worker,
-          );
-          return true;
-        }
-      } catch (_) {
-        // Fallback for dev mode without live backend
-        final mockWorker = WorkerModel(
-          id: 'w_101',
-          name: 'Ramesh Kumar',
-          phone: phone,
-          trade: 'ELECTRICIAN',
-          city: 'Bangalore',
-          isCertified: false,
-          pipelineStep: 1,
-        );
-        await SecureStorage.instance.saveTokens(jwtToken: 'dev_jwt_token_1234');
-        await SecureStorage.instance.saveWorkerId('w_101');
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          currentWorker: mockWorker,
-        );
+      final response = await _apiService.getWorkerProfile(workerId);
+      if (response.statusCode == 200 && response.data != null) {
+        final worker = WorkerModel.fromJson(Map<String, dynamic>.from(response.data));
+        state = state.copyWith(status: AuthStatus.authenticated, currentWorker: worker);
         return true;
       }
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+      return false;
+    } catch (_) {
+      // Invalid/expired token or backend unreachable — treat as logged out.
+      await SecureStorage.instance.clearAll();
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+      return false;
+    }
+  }
+
+  // Fixed OTP (1234) for now — the backend has no real SMS OTP provider
+  // wired up yet either (see backend/src/controllers/authController.js).
+  // Nothing to call here; login itself validates the OTP.
+  Future<bool> sendOtp(String phone) async {
+    state = state.copyWith(status: AuthStatus.unauthenticated, otpSentToPhone: phone, errorMessage: null);
+    return true;
+  }
+
+  Future<bool> verifyOtpAndLogin(String phoneNumber, String otp) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final response = await _apiService.loginWorker(phoneNumber, otp);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = Map<String, dynamic>.from(response.data);
+        final worker = WorkerModel.fromJson(Map<String, dynamic>.from(data['worker']));
+
+        await SecureStorage.instance.saveTokens(
+          jwtToken: data['accessToken'].toString(),
+          refreshToken: data['refreshToken']?.toString(),
+        );
+        await SecureStorage.instance.saveWorkerId(worker.id);
+
+        state = state.copyWith(status: AuthStatus.authenticated, currentWorker: worker);
+        return true;
+      }
+      state = state.copyWith(status: AuthStatus.error, errorMessage: 'Login failed');
       return false;
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: 'Login failed: $e',
+        errorMessage: _extractError(e, 'Login failed: $e'),
       );
       return false;
     }
@@ -147,50 +112,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> registerWorker(Map<String, dynamic> registrationData) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     try {
-      try {
-        final response = await _apiService.registerWorker(registrationData);
-        if (response.statusCode == 201 || response.statusCode == 200) {
-          final data = response.data;
-          final token = data['token'] ?? 'dev_jwt_token_registered';
-          final workerObj = WorkerModel.fromJson(data['worker'] ?? data);
+      final response = await _apiService.registerWorker(registrationData);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = Map<String, dynamic>.from(response.data);
+        final worker = WorkerModel.fromJson(Map<String, dynamic>.from(data['worker']));
 
-          await SecureStorage.instance.saveTokens(jwtToken: token);
-          await SecureStorage.instance.saveWorkerId(workerObj.id);
-
-          state = state.copyWith(
-            status: AuthStatus.authenticated,
-            currentWorker: workerObj,
-          );
-          return true;
-        }
-      } catch (_) {
-        // Dev fallback
-        final mockWorker = WorkerModel(
-          id: 'w_${DateTime.now().millisecondsSinceEpoch}',
-          name: registrationData['name'] ?? 'Worker',
-          phone: registrationData['phone'] ?? '',
-          trade: registrationData['trade'] ?? 'ELECTRICIAN',
-          city: registrationData['city'] ?? 'Bangalore',
-          locality: registrationData['locality'],
-          aadhaarHash: registrationData['aadhaarHash'] ?? 'a3f8921e90b',
-          profilePhotoUrl: registrationData['profilePhotoUrl'],
-          isCertified: false,
-          pipelineStep: 1,
+        await SecureStorage.instance.saveTokens(
+          jwtToken: data['accessToken'].toString(),
+          refreshToken: data['refreshToken']?.toString(),
         );
-        await SecureStorage.instance.saveTokens(jwtToken: 'dev_jwt_token');
-        await SecureStorage.instance.saveWorkerId(mockWorker.id);
+        await SecureStorage.instance.saveWorkerId(worker.id);
 
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          currentWorker: mockWorker,
-        );
+        state = state.copyWith(status: AuthStatus.authenticated, currentWorker: worker);
         return true;
       }
+      state = state.copyWith(status: AuthStatus.error, errorMessage: 'Registration failed');
       return false;
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: 'Registration failed: $e',
+        errorMessage: _extractError(e, 'Registration failed: $e'),
       );
       return false;
     }

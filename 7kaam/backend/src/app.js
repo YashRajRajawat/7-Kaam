@@ -9,7 +9,9 @@ const testRoutes = require('./routes/tests');
 const scoringRoutes = require('./routes/scoring');
 const kaamCardRoutes = require('./routes/kaamcards');
 const analyticsRoutes = require('./routes/analytics');
-const mobileRoutes = require('./routes/mobile');
+const publicRoutes = require('./routes/public');
+const adminRoutes = require('./routes/admin');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 
@@ -23,11 +25,18 @@ app.use(morgan('dev'));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workers', workerRoutes);
 app.use('/api/v1/tests', testRoutes);
-app.use('/api/v1', scoringRoutes);         // /api/v1/workers/:id/...
 app.use('/api/v1/kaamcards', kaamCardRoutes);
 app.use('/api/v1/verify', require('./routes/verify'));
 app.use('/api/v1/analytics', analyticsRoutes);
-app.use('/api/v1/mobile', mobileRoutes);
+app.use('/api/v1/public', publicRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/reports', reportRoutes);
+// Mounted last and bare (no sub-path) since its routes mix /workers/:id/...
+// and /certificates/:id prefixes — every other, more specific router above
+// must get first shot at matching, otherwise this router's blanket
+// `router.use(requireAuth)` would intercept and 401 traffic meant for the
+// public/admin/verify routers before they ever run.
+app.use('/api/v1', scoringRoutes);
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));

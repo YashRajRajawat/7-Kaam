@@ -1,8 +1,10 @@
 const router = require('express').Router();
-const { authenticate } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { overview, byTrade, byCity, scoreDistribution, certificationsOverTime } = require('../controllers/analyticsController');
 
-router.use(authenticate);
+const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
+
+router.use(requireAuth, requireRole(...ADMIN_ROLES));
 
 router.get('/overview', overview);
 router.get('/by-trade', byTrade);

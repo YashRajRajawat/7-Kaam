@@ -1,14 +1,16 @@
 const router = require('express').Router();
-const { authenticate } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { createTest, listTests, getTest, updateTest, deleteTest, getTestCatalogue } = require('../controllers/testController');
 
-router.use(authenticate);
+const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
 
-router.post('/', createTest);
-router.get('/', listTests);
+router.use(requireAuth);
+
+router.post('/', requireRole(...ADMIN_ROLES), createTest);
+router.get('/', requireRole(...ADMIN_ROLES), listTests);
 router.get('/catalogue', getTestCatalogue);
 router.get('/:id', getTest);
-router.patch('/:id', updateTest);
-router.delete('/:id', deleteTest);
+router.patch('/:id', requireRole(...ADMIN_ROLES), updateTest);
+router.delete('/:id', requireRole(...ADMIN_ROLES), deleteTest);
 
 module.exports = router;

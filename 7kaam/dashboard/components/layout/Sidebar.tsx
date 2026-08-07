@@ -13,16 +13,18 @@ import {
   LogOut,
   Plus,
   Shield,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard',  label: 'Overview',   icon: LayoutDashboard },
-  { href: '/workers',    label: 'Workers',     icon: Users },
-  { href: '/tests',      label: 'Tests',       icon: ClipboardList },
-  { href: '/kaamcards',  label: 'KaamCards',   icon: Award },
-  { href: '/analytics',  label: 'Analytics',   icon: BarChart3 },
-  { href: '/settings',   label: 'Settings',    icon: Settings },
+  { href: '/dashboard',   label: 'Overview',    icon: LayoutDashboard },
+  { href: '/workers',     label: 'Workers',      icon: Users },
+  { href: '/tests',       label: 'Tests',        icon: ClipboardList },
+  { href: '/kaamcards',   label: 'KaamCards',    icon: Award },
+  { href: '/moderation',  label: 'Moderation',   icon: ShieldAlert },
+  { href: '/analytics',   label: 'Analytics',    icon: BarChart3 },
+  { href: '/settings',    label: 'Settings',     icon: Settings },
 ];
 
 export function Sidebar() {

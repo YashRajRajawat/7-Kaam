@@ -49,7 +49,7 @@ class QuestionResultModel {
     return QuestionResultModel(
       questionId: json['questionId']?.toString() ?? json['question_id']?.toString() ?? '',
       questionText: json['questionText']?.toString() ?? json['question']?.toString() ?? '',
-      selectedAnswer: json['selectedAnswer']?.toString() ?? json['selected_answer']?.toString() ?? '',
+      selectedAnswer: json['selectedAnswer']?.toString() ?? json['selected_answer']?.toString() ?? json['workerAnswer']?.toString() ?? '',
       score: (json['score'] ?? 0).toDouble(),
       feedback: json['feedback']?.toString() ?? '',
     );

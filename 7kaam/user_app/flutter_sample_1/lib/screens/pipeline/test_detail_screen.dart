@@ -131,7 +131,7 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem('👥 ${test.totalAttempts > 0 ? test.totalAttempts : 1247}', 'Learners Attempted'),
+                    _buildStatItem('👥 ${test.totalAttempts}', 'Learners Attempted'),
                     Container(width: 1, height: 36, color: Colors.grey.shade200),
                     _buildStatItem('⏱ ~${test.estimatedMinutes} mins', 'Duration'),
                     Container(width: 1, height: 36, color: Colors.grey.shade200),
@@ -255,8 +255,7 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                 isOutlined: isPassed,
                 onPressed: () {
                   ref.read(testProvider.notifier).setLanguage(_selectedLanguage);
-                  ref.read(testProvider.notifier).fetchTradeTest(trade: test.trade, language: _selectedLanguage);
-                  context.push('/pipeline/trade-test');
+                  context.push('/pipeline/trade-test/${test.id}');
                 },
               ),
 

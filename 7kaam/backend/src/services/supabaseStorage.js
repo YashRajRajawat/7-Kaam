@@ -1,7 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qywflwdkrckyjdrsadvo.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_xJD9ZgF8dZfnGalPdIp05Q_JB_q_wJN';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  throw new Error(
+    'SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in the environment — see backend/.env.example'
+  );
+}
 
 const supabase = createClient(
   SUPABASE_URL,

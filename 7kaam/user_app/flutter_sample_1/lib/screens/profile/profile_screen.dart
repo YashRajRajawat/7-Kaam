@@ -16,7 +16,7 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key, this.onNavigateTab});
 
   void _showEditProfileDialog(BuildContext context, WidgetRef ref, dynamic worker) {
-    final nameController = TextEditingController(text: worker?.name ?? '');
+    final nameController = TextEditingController(text: worker?.fullName ?? '');
     final cityController = TextEditingController(text: worker?.city ?? '');
     final localityController = TextEditingController(text: worker?.locality ?? '');
 
@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               await ref.read(workerProvider.notifier).updateProfile({
-                'name': nameController.text.trim(),
+                'fullName': nameController.text.trim(),
                 'city': cityController.text.trim(),
                 'locality': localityController.text.trim(),
               });
@@ -80,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
     final hasPhoto = worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty;
     final hasAadhaar = worker?.aadhaarHash != null && worker!.aadhaarHash!.isNotEmpty;
     final hasHistory = workHistory.isNotEmpty;
-    final hasKaamCard = worker?.isCertified == true || worker?.kaamCard != null;
+    final hasKaamCard = worker?.hasKaamCard == true || worker?.kaamCard != null;
 
     int completedCount = 0;
     if (hasPhoto) completedCount++;
@@ -152,7 +152,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      worker?.name ?? 'Worker Name',
+                      worker?.fullName ?? 'Worker Name',
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -177,7 +177,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${worker?.city ?? 'Bangalore'} • ${worker?.phone ?? ''}',
+                      '${worker?.city ?? 'Bangalore'} • ${worker?.phoneNumber ?? ''}',
                       style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
                     ),
                     const SizedBox(height: 14),
@@ -256,21 +256,24 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: () {
                       if (onNavigateTab != null) onNavigateTab!(3); // Navigate to Certificates tab (Tab index 3)
                     },
-                    child: Text('View all (${certificates.isEmpty ? 1 : certificates.length})', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                    child: Text('View all (${certificates.length})', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
 
               // Certificates Horizontal Scroll
+              if (certificates.isEmpty)
+                Text('No certificates yet.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))
+              else
               SizedBox(
                 height: 100,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: certificates.isEmpty ? 1 : certificates.length,
+                  itemCount: certificates.length,
                   itemBuilder: (context, index) {
-                    final title = certificates.isNotEmpty ? certificates[index].testTitle : 'Electrical Safety Fundamentals';
-                    final score = certificates.isNotEmpty ? certificates[index].score : 86.0;
+                    final title = certificates[index].testTitle;
+                    final score = certificates[index].score;
 
                     return Container(
                       width: 200,

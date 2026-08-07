@@ -1,20 +1,20 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import {
   Users, Award, TrendingUp, MapPin,
-  Zap, BarChart2, Activity, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, FileText,
+  Zap, BarChart2, Activity, Plus, ShieldCheck, ArrowUpRight, ClipboardCheck,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   BarChart, Bar,
 } from 'recharts';
-import type { AnalyticsOverview, CertificationDataPoint, ScoreBand, ScoringLog } from '@/types';
-import { timeAgo } from '@/lib/utils';
+import type { AnalyticsOverview, CertificationDataPoint, PendingReviewResponse, ScoreBand, ScoringLog } from '@/types';
+import { timeAgo, formatScore } from '@/lib/utils';
 
 const TIER_COLORS: Record<string, string> = {
   EXPERT: '#7c3aed',
@@ -58,9 +58,24 @@ function KpiCard({ title, value, sub, icon: Icon, color, trend }: {
 }
 
 export default function DashboardPage() {
+  const qc = useQueryClient();
+
   const { data: overview } = useQuery<AnalyticsOverview>({
     queryKey: ['analytics', 'overview'],
     queryFn: () => api.get('/analytics/overview').then(r => r.data),
+  });
+
+  const { data: pendingReview } = useQuery<PendingReviewResponse>({
+    queryKey: ['admin', 'pending-review'],
+    queryFn: () => api.get('/admin/workers/pending-review').then(r => r.data),
+  });
+
+  const quickIssue = useMutation({
+    mutationFn: (workerId: string) => api.post(`/admin/workers/${workerId}/issue-kaamcard`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'pending-review'] });
+      qc.invalidateQueries({ queryKey: ['analytics', 'overview'] });
+    },
   });
 
   const { data: certData } = useQuery<CertificationDataPoint[]>({
@@ -159,6 +174,66 @@ export default function DashboardPage() {
             color="bg-[#d97706]"
             trend="Expanded"
           />
+        </div>
+
+        {/* Secondary KPI Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Active Workers', value: overview?.activeWorkers },
+            { label: 'Suspended', value: overview?.suspendedWorkers },
+            { label: 'KaamCards Issued', value: overview?.totalKaamCardsIssued },
+            { label: 'New This Week', value: overview?.newRegistrationsThisWeek },
+          ].map(({ label, value }) => (
+            <div key={label} className="bg-white border border-[#e0e3e5] rounded-xl px-4 py-3 shadow-sm">
+              <p className="text-[10px] font-bold text-[#767586] uppercase tracking-wider">{label}</p>
+              <p className="text-xl font-black text-[#191c1e] mt-0.5">{value ?? '—'}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Pending KaamCard Review Queue */}
+        <div className="bg-white border border-[#e0e3e5] rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#f2f4f6]">
+            <div>
+              <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+                <ClipboardCheck size={18} className="text-[#4648d4]" />
+                Pending KaamCard Review
+              </h3>
+              <p className="text-xs text-[#565e74] mt-0.5">
+                {pendingReview?.total ?? 0} workers with at least one assessment, ready for a KaamCard decision.
+              </p>
+            </div>
+            <Link href="/workers" className="text-xs text-[#4648d4] hover:underline font-bold">
+              View All Workers →
+            </Link>
+          </div>
+
+          {pendingReview && pendingReview.workers.length > 0 ? (
+            <div className="space-y-2.5">
+              {pendingReview.workers.slice(0, 5).map(w => (
+                <div key={w.id} className="flex items-center justify-between p-3.5 rounded-xl bg-[#f7f9fb] border border-[#e0e3e5]">
+                  <div className="min-w-0">
+                    <Link href={`/workers/${w.id}`} className="text-xs font-bold text-[#191c1e] hover:text-[#4648d4] transition-colors">
+                      {w.fullName}
+                    </Link>
+                    <p className="text-[11px] text-[#767586] mt-0.5">
+                      {w.trade} · {w.city} · Score: <span className="font-bold text-[#4648d4]">{formatScore(w.finalScore)}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => quickIssue.mutate(w.id)}
+                    disabled={quickIssue.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d1fae5] hover:bg-[#a7f3d0] text-[#059669] text-xs font-bold border border-emerald-200 transition-all disabled:opacity-50 flex-shrink-0 ml-3"
+                  >
+                    <Award size={13} />
+                    {quickIssue.isPending ? 'Issuing...' : 'Issue KaamCard'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-[#767586] text-xs">No workers awaiting KaamCard review right now.</div>
+          )}
         </div>
 
         {/* Visual Charts Grid */}

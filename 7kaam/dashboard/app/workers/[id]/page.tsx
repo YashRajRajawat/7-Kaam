@@ -6,12 +6,13 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
-import type { Worker } from '@/types';
+import type { Worker, SkillCertificate } from '@/types';
 import { cn, tierColor, statusColor, tradeLabel, formatDate } from '@/lib/utils';
 import {
   CheckCircle2, Clock, ChevronDown, ChevronUp, ChevronLeft,
   Video, FileText, Briefcase, Calculator, Award, XCircle,
-  Star, ExternalLink, Download, Copy, CheckCheck,
+  ExternalLink, Download, Copy, CheckCheck, UserX, UserCheck,
+  ShieldAlert, BadgeCheck,
 } from 'lucide-react';
 
 const PIPELINE_STEPS = [
@@ -58,7 +59,11 @@ export default function WorkerDetailPage() {
   const qc = useQueryClient();
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
   const [addHistoryOpen, setAddHistoryOpen] = useState(false);
-  const [historyForm, setHistoryForm] = useState({ employerName: '', role: '', startDate: '', endDate: '', rating: '4', verified: false, employerPhone: '' });
+  const [historyForm, setHistoryForm] = useState({
+    clientName: '', clientType: 'HOUSEHOLD', clientPhone: '', clientCity: '',
+    projectTitle: '', projectDescription: '', startDate: '', endDate: '',
+    projectScale: 'SMALL', isVerified: false,
+  });
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [revokeReason, setRevokeReason] = useState('');
   const [copied, setCopied] = useState(false);
@@ -66,6 +71,13 @@ export default function WorkerDetailPage() {
   const [selectedTestId, setSelectedTestId] = useState('');
   const [answers, setAnswers] = useState<string[]>([]);
   const [manualVideoScore, setManualVideoScore] = useState('');
+  const [videoScoreNotes, setVideoScoreNotes] = useState('');
+  const [issueCardOpen, setIssueCardOpen] = useState(false);
+  const [suspendOpen, setSuspendOpen] = useState(false);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [recertOpen, setRecertOpen] = useState(false);
+  const [recertTestIds, setRecertTestIds] = useState<string[]>([]);
+  const [recertReason, setRecertReason] = useState('');
 
   const { data: worker, isLoading } = useQuery<Worker>({
     queryKey: ['worker', id],
@@ -77,9 +89,14 @@ export default function WorkerDetailPage() {
     queryFn: () => api.get('/tests', { params: { isActive: 'true' } }).then(r => r.data),
   });
 
+  const { data: certificates } = useQuery<SkillCertificate[]>({
+    queryKey: ['worker', id, 'certificates'],
+    queryFn: () => api.get(`/workers/${id}/certificates`).then(r => r.data),
+  });
+
   const scoreVideo = useMutation({
     mutationFn: (data?: { score?: number; notes?: string }) => api.post(`/workers/${id}/score-video`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['worker', id] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setManualVideoScore(''); setVideoScoreNotes(''); },
   });
 
   const computeScore = useMutation({
@@ -88,12 +105,27 @@ export default function WorkerDetailPage() {
   });
 
   const issueKaamCard = useMutation({
-    mutationFn: () => api.post(`/workers/${id}/issue-kaamcard`),
+    mutationFn: () => api.post(`/admin/workers/${id}/issue-kaamcard`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setIssueCardOpen(false); },
+  });
+
+  const suspendWorker = useMutation({
+    mutationFn: () => api.post(`/admin/workers/${id}/suspend`, { reason: suspendReason }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setSuspendOpen(false); setSuspendReason(''); },
+  });
+
+  const reactivateWorker = useMutation({
+    mutationFn: () => api.post(`/admin/workers/${id}/reactivate`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['worker', id] }),
   });
 
+  const requireRecertification = useMutation({
+    mutationFn: () => api.post(`/admin/workers/${id}/require-recertification`, { testIds: recertTestIds, reason: recertReason }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setRecertOpen(false); setRecertTestIds([]); setRecertReason(''); },
+  });
+
   const addWorkHistory = useMutation({
-    mutationFn: () => api.post(`/workers/${id}/add-work-history`, { ...historyForm, rating: Number(historyForm.rating) }),
+    mutationFn: () => api.post(`/workers/${id}/add-work-history`, historyForm),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setAddHistoryOpen(false); },
   });
 
@@ -138,7 +170,9 @@ export default function WorkerDetailPage() {
     );
   }
 
-  const latestCard = worker.kaamCards?.[0];
+  const latestCard = worker.kaamCards
+    ? [...worker.kaamCards].sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())[0]
+    : undefined;
 
   return (
     <DashboardShell>
@@ -178,6 +212,11 @@ export default function WorkerDetailPage() {
               <div className="flex flex-wrap items-start gap-2 mb-1">
                 <h2 className="text-xl font-black text-[#191c1e]">{worker.fullName}</h2>
                 <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-bold border', statusColor(worker.status))}>{worker.status}</span>
+                {worker.underReview && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                    <ShieldAlert size={12} /> Under Review
+                  </span>
+                )}
                 {worker.aadhaarVerified && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs bg-[#d1fae5] text-[#059669] border border-emerald-200 font-bold">✓ Aadhaar Verified</span>
                 )}
@@ -240,7 +279,7 @@ export default function WorkerDetailPage() {
                 controls
                 className="w-full max-h-64 rounded-xl border border-[#e0e3e5] bg-black"
               />
-              <div className="flex flex-wrap items-center gap-3 bg-[#f8f9fa] p-3 rounded-xl border border-[#e0e3e5]">
+              <div className="flex flex-wrap items-end gap-3 bg-[#f8f9fa] p-3 rounded-xl border border-[#e0e3e5]">
                 <div className="flex-1 min-w-[140px]">
                   <label className="block text-[11px] font-bold text-[#565e74] mb-1">Manual Video Score (0–100)</label>
                   <input
@@ -253,14 +292,25 @@ export default function WorkerDetailPage() {
                     className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#e0e3e5] text-xs font-bold text-[#191c1e]"
                   />
                 </div>
+                <div className="flex-[2] min-w-[180px]">
+                  <label className="block text-[11px] font-bold text-[#565e74] mb-1">Notes (optional)</label>
+                  <input
+                    type="text"
+                    value={videoScoreNotes}
+                    onChange={e => setVideoScoreNotes(e.target.value)}
+                    placeholder="Reviewer notes..."
+                    className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#e0e3e5] text-xs text-[#191c1e]"
+                  />
+                </div>
                 <button
-                  onClick={() => scoreVideo.mutate({ score: Number(manualVideoScore) })}
+                  onClick={() => scoreVideo.mutate({ score: Number(manualVideoScore), notes: videoScoreNotes || undefined })}
                   disabled={!manualVideoScore || scoreVideo.isPending}
-                  className="mt-4 px-4 py-2 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all disabled:opacity-50"
                 >
                   {scoreVideo.isPending ? 'Saving...' : 'Submit Video Score'}
                 </button>
               </div>
+              <p className="text-[10px] text-[#767586]">Video scoring is admin-manual only — there is no automated CV model yet.</p>
             </div>
           ) : (
             <div className="p-6 rounded-xl bg-[#f8f9fa] text-center border border-[#e0e3e5]">
@@ -294,13 +344,18 @@ export default function WorkerDetailPage() {
         <div className="bg-white border border-[#e0e3e5] rounded-xl p-5 shadow-sm">
           <h3 className="text-sm font-bold text-[#191c1e] mb-4">Actions</h3>
           <div className="flex flex-wrap gap-2.5">
-            <ActionBtn icon={Video} label="Score Video" color="blue" onClick={() => scoreVideo.mutate()} loading={scoreVideo.isPending} />
             <ActionBtn icon={FileText} label="Assign Test" color="purple" onClick={() => setTestAssignOpen(true)} />
             <ActionBtn icon={Briefcase} label="Add Work History" color="orange" onClick={() => setAddHistoryOpen(true)} />
             <ActionBtn icon={Calculator} label="Compute Score" color="teal" onClick={() => computeScore.mutate()} loading={computeScore.isPending} disabled={!worker.videoScore || !worker.testScore} />
-            <ActionBtn icon={Award} label="Issue KaamCard" color="teal" onClick={() => issueKaamCard.mutate()} loading={issueKaamCard.isPending} disabled={!worker.finalScore} />
+            <ActionBtn icon={Award} label="Issue KaamCard" color="teal" onClick={() => setIssueCardOpen(true)} disabled={!worker.finalScore} />
             {latestCard && !latestCard.isRevoked && (
               <ActionBtn icon={XCircle} label="Revoke KaamCard" color="red" onClick={() => setRevokeOpen(true)} />
+            )}
+            <ActionBtn icon={ShieldAlert} label="Require Recertification" color="orange" onClick={() => setRecertOpen(true)} />
+            {worker.status === 'SUSPENDED' ? (
+              <ActionBtn icon={UserCheck} label="Reactivate Worker" color="teal" onClick={() => reactivateWorker.mutate()} loading={reactivateWorker.isPending} />
+            ) : (
+              <ActionBtn icon={UserX} label="Suspend Worker" color="red" onClick={() => setSuspendOpen(true)} />
             )}
           </div>
         </div>
@@ -317,7 +372,7 @@ export default function WorkerDetailPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-[#e0e3e5] bg-[#f2f4f6]">
-                    {['Employer', 'Role', 'Period', 'Rating', 'Verified'].map(h => (
+                    {['Client', 'Project', 'Period', 'Scale', 'Verified'].map(h => (
                       <th key={h} className="px-3 py-2.5 text-left font-bold text-[#767586] uppercase tracking-wider text-[10px]">{h}</th>
                     ))}
                   </tr>
@@ -325,18 +380,21 @@ export default function WorkerDetailPage() {
                 <tbody className="divide-y divide-[#e0e3e5]">
                   {worker.workHistories.map(wh => (
                     <tr key={wh.id} className="hover:bg-[#f7f9fb]">
-                      <td className="px-3 py-2.5 text-[#191c1e] font-bold">{wh.employerName}</td>
-                      <td className="px-3 py-2.5 text-[#565e74] font-medium">{wh.role}</td>
-                      <td className="px-3 py-2.5 text-[#767586]">{formatDate(wh.startDate)} — {wh.endDate ? formatDate(wh.endDate) : 'Present'}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} size={10} className={i < wh.rating ? 'text-amber-500 fill-amber-500' : 'text-[#d1d5db]'} />
-                          ))}
-                        </div>
+                      <td className="px-3 py-2.5 text-[#191c1e] font-bold">
+                        {wh.clientName}
+                        <p className="text-[10px] text-[#767586] font-normal">{wh.clientType} · {wh.clientCity}</p>
                       </td>
+                      <td className="px-3 py-2.5 text-[#565e74] font-medium">
+                        {wh.projectTitle}
+                        {wh.projectDescription && <p className="text-[10px] text-[#767586] font-normal">{wh.projectDescription}</p>}
+                      </td>
+                      <td className="px-3 py-2.5 text-[#767586]">
+                        {formatDate(wh.startDate)} — {wh.endDate ? formatDate(wh.endDate) : 'Present'}
+                        <p className="text-[10px]">{wh.durationMonths} mo</p>
+                      </td>
+                      <td className="px-3 py-2.5 text-[#565e74]">{wh.projectScale}</td>
                       <td className="px-3 py-2.5">
-                        {wh.verified ? <span className="text-[#059669] font-bold">✓</span> : <span className="text-[#767586]">—</span>}
+                        {wh.isVerified ? <span className="text-[#059669] font-bold">✓</span> : <span className="text-[#767586]">—</span>}
                       </td>
                     </tr>
                   ))}
@@ -349,9 +407,11 @@ export default function WorkerDetailPage() {
             <div className="mt-4 p-4 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] space-y-3 fade-in">
               <h4 className="text-xs font-bold text-[#191c1e]">Add Work History Entry</h4>
               {[
-                { label: 'Employer Name', key: 'employerName', type: 'text' },
-                { label: 'Role', key: 'role', type: 'text' },
-                { label: 'Employer Phone', key: 'employerPhone', type: 'tel' },
+                { label: 'Client Name', key: 'clientName', type: 'text' },
+                { label: 'Client City', key: 'clientCity', type: 'text' },
+                { label: 'Client Phone', key: 'clientPhone', type: 'tel' },
+                { label: 'Project Title', key: 'projectTitle', type: 'text' },
+                { label: 'Project Description', key: 'projectDescription', type: 'text' },
                 { label: 'Start Date', key: 'startDate', type: 'date' },
                 { label: 'End Date', key: 'endDate', type: 'date' },
               ].map(({ label, key, type }) => (
@@ -364,19 +424,24 @@ export default function WorkerDetailPage() {
               ))}
               <div className="flex items-center gap-4 pt-1">
                 <div className="flex-1">
-                  <label className="block text-[11px] font-bold text-[#565e74] mb-1">Rating (1–5)</label>
-                  <input type="range" min={1} max={5} value={historyForm.rating}
-                    onChange={e => setHistoryForm(f => ({ ...f, rating: e.target.value }))}
-                    className="w-full accent-[#4648d4]" />
-                  <div className="flex gap-0.5 mt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={12} className={i < Number(historyForm.rating) ? 'text-amber-500 fill-amber-500' : 'text-[#d1d5db]'} />
-                    ))}
-                  </div>
+                  <label className="block text-[11px] font-bold text-[#565e74] mb-1">Client Type</label>
+                  <select value={historyForm.clientType}
+                    onChange={e => setHistoryForm(f => ({ ...f, clientType: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#e0e3e5] text-[#191c1e] text-xs">
+                    {['HOUSEHOLD', 'BUSINESS', 'CONTRACTOR'].map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#565e74] font-bold">
-                  <input type="checkbox" checked={historyForm.verified}
-                    onChange={e => setHistoryForm(f => ({ ...f, verified: e.target.checked }))}
+                <div className="flex-1">
+                  <label className="block text-[11px] font-bold text-[#565e74] mb-1">Project Scale</label>
+                  <select value={historyForm.projectScale}
+                    onChange={e => setHistoryForm(f => ({ ...f, projectScale: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#e0e3e5] text-[#191c1e] text-xs">
+                    {['SMALL', 'MEDIUM', 'LARGE'].map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#565e74] font-bold self-end pb-2">
+                  <input type="checkbox" checked={historyForm.isVerified}
+                    onChange={e => setHistoryForm(f => ({ ...f, isVerified: e.target.checked }))}
                     className="accent-[#4648d4] w-4 h-4 rounded" />
                   Verified
                 </label>
@@ -420,6 +485,28 @@ export default function WorkerDetailPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Certificates */}
+        {certificates && certificates.length > 0 && (
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-[#191c1e] mb-4 flex items-center gap-2">
+              <BadgeCheck size={16} className="text-[#4648d4]" />
+              Skill Certificates ({certificates.length})
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {certificates.map(c => (
+                <div key={c.id} className="min-w-[180px] p-3 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5]">
+                  <p className="text-xs font-bold text-[#191c1e]">{c.testTitle}</p>
+                  <p className="text-[11px] text-[#565e74] mt-0.5">{c.category} · {c.difficulty}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs font-black text-[#059669]">{Math.round(c.score)}/100</span>
+                    <span className="text-[10px] text-[#767586]">{formatDate(c.issuedAt)}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -549,6 +636,111 @@ export default function WorkerDetailPage() {
               <button onClick={() => revokeCard.mutate()} disabled={!revokeReason || revokeCard.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm">
                 {revokeCard.isPending ? 'Revoking...' : 'Confirm Revocation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue KaamCard Modal */}
+      {issueCardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+              <Award size={18} className="text-[#059669]" />
+              Issue KaamCard to {worker.fullName}?
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {[
+                { label: 'Video Score', value: worker.videoScore },
+                { label: 'Test Score', value: worker.testScore },
+                { label: 'Work History Score', value: worker.workHistoryScore },
+                { label: 'Final Score', value: worker.finalScore },
+              ].map(({ label, value }) => (
+                <div key={label} className="p-3 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5]">
+                  <p className="text-[10px] font-bold text-[#767586] uppercase">{label}</p>
+                  <p className="text-lg font-black text-[#191c1e]">{value != null ? Math.round(value) : '—'}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-[#767586]">Score is recomputed from all current assessments at the moment of issuance.</p>
+            {issueKaamCard.isError && (
+              <p className="text-xs text-red-600 font-semibold">
+                {(issueKaamCard.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not issue KaamCard.'}
+              </p>
+            )}
+            <div className="flex gap-2.5 pt-2">
+              <button onClick={() => setIssueCardOpen(false)} className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors">Cancel</button>
+              <button onClick={() => issueKaamCard.mutate()} disabled={issueKaamCard.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-[#059669] hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm">
+                {issueKaamCard.isPending ? 'Issuing...' : 'Confirm Issue'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend Modal */}
+      {suspendOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+              <UserX size={18} />
+              Suspend {worker.fullName}?
+            </h3>
+            <p className="text-xs text-[#565e74]">The worker will immediately disappear from customer discovery and cannot take new tests until reactivated.</p>
+            <textarea
+              value={suspendReason}
+              onChange={e => setSuspendReason(e.target.value)}
+              placeholder="Reason for suspension (required)..."
+              rows={3}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] text-xs placeholder:text-[#767586] focus:outline-none focus:border-red-500 transition-colors resize-none"
+            />
+            <div className="flex gap-2.5 pt-2">
+              <button onClick={() => setSuspendOpen(false)} className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors">Cancel</button>
+              <button onClick={() => suspendWorker.mutate()} disabled={!suspendReason || suspendWorker.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm">
+                {suspendWorker.isPending ? 'Suspending...' : 'Confirm Suspension'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Require Recertification Modal */}
+      {recertOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-amber-700 flex items-center gap-2">
+              <ShieldAlert size={18} />
+              Require Recertification
+            </h3>
+            <p className="text-xs text-[#565e74]">Worker stays listed with an &quot;Under Review&quot; badge until they pass every test selected below.</p>
+            <div>
+              <label className="block text-xs font-bold text-[#565e74] mb-1.5">Tests worker must retake</label>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto p-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5]">
+                {testsData?.map((t: { id: string; title: string; trade: string }) => (
+                  <label key={t.id} className="flex items-center gap-2.5 cursor-pointer p-1.5 rounded-lg hover:bg-white text-xs text-[#191c1e]">
+                    <input type="checkbox" checked={recertTestIds.includes(t.id)}
+                      onChange={e => setRecertTestIds(ids => e.target.checked ? [...ids, t.id] : ids.filter(x => x !== t.id))}
+                      className="accent-[#4648d4]" />
+                    {t.title} <span className="text-[#767586]">({t.trade})</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={recertReason}
+              onChange={e => setRecertReason(e.target.value)}
+              placeholder="Reason (e.g. complaint details)..."
+              rows={3}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] text-xs placeholder:text-[#767586] focus:outline-none focus:border-amber-500 transition-colors resize-none"
+            />
+            <div className="flex gap-2.5 pt-2">
+              <button onClick={() => setRecertOpen(false)} className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors">Cancel</button>
+              <button onClick={() => requireRecertification.mutate()} disabled={recertTestIds.length === 0 || requireRecertification.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm">
+                {requireRecertification.isPending ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>

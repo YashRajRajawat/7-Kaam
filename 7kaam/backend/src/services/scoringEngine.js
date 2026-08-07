@@ -1,11 +1,10 @@
 /**
  * Scoring Engine — 3-Signal AI Pipeline
+ *
+ * Video scoring has no automated CV model today — it is admin-manual only
+ * (see scoringController.scoreVideo), so there is no mock/random video score
+ * generator here.
  */
-
-/** Mock computer vision score: realistic 55–95 range */
-function mockVideoScore() {
-  return Math.floor(Math.random() * 40) + 55;
-}
 
 /**
  * Work History Score Formula (Part 5):
@@ -85,7 +84,6 @@ function computeTier(finalScore) {
 }
 
 module.exports = {
-  mockVideoScore,
   computeWorkHistoryScore,
   computeFinalScore,
   computeTier,

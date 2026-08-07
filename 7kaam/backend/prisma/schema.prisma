@@ -61,12 +61,21 @@ enum SignalType {
   FINAL
 }
 
+// DEPRECATED: booking is not part of the current product surface (7 Kaam is a
+// discovery/trust platform, not a booking middleman — see 7Kaam sync spec).
+// Kept for historical data only; no routes read/write this model.
 enum BookingStatus {
   PENDING
   CONFIRMED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum ReportStatus {
+  OPEN
+  DISMISSED
+  ACTIONED
 }
 
 model Worker {
@@ -78,6 +87,8 @@ model Worker {
   trade            Trade
   city             String
   locality         String?
+  latitude         Float?
+  longitude        Float?
   videoUrl         String?
   videoScore       Float?
   videoScoredAt    DateTime?
@@ -91,6 +102,11 @@ model Worker {
   kaamCardIssuedAt DateTime?
   aadhaarVerified  Boolean      @default(false)
   status           WorkerStatus @default(PENDING)
+  // Set by admin "Require Recertification" action after a complaint; cleared
+  // once the worker passes every test listed in recertificationTestIds.
+  underReview             Boolean  @default(false)
+  recertificationTestIds  String[] @default([])
+  recertificationReason   String?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -99,8 +115,10 @@ model Worker {
   workHistories     WorkHistory[]
   kaamCards         KaamCard[]
   scoringLogs       ScoringLog[]
+  // DEPRECATED: see BookingStatus above.
   bookings          Booking[]
   skillCertificates SkillCertificate[]
+  reports           Report[]
 }
 
 model Admin {
@@ -272,9 +290,14 @@ model Customer {
   city        String
   createdAt   DateTime @default(now())
 
+  // DEPRECATED: see BookingStatus above.
   bookings Booking[]
+  reports  Report[]
 }
 
+// DEPRECATED: booking is not part of the current product surface. Kept for
+// historical data only — no routes read/write this model. Do not add new
+// endpoints against it; see 7Kaam sync spec.
 model Booking {
   id          String        @id @default(uuid())
   customerId  String
@@ -288,4 +311,21 @@ model Booking {
 
   customer Customer @relation(fields: [customerId], references: [id])
   worker   Worker   @relation(fields: [workerId], references: [id])
+}
+
+// Customer complaint against a worker, reviewed by admins in the moderation
+// queue. Dismissal/actioning are status transitions here; the actual
+// enforcement (suspend/revoke/recertify) happens via the admin worker
+// endpoints and is applied independently.
+model Report {
+  id                 String       @id @default(uuid())
+  workerId           String
+  reporterCustomerId String
+  reason             String
+  description        String?
+  status             ReportStatus @default(OPEN)
+  createdAt          DateTime     @default(now())
+
+  worker           Worker   @relation(fields: [workerId], references: [id])
+  reporterCustomer Customer @relation(fields: [reporterCustomerId], references: [id])
 }

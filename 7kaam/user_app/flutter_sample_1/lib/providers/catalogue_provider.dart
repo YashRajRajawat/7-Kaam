@@ -64,8 +64,12 @@ class CatalogueNotifier extends StateNotifier<CatalogueState> {
 
   Future<void> fetchCatalogue({String? trade}) async {
     final currentWorker = ref.read(authProvider).currentWorker;
-    final workerTrade = trade ?? currentWorker?.trade ?? 'ELECTRICIAN';
-    final workerId = currentWorker?.id ?? 'worker-ravi-001';
+    if (currentWorker == null) {
+      state = state.copyWith(errorMessage: 'Not logged in');
+      return;
+    }
+    final workerTrade = trade ?? currentWorker.trade;
+    final workerId = currentWorker.id;
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 

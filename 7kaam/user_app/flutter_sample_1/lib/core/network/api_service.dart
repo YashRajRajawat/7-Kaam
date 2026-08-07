@@ -11,9 +11,9 @@ class ApiService {
   }
 
   // Auth: Login
-  Future<Response> loginWorker(String phone, String otp) async {
+  Future<Response> loginWorker(String phoneNumber, String otp) async {
     return await _dio.post(ApiConstants.loginWorker, data: {
-      'phone': phone,
+      'phoneNumber': phoneNumber,
       'otp': otp,
     });
   }
@@ -56,13 +56,6 @@ class ApiService {
     );
   }
 
-  // Scoring: Trigger Video Scoring
-  Future<Response> scoreVideo(String workerId, String videoUrl) async {
-    return await _dio.post(ApiConstants.scoreVideo(workerId), data: {
-      'videoUrl': videoUrl,
-    });
-  }
-
   // Scoring: Submit Trade Test Answers
   Future<Response> submitTradeTest(String workerId, Map<String, dynamic> payload) async {
     return await _dio.post(ApiConstants.submitTest(workerId), data: payload);
@@ -73,30 +66,20 @@ class ApiService {
     return await _dio.post(ApiConstants.addWorkHistory(workerId), data: payload);
   }
 
-  // Scoring: Compute Final Score
-  Future<Response> computeScore(String workerId) async {
-    return await _dio.post(ApiConstants.computeScore(workerId));
-  }
-
-  // Scoring: Issue KaamCard
-  Future<Response> issueKaamCard(String workerId) async {
-    return await _dio.post(ApiConstants.issueKaamCard(workerId));
-  }
-
-  // Trade Tests: Get available tests
-  Future<Response> getTradeTests({required String trade, required String language}) async {
-    return await _dio.get(
-      ApiConstants.tradeTests,
-      queryParameters: {
-        'trade': trade,
-        'language': language,
-      },
-    );
+  // Trade Tests: Get a specific test by id (worker-accessible; the bare
+  // /tests listing is admin-only)
+  Future<Response> getTestById(String testId) async {
+    return await _dio.get(ApiConstants.testById(testId));
   }
 
   // KaamCard: Get worker's card
   Future<Response> getKaamCard(String workerId) async {
     return await _dio.get(ApiConstants.kaamCard(workerId));
+  }
+
+  // KaamCard: Score history for the trend chart
+  Future<Response> getKaamCardHistory(String workerId) async {
+    return await _dio.get(ApiConstants.kaamCardHistory(workerId));
   }
 
   // KaamCard: Public QR Verification

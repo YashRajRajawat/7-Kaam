@@ -7,7 +7,7 @@ export type AdminRole = 'SUPER_ADMIN' | 'CITY_ADMIN' | 'REVIEWER';
 export type TestLanguage = 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL';
 export type SubmissionStatus = 'SUBMITTED' | 'EVALUATING' | 'COMPLETED' | 'FAILED';
 export type SignalType = 'VIDEO' | 'TEST' | 'WORK_HISTORY' | 'FINAL';
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type ReportStatus = 'OPEN' | 'DISMISSED' | 'ACTIONED';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +33,9 @@ export interface Worker {
   kaamCardIssuedAt?: string;
   aadhaarVerified: boolean;
   status: WorkerStatus;
+  underReview?: boolean;
+  recertificationTestIds?: string[];
+  recertificationReason?: string;
   createdAt: string;
   updatedAt: string;
   workHistories?: WorkHistory[];
@@ -94,14 +97,47 @@ export interface AiEvaluation {
 export interface WorkHistory {
   id: string;
   workerId: string;
-  employerName: string;
-  employerPhone?: string;
-  role: string;
+  clientName: string;
+  clientType: string;
+  clientPhone?: string;
+  clientCity: string;
+  projectTitle: string;
+  projectDescription: string;
+  trade: Trade;
   startDate: string;
   endDate?: string;
-  rating: number;
-  verified: boolean;
+  durationMonths: number;
+  projectScale: string;
+  photoUrls: string[];
+  isVerified: boolean;
   createdAt: string;
+}
+
+export interface SkillCertificate {
+  id: string;
+  workerId: string;
+  testId: string;
+  testTitle: string;
+  trade: Trade;
+  category: string;
+  difficulty: string;
+  score: number;
+  passingScore: number;
+  issuedAt: string;
+  pdfUrl?: string;
+  certificateNo?: string;
+}
+
+export interface Report {
+  id: string;
+  workerId: string;
+  reporterCustomerId: string;
+  reason: string;
+  description?: string;
+  status: ReportStatus;
+  createdAt: string;
+  worker?: Partial<Worker>;
+  reporterCustomer?: { fullName: string; phoneNumber: string };
 }
 
 export interface KaamCard {
@@ -146,10 +182,21 @@ export interface PaginatedResponse<T> {
 
 export interface AnalyticsOverview {
   totalWorkers: number;
+  activeWorkers: number;
+  suspendedWorkers: number;
+  totalKaamCardsIssued: number;
   certifiedToday: number;
   averageScore: number;
   activeCities: number;
   tierBreakdown: Array<{ tier: Tier; count: number }>;
+  newRegistrationsThisWeek: number;
+  testsAttemptedToday: number;
+  certificatesIssuedToday: number;
+}
+
+export interface PendingReviewResponse {
+  workers: Worker[];
+  total: number;
 }
 
 export interface TradeBreakdown {

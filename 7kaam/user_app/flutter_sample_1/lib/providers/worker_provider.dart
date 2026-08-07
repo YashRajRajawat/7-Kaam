@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_service.dart';
 import '../models/worker_model.dart';
@@ -31,6 +32,14 @@ class WorkerState {
   }
 }
 
+String _extractError(Object e, String fallback) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map && data['error'] != null) return data['error'].toString();
+  }
+  return fallback;
+}
+
 class WorkerNotifier extends StateNotifier<WorkerState> {
   final ApiService _apiService = ApiService();
 
@@ -45,13 +54,15 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     try {
       final response = await _apiService.getWorkerProfile(workerId);
       if (response.statusCode == 200 && response.data != null) {
-        final worker = WorkerModel.fromJson(response.data);
+        final worker = WorkerModel.fromJson(Map<String, dynamic>.from(response.data));
         state = state.copyWith(isLoading: false, worker: worker);
+      } else {
+        state = state.copyWith(isLoading: false, errorMessage: 'Failed to load profile');
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load profile: $e',
+        errorMessage: _extractError(e, 'Failed to load profile: $e'),
       );
     }
   }
@@ -60,30 +71,24 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     if (state.worker == null) return false;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      try {
-        final response = await _apiService.updateWorkerProfile(state.worker!.id, data);
-        if (response.statusCode == 200 && response.data != null) {
-          final updatedWorker = WorkerModel.fromJson(response.data);
-          state = state.copyWith(isLoading: false, worker: updatedWorker);
-          return true;
-        }
-      } catch (_) {
-        // Dev fallback
-        final updatedWorker = state.worker!.copyWith(
-          name: data['name'] ?? state.worker!.name,
-          city: data['city'] ?? state.worker!.city,
-          locality: data['locality'] ?? state.worker!.locality,
-        );
+      final response = await _apiService.updateWorkerProfile(state.worker!.id, data);
+      if (response.statusCode == 200 && response.data != null) {
+        final updatedWorker = WorkerModel.fromJson(Map<String, dynamic>.from(response.data));
         state = state.copyWith(isLoading: false, worker: updatedWorker);
         return true;
       }
+      state = state.copyWith(isLoading: false, errorMessage: 'Update failed');
       return false;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Update failed: $e');
+      state = state.copyWith(isLoading: false, errorMessage: _extractError(e, 'Update failed: $e'));
       return false;
     }
   }
 
+  // Uploads the recorded video to Supabase Storage via a backend-issued
+  // presigned URL, then saves videoUrl on the worker. Video scoring itself
+  // is admin-manual only (see 7Kaam sync spec) — no auto-score call here,
+  // the worker just sees a "pending admin scoring" status afterward.
   Future<bool> uploadVideoAndTriggerScore(List<int> videoBytes, String fileName, {WorkerModel? fallbackWorker}) async {
     final targetWorker = state.worker ?? fallbackWorker;
     if (targetWorker == null) return false;
@@ -96,40 +101,22 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     );
 
     try {
-      // Step 1: get presigned URL from backend
-      String videoUrl = 'https://supabase.co/storage/v1/object/public/videos/$fileName';
-      try {
-        final presignedRes = await _apiService.getUploadVideoPresignedUrl(targetWorker.id, fileName);
-        if (presignedRes.statusCode == 200 && presignedRes.data != null) {
-          final signedUrl = presignedRes.data['signedUrl'] ?? presignedRes.data['presignedUrl'] ?? presignedRes.data['url'];
-          videoUrl = presignedRes.data['videoUrl'] ?? presignedRes.data['publicUrl'] ?? videoUrl;
-          state = state.copyWith(videoUploadProgress: 0.5);
-
-          if (signedUrl != null && signedUrl.toString().isNotEmpty) {
-            // Step 2: upload bytes to S3/Supabase presigned URL
-            await _apiService.uploadVideoToUrl(signedUrl.toString(), videoBytes, 'video/mp4');
-          }
-          state = state.copyWith(videoUploadProgress: 0.8);
-        }
-      } catch (_) {
-        // Dev fallback simulate upload progress when backend storage is offline
-        await Future.delayed(const Duration(milliseconds: 600));
-        state = state.copyWith(videoUploadProgress: 0.8);
+      final presignedRes = await _apiService.getUploadVideoPresignedUrl(targetWorker.id, fileName);
+      if (presignedRes.statusCode != 200 || presignedRes.data == null) {
+        throw Exception('Could not get an upload URL from the server');
       }
 
-      // Step 3: Trigger video scoring backend endpoint
-      try {
-        await _apiService.scoreVideo(targetWorker.id, videoUrl);
-      } catch (_) {}
+      final data = Map<String, dynamic>.from(presignedRes.data);
+      final signedUrl = data['signedUrl'];
+      final videoUrl = data['videoUrl']?.toString() ?? '';
+      state = state.copyWith(videoUploadProgress: 0.5);
 
-      // Update worker model and pipeline step
-      final nextStep = targetWorker.pipelineStep < 3 ? 3 : targetWorker.pipelineStep;
-      final updatedWorker = targetWorker.copyWith(
-        videoUrl: videoUrl,
-        videoStatus: 'PENDING_ADMIN_SCORING',
-        pipelineStep: nextStep,
-      );
+      if (signedUrl != null && signedUrl.toString().isNotEmpty) {
+        await _apiService.uploadVideoToUrl(signedUrl.toString(), videoBytes, 'video/mp4');
+      }
+      state = state.copyWith(videoUploadProgress: 0.9);
 
+      final updatedWorker = targetWorker.copyWith(videoUrl: videoUrl);
       state = state.copyWith(
         isLoading: false,
         videoUploadProgress: 1.0,
@@ -140,7 +127,7 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
       state = state.copyWith(
         isLoading: false,
         videoUploadProgress: 0.0,
-        errorMessage: 'Video upload failed: $e',
+        errorMessage: _extractError(e, 'Video upload failed: $e'),
       );
       return false;
     }
@@ -150,21 +137,17 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     if (state.worker == null) return false;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      try {
-        await _apiService.addWorkHistory(state.worker!.id, entry.toJson());
-      } catch (_) {}
+      await _apiService.addWorkHistory(state.worker!.id, entry.toJson());
 
       final updatedList = List<WorkHistoryModel>.from(state.worker!.workHistory)..add(entry);
-      final nextStep = state.worker!.pipelineStep < 5 ? 5 : state.worker!.pipelineStep;
-      final updatedWorker = state.worker!.copyWith(
-        workHistory: updatedList,
-        pipelineStep: nextStep,
-      );
+      final updatedWorker = state.worker!.copyWith(workHistory: updatedList);
 
       state = state.copyWith(isLoading: false, worker: updatedWorker);
+      // Refresh from the server so the real computed workHistoryScore/finalScore show up.
+      await fetchWorkerProfile(updatedWorker.id);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to add work history: $e');
+      state = state.copyWith(isLoading: false, errorMessage: _extractError(e, 'Failed to add work history: $e'));
       return false;
     }
   }

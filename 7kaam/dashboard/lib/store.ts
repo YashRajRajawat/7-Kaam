@@ -7,9 +7,11 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
   login: (admin: Admin, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setAccessToken: (token: string) => void;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,6 +21,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
       login: (admin, accessToken, refreshToken) => {
         localStorage.setItem('7kaam_access_token', accessToken);
@@ -36,6 +39,8 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('7kaam_access_token', token);
         set({ accessToken: token });
       },
+
+      setHasHydrated: (v) => set({ hasHydrated: v }),
     }),
     {
       name: '7kaam-auth',
@@ -45,6 +50,9 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

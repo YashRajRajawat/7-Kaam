@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../storage/secure_storage.dart';
 import '../../screens/splash/splash_screen.dart';
 import '../../screens/onboarding/onboarding_screen.dart';
 import '../../screens/auth/login_screen.dart';
@@ -10,9 +11,20 @@ import '../../screens/pipeline/trade_test_screen.dart';
 import '../../screens/profile/work_history_screen.dart';
 import '../../screens/verify/verify_screen.dart';
 
+const _publicPaths = ['/', '/onboarding', '/login', '/register'];
+
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    redirect: (context, state) async {
+      final loc = state.matchedLocation;
+      final isPublic = _publicPaths.contains(loc) || loc.startsWith('/verify/');
+      if (isPublic) return null;
+
+      final token = await SecureStorage.instance.getJwtToken();
+      if (token == null) return '/login';
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',
@@ -49,9 +61,12 @@ class AppRouter {
         builder: (context, state) => const VideoUploadScreen(),
       ),
       GoRoute(
-        path: '/pipeline/trade-test',
+        path: '/pipeline/trade-test/:testId',
         name: 'trade-test',
-        builder: (context, state) => const TradeTestScreen(),
+        builder: (context, state) {
+          final testId = state.pathParameters['testId'] ?? '';
+          return TradeTestScreen(testId: testId);
+        },
       ),
       GoRoute(
         path: '/profile/work-history',

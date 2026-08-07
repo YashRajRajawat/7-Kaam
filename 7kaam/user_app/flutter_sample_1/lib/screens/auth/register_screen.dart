@@ -114,13 +114,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final aadhaarHash = sha256.convert(bytes).toString();
 
     final registrationData = {
-      'name': _nameController.text.trim(),
-      'phone': '+91${_phoneController.text.trim()}',
+      'fullName': _nameController.text.trim(),
+      'phoneNumber': '+91${_phoneController.text.trim()}',
       'trade': _selectedTrade,
       'city': _cityController.text.trim(),
       'locality': _localityController.text.trim().isNotEmpty ? _localityController.text.trim() : null,
       'aadhaarHash': aadhaarHash,
-      'profilePhotoUrl': _profileImage?.path,
+      // No endpoint exists yet for a worker to upload a photo file during
+      // self-registration (only the admin-created-worker path handles
+      // multipart upload) — omit rather than send a bogus local file path.
+      // The picked photo (_profileImage) can be wired up once that upload
+      // endpoint exists; profile photo can also be added later via Edit Profile.
+      'profilePhotoUrl': null,
     };
 
     final success = await ref.read(authProvider.notifier).registerWorker(registrationData);

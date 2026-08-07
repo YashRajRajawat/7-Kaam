@@ -89,7 +89,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         Container(width: 1, height: 40, color: Colors.white24),
                         _buildStatBox('${histories.length}', 'Projects'),
                         Container(width: 1, height: 40, color: Colors.white24),
-                        _buildStatBox('${cities.isEmpty ? 1 : cities.length}', 'Cities'),
+                        _buildStatBox('${cities.length}', 'Cities'),
                       ],
                     ),
                     if (trades.isNotEmpty) ...[

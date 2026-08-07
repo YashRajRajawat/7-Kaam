@@ -9,7 +9,7 @@ class ApiConstants {
   }
 
   // Auth endpoints
-  static const String registerWorker = '/workers/register';
+  static const String registerWorker = '/auth/worker/register';
   static const String loginWorker = '/auth/worker/login';
   static const String refreshToken = '/auth/refresh';
 
@@ -18,16 +18,15 @@ class ApiConstants {
 
   // Scoring Pipeline
   static String uploadVideo(String id) => '/workers/$id/upload-video';
-  static String scoreVideo(String id) => '/workers/$id/score-video';
   static String submitTest(String id) => '/workers/$id/submit-test';
   static String addWorkHistory(String id) => '/workers/$id/add-work-history';
-  static String computeScore(String id) => '/workers/$id/compute-score';
-  static String issueKaamCard(String id) => '/workers/$id/issue-kaamcard';
 
   // Trade Tests
   static const String tradeTests = '/tests';
+  static String testById(String id) => '/tests/$id';
 
   // KaamCard & Public Verification
   static String kaamCard(String workerId) => '/kaamcards/$workerId';
+  static String kaamCardHistory(String workerId) => '/workers/$workerId/kaamcard/history';
   static String verifyQr(String qrToken) => '/verify/$qrToken';
 }

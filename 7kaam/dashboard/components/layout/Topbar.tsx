@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/tests': 'Trade Competency Tests',
   '/tests/new': 'Create Trade Test',
   '/kaamcards': 'KaamCards Certification',
+  '/moderation': 'Moderation Queue',
   '/analytics': 'Analytics & Insights',
   '/settings': 'System Settings',
 };

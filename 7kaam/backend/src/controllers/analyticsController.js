@@ -3,22 +3,48 @@ const prisma = require('../utils/prisma');
 // GET /api/v1/analytics/overview
 async function overview(req, res) {
   try {
-    const [totalWorkers, certifiedToday, avgScoreData, cities, tierCounts] = await Promise.all([
+    const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const [
+      totalWorkers,
+      activeWorkers,
+      suspendedWorkers,
+      totalKaamCardsIssued,
+      certifiedToday,
+      avgScoreData,
+      cities,
+      tierCounts,
+      newRegistrationsThisWeek,
+      testsAttemptedToday,
+      certificatesIssuedToday,
+    ] = await Promise.all([
       prisma.worker.count(),
-      prisma.kaamCard.count({
-        where: { issuedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
-      }),
+      prisma.worker.count({ where: { status: 'ACTIVE' } }),
+      prisma.worker.count({ where: { status: 'SUSPENDED' } }),
+      prisma.kaamCard.count({ where: { isRevoked: false } }),
+      prisma.kaamCard.count({ where: { issuedAt: { gte: startOfToday } } }),
       prisma.worker.aggregate({ _avg: { finalScore: true }, where: { finalScore: { not: null } } }),
       prisma.worker.groupBy({ by: ['city'], _count: true }),
       prisma.worker.groupBy({ by: ['tier'], _count: true, where: { tier: { not: null } } }),
+      prisma.worker.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      prisma.testSubmission.count({ where: { submittedAt: { gte: startOfToday } } }),
+      prisma.skillCertificate.count({ where: { issuedAt: { gte: startOfToday } } }),
     ]);
 
     res.json({
       totalWorkers,
+      activeWorkers,
+      suspendedWorkers,
+      totalKaamCardsIssued,
       certifiedToday,
       averageScore: Math.round(avgScoreData._avg.finalScore || 0),
       activeCities: cities.length,
       tierBreakdown: tierCounts.map((t) => ({ tier: t.tier, count: t._count })),
+      newRegistrationsThisWeek,
+      testsAttemptedToday,
+      certificatesIssuedToday,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

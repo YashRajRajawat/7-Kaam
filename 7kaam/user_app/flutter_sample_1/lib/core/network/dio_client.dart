@@ -7,6 +7,7 @@ class DioClient {
   factory DioClient() => _instance;
 
   late final Dio dio;
+  bool _isRefreshing = false;
 
   DioClient._internal() {
     dio = Dio(
@@ -31,13 +32,48 @@ class DioClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
-          if (error.response?.statusCode == 401) {
-            // JWT token expired or invalid
-            await SecureStorage.instance.clearAll();
+          final isAuthEndpoint = error.requestOptions.path.contains('/auth/');
+          if (error.response?.statusCode == 401 && !isAuthEndpoint && !_isRefreshing) {
+            final refreshed = await _tryRefresh();
+            if (refreshed != null) {
+              final retryOptions = error.requestOptions;
+              retryOptions.headers['Authorization'] = 'Bearer $refreshed';
+              try {
+                final response = await dio.fetch(retryOptions);
+                return handler.resolve(response);
+              } catch (_) {
+                // fall through to the original error below
+              }
+            } else {
+              await SecureStorage.instance.clearAll();
+            }
           }
           return handler.next(error);
         },
       ),
     );
+  }
+
+  Future<String?> _tryRefresh() async {
+    _isRefreshing = true;
+    try {
+      final refreshToken = await SecureStorage.instance.getRefreshToken();
+      if (refreshToken == null) return null;
+
+      // Bare Dio instance — avoids re-entering this client's interceptors.
+      final response = await Dio(BaseOptions(baseUrl: ApiConstants.baseUrl)).post(
+        ApiConstants.refreshToken,
+        data: {'refreshToken': refreshToken},
+      );
+      final newAccessToken = response.data?['accessToken']?.toString();
+      if (newAccessToken == null) return null;
+
+      await SecureStorage.instance.saveTokens(jwtToken: newAccessToken);
+      return newAccessToken;
+    } catch (_) {
+      return null;
+    } finally {
+      _isRefreshing = false;
+    }
   }
 }

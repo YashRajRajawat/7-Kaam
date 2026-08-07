@@ -121,15 +121,23 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
       ref.read(workerProvider.notifier).setWorker(currentWorker);
     }
 
+    if (_recordedVideoFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No recorded video found — please record again.'), backgroundColor: AppColors.errorRed),
+      );
+      return;
+    }
+
     List<int> bytes;
-    if (_recordedVideoFile != null) {
-      try {
-        bytes = await File(_recordedVideoFile!.path).readAsBytes();
-      } catch (_) {
-        bytes = List<int>.generate(1024 * 10, (index) => index % 256);
+    try {
+      bytes = await File(_recordedVideoFile!.path).readAsBytes();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not read the recorded video file: $e'), backgroundColor: AppColors.errorRed),
+        );
       }
-    } else {
-      bytes = List<int>.generate(1024 * 10, (index) => index % 256);
+      return;
     }
 
     final fileName = 'worker_video_${DateTime.now().millisecondsSinceEpoch}.mp4';

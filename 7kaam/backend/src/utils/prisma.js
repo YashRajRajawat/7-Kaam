@@ -7,8 +7,14 @@
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qywflwdkrckyjdrsadvo.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_xJD9ZgF8dZfnGalPdIp05Q_JB_q_wJN';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  throw new Error(
+    'SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in the environment — see backend/.env.example'
+  );
+}
 
 const supabase = createClient(
   SUPABASE_URL,
@@ -36,6 +42,9 @@ const REL_TO_TABLE = {
   admin: 'Admin',
   worker: 'Worker',
   customer: 'Customer',
+  reporterCustomer: 'Customer',
+  reports: 'Report',
+  report: 'Report',
   skillCertificates: 'SkillCertificate',
   skillCertificate: 'SkillCertificate',
   certificates: 'SkillCertificate',
@@ -362,6 +371,9 @@ const db = {
   videoAssessment:  makeModel('VideoAssessment'),
   scoringLog:       makeModel('ScoringLog'),
   customer:         makeModel('Customer'),
+  report:           makeModel('Report'),
+  // DEPRECATED: booking is not part of the current product surface — kept
+  // so historical rows remain queryable, but no route calls this.
   booking:          makeModel('Booking'),
 
   $queryRaw: async (query) => {

@@ -34,7 +34,11 @@ class CertificateNotifier extends StateNotifier<CertificateState> {
   CertificateNotifier(this.ref) : super(CertificateState());
 
   Future<void> fetchCertificates() async {
-    final workerId = ref.read(authProvider).currentWorker?.id ?? 'worker-ravi-001';
+    final workerId = ref.read(authProvider).currentWorker?.id;
+    if (workerId == null) {
+      state = state.copyWith(errorMessage: 'Not logged in');
+      return;
+    }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {

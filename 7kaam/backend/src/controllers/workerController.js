@@ -98,9 +98,14 @@ async function getWorker(req, res) {
 }
 
 // PATCH /api/v1/workers/:id
+const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
+
 async function updateWorker(req, res) {
   try {
-    const allowed = ['fullName', 'city', 'locality', 'status', 'aadhaarVerified'];
+    const isAdmin = ADMIN_ROLES.includes(req.auth?.role);
+    const allowed = isAdmin
+      ? ['fullName', 'city', 'locality', 'profilePhotoUrl', 'status', 'aadhaarVerified']
+      : ['fullName', 'city', 'locality', 'profilePhotoUrl'];
     const data = {};
     allowed.forEach((k) => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
 

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "7kaam-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "7kaam/dashboard", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

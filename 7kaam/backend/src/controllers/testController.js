@@ -1,10 +1,24 @@
 const prisma = require('../utils/prisma');
 
+const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
+
+// Questions are stored with `correctAnswer` (and other grader-only fields)
+// for Groq evaluation. That's fine for admin test management, but a worker
+// legitimately calling GET /tests/:id or /tests/catalogue with their own
+// token must never see the answer before taking the test.
+function sanitizeTestForCaller(test, req) {
+  if (!test || ADMIN_ROLES.includes(req.auth?.role)) return test;
+  const questions = Array.isArray(test.questions)
+    ? test.questions.map(({ correctAnswer, ...rest }) => rest)
+    : test.questions;
+  return { ...test, questions };
+}
+
 // POST /api/v1/tests
 async function createTest(req, res) {
   try {
     const { trade, language, title, questions } = req.body;
-    let createdBy = req.admin?.id || null;
+    let createdBy = req.auth?.id || null;
     if (createdBy) {
       const adminExists = await prisma.admin.findUnique({ where: { id: createdBy } });
       if (!adminExists) createdBy = null;
@@ -46,7 +60,7 @@ async function getTest(req, res) {
       include: { admin: { select: { email: true } }, submissions: { take: 5, orderBy: { submittedAt: 'desc' } } },
     });
     if (!test) return res.status(404).json({ error: 'Test not found' });
-    res.json(test);
+    res.json(sanitizeTestForCaller(test, req));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -94,7 +108,7 @@ async function getTestCatalogue(req, res) {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (search && search.trim().isNotEmpty) {
+    if (search && search.trim().length > 0) {
       const q = search.trim().toLowerCase();
       tests = tests.filter(t => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
     }
@@ -139,7 +153,7 @@ async function getTestCatalogue(req, res) {
       };
     };
 
-    const enrichedTests = tests.map(mapTestItem);
+    const enrichedTests = tests.map(mapTestItem).map((t) => sanitizeTestForCaller(t, req));
 
     // Group tests by category
     const categoryMap = {};

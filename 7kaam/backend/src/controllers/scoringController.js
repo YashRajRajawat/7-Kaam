@@ -1,5 +1,5 @@
 const prisma = require('../utils/prisma');
-const { mockVideoScore, computeWorkHistoryScore, computeFinalScore, computeTier } = require('../services/scoringEngine');
+const { computeWorkHistoryScore, computeFinalScore, computeTier } = require('../services/scoringEngine');
 const { evaluateTestWithGroq } = require('../services/groqEvaluator');
 const { createUploadSignedUrl } = require('../services/supabaseStorage');
 
@@ -153,6 +153,33 @@ async function internalIssueKaamCard(workerId) {
   return kaamCard;
 }
 
+// Helper: clears Worker.underReview once every test in
+// recertificationTestIds has a passing submission.
+async function maybeClearRecertification(workerId, justPassedTestId) {
+  const worker = await prisma.worker.findUnique({ where: { id: workerId } });
+  if (!worker || !worker.underReview) return;
+
+  const requiredTestIds = worker.recertificationTestIds || [];
+  if (requiredTestIds.length === 0) {
+    await prisma.worker.update({ where: { id: workerId }, data: { underReview: false } });
+    return;
+  }
+
+  const submissions = await prisma.testSubmission.findMany({ where: { workerId } });
+  const passedTestIds = new Set(
+    submissions.filter((s) => s.rawScore != null && s.rawScore >= 60).map((s) => s.testId)
+  );
+  passedTestIds.add(justPassedTestId);
+
+  const allCleared = requiredTestIds.every((tid) => passedTestIds.has(tid));
+  if (allCleared) {
+    await prisma.worker.update({
+      where: { id: workerId },
+      data: { underReview: false, recertificationTestIds: [], recertificationReason: null },
+    });
+  }
+}
+
 // POST /api/v1/workers/:id/upload-video — return Supabase presigned upload URL
 async function getVideoUploadUrl(req, res) {
   try {
@@ -174,7 +201,7 @@ async function getVideoUploadUrl(req, res) {
   }
 }
 
-// POST /api/v1/workers/:id/score-video
+// POST /api/v1/workers/:id/score-video — admin manual scoring only (no CV model exists)
 async function scoreVideo(req, res) {
   try {
     const { id } = req.params;
@@ -182,7 +209,13 @@ async function scoreVideo(req, res) {
     const worker = await prisma.worker.findUnique({ where: { id } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
 
-    const score = customScore != null ? Number(customScore) : mockVideoScore();
+    if (customScore == null || Number.isNaN(Number(customScore))) {
+      return res.status(400).json({ error: 'A numeric score is required — video scoring is admin-manual only' });
+    }
+    const score = Number(customScore);
+    if (score < 0 || score > 100) {
+      return res.status(400).json({ error: 'score must be between 0 and 100' });
+    }
     const now = new Date();
 
     await prisma.worker.update({
@@ -196,7 +229,7 @@ async function scoreVideo(req, res) {
         signalType: 'VIDEO',
         inputData: { videoUrl: worker.videoUrl },
         outputScore: score,
-        notes: notes || 'Admin / AI video score assessment',
+        notes: notes || 'Admin manual video score assessment',
       },
     });
 
@@ -209,7 +242,7 @@ async function scoreVideo(req, res) {
       await internalIssueKaamCard(id);
     }
 
-    res.json({ videoScore: score, scoredAt: now, updatedScore: updated });
+    res.json({ videoScore: score, scoredAt: now, updatedScore: updatedScores });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -233,12 +266,24 @@ async function submitTest(req, res) {
       data: { workerId: id, testId, answers, status: 'EVALUATING' },
     });
 
-    const evaluation = await evaluateTestWithGroq({
-      trade: test.trade,
-      testTitle: test.title,
-      questions: test.questions,
-      answers,
-    });
+    let evaluation;
+    try {
+      evaluation = await evaluateTestWithGroq({
+        trade: test.trade,
+        testTitle: test.title,
+        questions: test.questions,
+        answers,
+      });
+    } catch (evalErr) {
+      await prisma.testSubmission.update({
+        where: { id: submission.id },
+        data: { status: 'FAILED' },
+      });
+      return res.status(502).json({
+        error: 'AI evaluation is temporarily unavailable — please try submitting again shortly.',
+        detail: evalErr.message,
+      });
+    }
 
     const rawScore = evaluation.totalScore;
 
@@ -262,7 +307,7 @@ async function submitTest(req, res) {
     let certificateRecord = null;
     if (rawScore >= 60) {
       certificateEarned = true;
-      const pdfUrl = `https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/certificates/${id}_${testId}.pdf`;
+      const pdfUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/7kaam-assets/certificates/${id}_${testId}.pdf`;
 
       const existingCert = await prisma.skillCertificate.findFirst({
         where: { workerId: id, testId },
@@ -285,6 +330,12 @@ async function submitTest(req, res) {
           },
         });
       }
+    }
+
+    // If this worker was flagged for recertification and this submission
+    // clears the last outstanding required test, lift the flag.
+    if (worker.underReview && rawScore >= (test.passingScore ?? 60)) {
+      await maybeClearRecertification(id, testId);
     }
 
     // Trigger score recomputation (rolling average)
@@ -463,4 +514,7 @@ module.exports = {
   getCertificateDetail,
   getWorkerVideoAssessments,
   getKaamCardHistory,
+  // Exported for reuse by the admin namespace (controllers/adminController.js)
+  internalComputeScore,
+  internalIssueKaamCard,
 };

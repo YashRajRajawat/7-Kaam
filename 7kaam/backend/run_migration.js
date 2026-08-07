@@ -1,9 +1,18 @@
+// SUPERSEDED by run_migration_2.js — this script depends on a Supabase
+// `exec_sql` RPC function that does not exist on this project, so it has
+// never actually applied. run_migration_2.js runs the same statements (plus
+// the newer ones) directly over Postgres instead. Kept only for history —
+// do not add new statements here, add them to run_migration_2.js.
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in the environment');
+}
+
 const supabase = createClient(
-  process.env.SUPABASE_URL || 'https://qywflwdkrckyjdrsadvo.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || 'sb_secret_xJD9ZgF8dZfnGalPdIp05Q_JB_q_wJN'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 async function runMigration() {

@@ -25,6 +25,8 @@ export default function WorkersPage() {
   const [tier, setTier] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const [suspendTarget, setSuspendTarget] = useState<Worker | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
   const limit = 10;
 
   const { data, isLoading } = useQuery<PaginatedResponse<Worker>>({
@@ -35,9 +37,18 @@ export default function WorkersPage() {
     placeholderData: prev => prev,
   });
 
-  const toggleStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      api.patch(`/workers/${id}`, { status }),
+  const suspend = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.post(`/admin/workers/${id}/suspend`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workers'] });
+      setSuspendTarget(null);
+      setSuspendReason('');
+    },
+  });
+
+  const reactivate = useMutation({
+    mutationFn: (id: string) => api.post(`/admin/workers/${id}/reactivate`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['workers'] }),
   });
 
@@ -163,9 +174,16 @@ export default function WorkersPage() {
 
                       {/* Status */}
                       <td className="px-6 py-4">
-                        <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold', statusColor(worker.status))}>
-                          ● {worker.status}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold', statusColor(worker.status))}>
+                            ● {worker.status}
+                          </span>
+                          {worker.underReview && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              Under Review
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* KaamCard Status */}
@@ -192,15 +210,16 @@ export default function WorkersPage() {
                           </button>
                           {worker.status === 'SUSPENDED' ? (
                             <button
-                              onClick={() => toggleStatus.mutate({ id: worker.id, status: 'ACTIVE' })}
-                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-emerald-100 hover:text-emerald-700 text-[#565e74] transition-all"
-                              title="Activate Worker"
+                              onClick={() => reactivate.mutate(worker.id)}
+                              disabled={reactivate.isPending}
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-emerald-100 hover:text-emerald-700 text-[#565e74] transition-all disabled:opacity-50"
+                              title="Reactivate Worker"
                             >
                               <UserCheck size={14} />
                             </button>
                           ) : (
                             <button
-                              onClick={() => toggleStatus.mutate({ id: worker.id, status: 'SUSPENDED' })}
+                              onClick={() => setSuspendTarget(worker)}
                               className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 hover:text-red-700 text-[#565e74] transition-all"
                               title="Suspend Worker"
                             >
@@ -243,6 +262,43 @@ export default function WorkersPage() {
           )}
         </div>
       </div>
+
+      {/* Suspend Confirmation Modal */}
+      {suspendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+              <UserX size={18} />
+              Suspend {suspendTarget.fullName}?
+            </h3>
+            <p className="text-xs text-[#565e74]">
+              The worker will immediately disappear from customer discovery and cannot take new tests until reactivated.
+            </p>
+            <textarea
+              value={suspendReason}
+              onChange={e => setSuspendReason(e.target.value)}
+              placeholder="Reason for suspension (required)..."
+              rows={3}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] text-xs placeholder:text-[#767586] focus:outline-none focus:border-red-500 transition-colors resize-none"
+            />
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => { setSuspendTarget(null); setSuspendReason(''); }}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => suspend.mutate({ id: suspendTarget.id, reason: suspendReason })}
+                disabled={!suspendReason || suspend.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {suspend.isPending ? 'Suspending...' : 'Confirm Suspension'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/skill_certificate_model.dart';
 import '../../providers/certificate_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
 
 class CertificatesScreen extends ConsumerStatefulWidget {
@@ -107,7 +106,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${allCerts.isEmpty ? 1 : allCerts.length} Certificates Earned',
+                                        '${allCerts.length} Certificate${allCerts.length == 1 ? '' : 's'} Earned',
                                         style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                                       ),
                                       const SizedBox(height: 2),
@@ -176,32 +175,17 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
 
                       const SizedBox(height: 18),
 
-                      if (allCerts.isEmpty && certs.isEmpty)
-                        // Sample fallback certificates for rich preview
-                        _buildCertificateGrid([
-                          SkillCertificateModel(
-                            id: 'cert-ravi-001',
-                            workerId: ref.read(authProvider).currentWorker?.id ?? 'worker-ravi-001',
-                            testId: 'test-elec-safe-001',
-                            testTitle: 'Electrical Safety Fundamentals',
-                            title: 'Electrical Safety Fundamentals',
-                            trade: 'ELECTRICIAN',
-                            category: 'Safety',
-                            difficulty: 'BEGINNER',
-                            score: 86.0,
-                            passingScore: 60,
-                            issuedAt: '2026-01-16',
-                            certificateNo: '7K-ELEC-2026-00142',
-                            pdfUrl: 'https://7kaam.in/certificates/ravi-001.pdf',
-                          ),
-                        ])
-                      else if (certs.isEmpty)
+                      if (certs.isEmpty)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                           child: Center(
-                            child: Text('No certificates found for this filter.', style: GoogleFonts.poppins(color: Colors.grey.shade600)),
+                            child: Text(
+                              allCerts.isEmpty ? 'No certificates yet — pass an assessment to earn your first one.' : 'No certificates found for this filter.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: Colors.grey.shade600),
+                            ),
                           ),
                         )
                       else

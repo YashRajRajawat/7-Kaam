@@ -9,7 +9,9 @@ import '../../providers/test_provider.dart';
 import '../../widgets/custom_button.dart';
 
 class TradeTestScreen extends ConsumerStatefulWidget {
-  const TradeTestScreen({super.key});
+  final String testId;
+
+  const TradeTestScreen({super.key, required this.testId});
 
   @override
   ConsumerState<TradeTestScreen> createState() => _TradeTestScreenState();
@@ -22,9 +24,7 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      final worker = ref.read(workerProvider).worker ?? ref.read(authProvider).currentWorker;
-      final trade = worker?.trade ?? 'ELECTRICIAN';
-      ref.read(testProvider.notifier).fetchTradeTest(trade: trade);
+      ref.read(testProvider.notifier).fetchTestById(widget.testId);
     });
   }
 
@@ -61,14 +61,13 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
     if (confirmed == true && mounted) {
       final success = await ref.read(testProvider.notifier).submitTest(worker.id);
       if (success && mounted) {
-        // Update worker test step in workerProvider
-        final result = ref.read(testProvider).result;
-        final updated = worker.copyWith(
-          testCompleted: true,
-          testScore: result?.totalScore ?? 88.0,
-          pipelineStep: worker.pipelineStep < 4 ? 4 : worker.pipelineStep,
+        // Refresh from the server so the real recomputed score/certificate show up.
+        await ref.read(workerProvider.notifier).fetchWorkerProfile(worker.id);
+      } else if (mounted) {
+        final errorMsg = ref.read(testProvider).errorMessage ?? 'Submission failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: AppColors.errorRed),
         );
-        ref.read(workerProvider.notifier).setWorker(updated);
       }
     }
   }
@@ -107,9 +106,25 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
 
     final test = testState.currentTest;
     if (test == null || test.questions.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: Text('No questions loaded')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                testState.errorMessage ?? 'This assessment has no questions loaded',
+                style: GoogleFonts.poppins(color: AppColors.grayText),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => ref.read(testProvider.notifier).fetchTestById(widget.testId),
+                child: Text('Retry', style: GoogleFonts.poppins(color: AppColors.primaryTeal, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

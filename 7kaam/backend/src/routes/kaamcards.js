@@ -1,11 +1,13 @@
 const router = require('express').Router();
-const { authenticate } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { listKaamCards, getKaamCardByWorker, revokeKaamCard } = require('../controllers/kaamCardController');
 
-router.use(authenticate);
+const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
 
-router.get('/', listKaamCards);
+router.use(requireAuth);
+
+router.get('/', requireRole(...ADMIN_ROLES), listKaamCards);
 router.get('/:workerId', getKaamCardByWorker);
-router.post('/:id/revoke', revokeKaamCard);
+router.post('/:id/revoke', requireRole(...ADMIN_ROLES), revokeKaamCard);
 
 module.exports = router;
