@@ -18,7 +18,7 @@ class QrScanScreen extends ConsumerStatefulWidget {
 
 class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
-  final TextEditingController _testTokenController = TextEditingController(text: 'KC-7K-94821');
+  final TextEditingController _testTokenController = TextEditingController();
   bool _isProcessing = false;
   KaamCardModel? _verificationResult;
 
@@ -42,37 +42,16 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     final apiService = ref.read(apiServiceProvider);
     try {
       final response = await apiService.verifyKaamCard(token);
-      final result = KaamCardModel.fromJson(response.data['data'] ?? response.data);
+      final result = KaamCardModel.fromJson(Map<String, dynamic>.from(response.data));
       setState(() {
         _verificationResult = result;
         _isProcessing = false;
       });
     } catch (e) {
-      // Mock Verification responses based on token content
-      KaamCardModel mockResult;
-      if (token.toUpperCase().contains('REVOKE')) {
-        mockResult = KaamCardModel(
-          status: 'REVOKED',
-          qrToken: token,
-          workerName: 'Rajesh Kumar',
-          trade: 'Electrician',
-          score: 45,
-          tier: 'BRONZE',
-          validUntil: '01 Jan 2025',
-          revocationReason: 'Failed safety protocol audit during customer service.',
-        );
-      } else if (token.toUpperCase().contains('EXPIRE')) {
-        mockResult = KaamCardModel(
-          status: 'EXPIRED',
-          qrToken: token,
-          workerName: 'Sanjay Sharma',
-          trade: 'Plumber',
-          score: 62,
-          tier: 'SILVER',
-          validUntil: '15 Jan 2026',
-        );
-      } else if (token.toUpperCase().contains('INVALID')) {
-        mockResult = KaamCardModel(
+      // A 404 (or any other failure) means this token isn't a real,
+      // registered KaamCard — show that honestly instead of a fake result.
+      setState(() {
+        _verificationResult = KaamCardModel(
           status: 'NOT_FOUND',
           qrToken: token,
           workerName: 'Unknown',
@@ -81,20 +60,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
           tier: 'NONE',
           validUntil: 'N/A',
         );
-      } else {
-        mockResult = KaamCardModel(
-          status: 'VERIFIED',
-          qrToken: token.isEmpty ? 'KC-7K-94821' : token,
-          workerName: 'Ramesh Kumar',
-          trade: 'Electrician',
-          score: 94,
-          tier: 'EXPERT',
-          validUntil: '31 Dec 2026',
-        );
-      }
-
-      setState(() {
-        _verificationResult = mockResult;
         _isProcessing = false;
       });
     }
@@ -208,7 +173,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     String titleText;
 
     switch (res.status) {
-      case 'VERIFIED':
+      case 'VALID':
         cardColor = Colors.green;
         icon = Icons.verified_user_rounded;
         titleText = '✓ KAAMCARD VERIFIED';
@@ -265,7 +230,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
           ),
           const SizedBox(height: 14),
 
-          if (res.status == 'VERIFIED') ...[
+          if (res.status == 'VALID') ...[
             Text(
               res.workerName,
               style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy),
@@ -303,7 +268,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
             ),
           ] else ...[
             Text(
-              'Token "$res.qrToken" not registered in 7 Kaam database.',
+              'Token "${res.qrToken}" not registered in 7 Kaam database.',
               style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
             ),
           ],

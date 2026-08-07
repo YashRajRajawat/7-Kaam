@@ -20,36 +20,22 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
   GoogleMapController? _mapController;
   final LatLng _initialCenter = const LatLng(12.9352, 77.6245); // Bangalore center
 
+  // Colour-coded by KaamCard status per spec: teal ✓ = has KaamCard, gray = not yet.
   Set<Marker> _buildMarkers(List<WorkerPublicModel> workers, String? selectedId) {
-    return workers.map((w) {
-      double hue;
-      switch (w.tier.toUpperCase()) {
-        case 'EXPERT':
-          hue = BitmapDescriptor.hueCyan;
-          break;
-        case 'GOLD':
-          hue = BitmapDescriptor.hueOrange;
-          break;
-        case 'SILVER':
-          hue = BitmapDescriptor.hueAzure;
-          break;
-        case 'BRONZE':
-        default:
-          hue = BitmapDescriptor.hueRed;
-          break;
-      }
+    return workers.where((w) => w.latitude != null && w.longitude != null).map((w) {
+      final hue = w.hasKaamCard ? BitmapDescriptor.hueCyan : BitmapDescriptor.hueViolet;
 
       return Marker(
         markerId: MarkerId(w.id),
-        position: LatLng(w.latitude, w.longitude),
+        position: LatLng(w.latitude!, w.longitude!),
         icon: BitmapDescriptor.defaultMarkerWithHue(
           w.id == selectedId ? BitmapDescriptor.hueGreen : hue,
         ),
         infoWindow: InfoWindow(
-          title: '${w.name} (${w.score}/100)',
-          snippet: '${w.trade} · ${w.tier}',
+          title: '${w.fullName} (${w.finalScore?.toInt() ?? '—'}/100)',
+          snippet: '${w.trade} · ${w.hasKaamCard ? "KaamCard ✓" : "Not yet certified"}',
           onTap: () {
-            context.push('/worker/${w.id}', extra: w);
+            context.push('/worker/${w.id}');
           },
         ),
         onTap: () {
@@ -63,6 +49,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
   Widget build(BuildContext context) {
     final discoveryState = ref.watch(discoveryProvider);
     final workers = discoveryState.filteredWorkers;
+    final mappableWorkers = workers.where((w) => w.latitude != null && w.longitude != null).toList();
     final selectedId = discoveryState.selectedWorkerId;
 
     return Stack(
@@ -70,9 +57,11 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
         // Google Map Component
         GoogleMap(
           initialCameraPosition: CameraPosition(
-            target: workers.isNotEmpty
-                ? LatLng(workers.first.latitude, workers.first.longitude)
-                : _initialCenter,
+            target: mappableWorkers.isNotEmpty
+                ? LatLng(mappableWorkers.first.latitude!, mappableWorkers.first.longitude!)
+                : (discoveryState.useGps && discoveryState.latitude != null
+                    ? LatLng(discoveryState.latitude!, discoveryState.longitude!)
+                    : _initialCenter),
             zoom: 13,
           ),
           onMapCreated: (controller) {
@@ -123,7 +112,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
-                      '${workers.length} verified workers on map',
+                      '${mappableWorkers.length} verified workers on map',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -139,9 +128,9 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: workers.length,
+                      itemCount: mappableWorkers.length,
                       itemBuilder: (context, index) {
-                        final w = workers[index];
+                        final w = mappableWorkers[index];
                         final isSelected = w.id == selectedId;
 
                         return GestureDetector(
@@ -149,7 +138,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                             ref.read(discoveryProvider.notifier).selectWorker(w.id);
                             _mapController?.animateCamera(
                               CameraUpdate.newLatLng(
-                                LatLng(w.latitude, w.longitude),
+                                LatLng(w.latitude!, w.longitude!),
                               ),
                             );
                           },
@@ -177,12 +166,19 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(24),
-                                  child: CachedNetworkImage(
-                                    imageUrl: w.photoUrl,
-                                    width: 48,
-                                    height: 48,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: w.profilePhotoUrl != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: w.profilePhotoUrl!,
+                                          width: 48,
+                                          height: 48,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          width: 48,
+                                          height: 48,
+                                          color: AppColors.borderGray,
+                                          child: const Icon(Icons.person, color: Colors.grey),
+                                        ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -191,7 +187,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        w.name,
+                                        w.fullName,
                                         style: GoogleFonts.poppins(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14,
@@ -200,7 +196,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
-                                        '${w.trade} · ★ ${w.score}',
+                                        '${w.trade.replaceAll('_', ' ')} · ★ ${w.finalScore?.toInt() ?? '—'}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           color: AppColors.primaryTeal,
@@ -208,7 +204,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      TierBadge(tier: w.tier, isSmall: true),
+                                      if (w.tier != null) TierBadge(tier: w.tier!, isSmall: true),
                                     ],
                                   ),
                                 ),

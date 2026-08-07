@@ -45,13 +45,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     final success = await ref.read(authProvider.notifier).register(
-          name: name,
-          phone: phone,
+          fullName: name,
+          phoneNumber: phone,
           city: _selectedCity,
         );
 
     if (success && mounted) {
       context.go('/home');
+    } else if (mounted) {
+      setState(() {
+        _errorMessage = ref.read(authProvider).errorMessage ?? 'Registration failed';
+      });
     }
   }
 

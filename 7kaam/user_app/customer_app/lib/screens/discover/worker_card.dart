@@ -2,39 +2,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/worker_public_model.dart';
 import '../../widgets/tier_badge.dart';
 
 class WorkerCard extends StatelessWidget {
   final WorkerPublicModel worker;
-  final VoidCallback? onCall;
 
   const WorkerCard({
     super.key,
     required this.worker,
-    this.onCall,
   });
-
-  void _callWorker(BuildContext context, String phoneNumber) async {
-    final uri = Uri.parse('tel:$phoneNumber');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Calling $phoneNumber...')),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        context.push('/worker/${worker.id}', extra: worker);
+        context.push('/worker/${worker.id}');
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -57,44 +41,30 @@ class WorkerCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar with Tier Badge Overlay
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: CachedNetworkImage(
-                        imageUrl: worker.photoUrl,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
+                // Avatar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: worker.profilePhotoUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: worker.profilePhotoUrl!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: AppColors.borderGray,
+                            child: const Icon(Icons.person, color: Colors.grey),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: AppColors.borderGray,
+                            child: const Icon(Icons.person, color: Colors.grey),
+                          ),
+                        )
+                      : Container(
+                          width: 56,
+                          height: 56,
                           color: AppColors.borderGray,
                           child: const Icon(Icons.person, color: Colors.grey),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.borderGray,
-                          child: const Icon(Icons.person, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    if (worker.aadhaarVerified)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_circle,
-                            color: AppColors.primaryTeal,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                  ],
                 ),
                 const SizedBox(width: 12),
 
@@ -108,7 +78,7 @@ class WorkerCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              worker.name,
+                              worker.fullName,
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -125,7 +95,7 @@ class WorkerCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              worker.trade,
+                              worker.trade.replaceAll('_', ' '),
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -143,15 +113,17 @@ class WorkerCard extends StatelessWidget {
                           const Icon(Icons.star_rounded, color: AppColors.gold, size: 18),
                           const SizedBox(width: 2),
                           Text(
-                            '${worker.score}/100',
+                            worker.finalScore != null ? '${worker.finalScore!.toInt()}/100' : 'Not scored yet',
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               color: AppColors.darkText,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          TierBadge(tier: worker.tier, isSmall: true),
+                          if (worker.tier != null) ...[
+                            const SizedBox(width: 6),
+                            TierBadge(tier: worker.tier!, isSmall: true),
+                          ],
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -181,7 +153,11 @@ class WorkerCard extends StatelessWidget {
                           const SizedBox(width: 2),
                           Expanded(
                             child: Text(
-                              '${worker.locality} · ${worker.distanceKm} km away',
+                              [
+                                if (worker.locality != null) worker.locality!,
+                                worker.city,
+                                if (worker.distanceKm != null) '${worker.distanceKm!.toStringAsFixed(1)} km away',
+                              ].join(' · '),
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: AppColors.grayText,
@@ -202,38 +178,23 @@ class WorkerCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.borderGray),
             const SizedBox(height: 10),
 
-            // Bottom Bar: Mini score pills + Call Worker button
+            // Bottom Bar: real list-level signals only (no phone/score-breakdown at list level)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    _buildMiniPill('🎥', '${worker.scoreBreakdown.videoScore}'),
+                    _buildMiniPill('📜', '${worker.certificatesEarned} certs'),
                     const SizedBox(width: 6),
-                    _buildMiniPill('📝', '${worker.scoreBreakdown.testScore}'),
-                    const SizedBox(width: 6),
-                    _buildMiniPill('💼', '${worker.scoreBreakdown.workHistoryScore}'),
+                    _buildMiniPill('👤', worker.credibilityLevel),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: onCall ?? () => _callWorker(context, worker.phone),
-                  icon: const Icon(Icons.phone, size: 14, color: Colors.white),
-                  label: Text(
-                    'Call Worker',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryTeal,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: const Size(0, 32),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                Text(
+                  'View Profile →',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryTeal,
                   ),
                 ),
               ],
@@ -244,7 +205,7 @@ class WorkerCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniPill(String emoji, String scoreText) {
+  Widget _buildMiniPill(String emoji, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
@@ -257,7 +218,7 @@ class WorkerCard extends StatelessWidget {
           Text(emoji, style: const TextStyle(fontSize: 11)),
           const SizedBox(width: 3),
           Text(
-            scoreText,
+            text,
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w600,

@@ -14,8 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController(text: '9876543210');
-  final TextEditingController _otpController = TextEditingController(text: '1234');
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
   String? _errorMessage;
 
@@ -33,13 +33,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _handleLogin() async {
-    if (_otpController.text.trim() != '1234') {
-      setState(() {
-        _errorMessage = 'Invalid OTP. Use fixed OTP: 1234';
-      });
-      return;
-    }
-
     final success = await ref.read(authProvider.notifier).login(
           _phoneController.text.trim(),
           _otpController.text.trim(),
@@ -47,6 +40,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (success && mounted) {
       context.go('/home');
+    } else if (mounted) {
+      setState(() {
+        _errorMessage = ref.read(authProvider).errorMessage ?? 'Login failed';
+      });
     }
   }
 

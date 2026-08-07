@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_service.dart';
 import '../core/network/dio_client.dart';
@@ -25,9 +26,17 @@ class AuthState {
     return AuthState(
       status: status ?? this.status,
       customer: customer ?? this.customer,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
     );
   }
+}
+
+String _extractError(Object e, String fallback) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map && data['error'] != null) return data['error'].toString();
+  }
+  return fallback;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -51,127 +60,100 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null && id != null && name != null) {
         final customer = CustomerModel(
           id: id,
-          name: name,
-          phone: phone ?? '',
-          city: city ?? 'Bangalore',
+          fullName: name,
+          phoneNumber: phone ?? '',
+          city: city ?? '',
         );
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          customer: customer,
-        );
+        state = state.copyWith(status: AuthStatus.authenticated, customer: customer);
       } else {
         state = state.copyWith(status: AuthStatus.unauthenticated);
       }
-    } catch (e) {
+    } catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
   }
 
-  Future<bool> login(String phone, String otp) async {
+  Future<bool> login(String phoneNumber, String otp) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     try {
-      final response = await _apiService.loginCustomer(phone: phone, otp: otp);
-      final data = response.data;
-      final token = data['token'] ?? data['accessToken'] ?? 'mock_jwt_token';
-      final customerJson = data['customer'] ?? data['user'] ?? {
-        'id': 'cust_101',
-        'name': 'Rahul Sharma',
-        'phone': phone,
-        'city': 'Bangalore',
-      };
+      final response = await _apiService.loginCustomer(phoneNumber: phoneNumber, otp: otp);
+      final data = Map<String, dynamic>.from(response.data);
+      final customer = CustomerModel.fromJson(Map<String, dynamic>.from(data['customer']));
 
-      final customer = CustomerModel.fromJson(customerJson);
-      await _storage.saveToken(token);
+      await _storage.saveToken(data['accessToken'].toString());
+      if (data['refreshToken'] != null) {
+        await _storage.saveRefreshToken(data['refreshToken'].toString());
+      }
       await _storage.saveCustomerData(
         id: customer.id,
-        name: customer.name,
-        phone: customer.phone,
+        name: customer.fullName,
+        phone: customer.phoneNumber,
         city: customer.city,
       );
 
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      );
+      state = state.copyWith(status: AuthStatus.authenticated, customer: customer);
       return true;
     } catch (e) {
-      // Demo Fallback for local testing
-      final demoCustomer = CustomerModel(
-        id: 'cust_101',
-        name: 'Rahul Sharma',
-        phone: phone,
-        city: 'Bangalore',
-      );
-      await _storage.saveToken('demo_jwt_token_123');
-      await _storage.saveCustomerData(
-        id: demoCustomer.id,
-        name: demoCustomer.name,
-        phone: demoCustomer.phone,
-        city: demoCustomer.city,
-      );
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: demoCustomer,
-      );
-      return true;
+      state = state.copyWith(status: AuthStatus.error, errorMessage: _extractError(e, 'Login failed: $e'));
+      return false;
     }
   }
 
   Future<bool> register({
-    required String name,
-    required String phone,
+    required String fullName,
+    required String phoneNumber,
     required String city,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     try {
       final response = await _apiService.registerCustomer(
-        name: name,
-        phone: phone,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
         city: city,
       );
-      final data = response.data;
-      final token = data['token'] ?? 'mock_jwt_token_reg';
-      final customerJson = data['customer'] ?? {
-        'id': 'cust_${DateTime.now().millisecondsSinceEpoch}',
-        'name': name,
-        'phone': phone,
-        'city': city,
-      };
+      final data = Map<String, dynamic>.from(response.data);
+      final customer = CustomerModel.fromJson(Map<String, dynamic>.from(data['customer']));
 
-      final customer = CustomerModel.fromJson(customerJson);
-      await _storage.saveToken(token);
+      await _storage.saveToken(data['accessToken'].toString());
+      if (data['refreshToken'] != null) {
+        await _storage.saveRefreshToken(data['refreshToken'].toString());
+      }
       await _storage.saveCustomerData(
         id: customer.id,
-        name: customer.name,
-        phone: customer.phone,
+        name: customer.fullName,
+        phone: customer.phoneNumber,
         city: customer.city,
       );
 
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: customer,
-      );
+      state = state.copyWith(status: AuthStatus.authenticated, customer: customer);
       return true;
     } catch (e) {
-      // Demo Fallback
-      final demoCustomer = CustomerModel(
-        id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-        name: name,
-        phone: phone,
-        city: city,
-      );
-      await _storage.saveToken('demo_jwt_token_reg');
+      state = state.copyWith(status: AuthStatus.error, errorMessage: _extractError(e, 'Registration failed: $e'));
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({String? fullName, String? city}) async {
+    if (state.customer == null) return false;
+    try {
+      final data = <String, dynamic>{};
+      if (fullName != null && fullName.isNotEmpty) data['fullName'] = fullName;
+      if (city != null && city.isNotEmpty) data['city'] = city;
+      if (data.isEmpty) return false;
+
+      final response = await _apiService.updateCustomerProfile(state.customer!.id, data);
+      final updated = CustomerModel.fromJson(Map<String, dynamic>.from(response.data));
       await _storage.saveCustomerData(
-        id: demoCustomer.id,
-        name: demoCustomer.name,
-        phone: demoCustomer.phone,
-        city: demoCustomer.city,
+        id: updated.id,
+        name: updated.fullName,
+        phone: updated.phoneNumber,
+        city: updated.city,
       );
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        customer: demoCustomer,
-      );
+      state = state.copyWith(customer: updated);
       return true;
+    } catch (e) {
+      state = state.copyWith(errorMessage: _extractError(e, 'Update failed: $e'));
+      return false;
     }
   }
 

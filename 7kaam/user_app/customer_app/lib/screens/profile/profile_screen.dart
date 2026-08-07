@@ -3,8 +3,58 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/customer_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
+
+void _showEditProfileDialog(BuildContext context, WidgetRef ref, CustomerModel customer) {
+  final nameController = TextEditingController(text: customer.fullName);
+  final cityController = TextEditingController(text: customer.city);
+
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text('Edit Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: 'Full Name'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: cityController,
+            decoration: const InputDecoration(labelText: 'City'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.grayText)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.of(ctx).pop();
+            final success = await ref.read(authProvider.notifier).updateProfile(
+                  fullName: nameController.text.trim(),
+                  city: cityController.text.trim(),
+                );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(success ? 'Profile updated' : 'Could not update profile')),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
+          child: Text('Save', style: GoogleFonts.poppins(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -59,8 +109,8 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       child: Center(
                         child: Text(
-                          customer != null && customer.name.isNotEmpty
-                              ? customer.name[0].toUpperCase()
+                          customer != null && customer.fullName.isNotEmpty
+                              ? customer.fullName[0].toUpperCase()
                               : 'C',
                           style: GoogleFonts.poppins(
                             fontSize: 26,
@@ -76,7 +126,7 @@ class ProfileScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            customer?.name ?? 'Rahul Sharma',
+                            customer?.fullName ?? 'Guest',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -85,9 +135,9 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            customer?.phone.isNotEmpty == true
-                                ? '+91 ${customer!.phone}'
-                                : '+91 98765 43210',
+                            customer?.phoneNumber.isNotEmpty == true
+                                ? '+91 ${customer!.phoneNumber}'
+                                : 'Not logged in',
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               color: AppColors.grayText,
@@ -99,7 +149,7 @@ class ProfileScreen extends ConsumerWidget {
                               const Icon(Icons.location_on, size: 14, color: AppColors.primaryTeal),
                               const SizedBox(width: 4),
                               Text(
-                                customer?.city ?? 'Bangalore',
+                                customer?.city ?? 'Not set',
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -139,24 +189,12 @@ class ProfileScreen extends ConsumerWidget {
                         context.push('/qr_scan');
                       },
                     ),
+                    const Divider(height: 1, indent: 50, color: AppColors.borderGray),
                     _buildListTile(
                       icon: Icons.edit_note_rounded,
                       title: 'Edit Profile',
-                      subtitle: 'Update name, phone or default city',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Profile edit saved')),
-                        );
-                      },
-                    ),
-                    const Divider(height: 1, indent: 50, color: AppColors.borderGray),
-                    _buildListTile(
-                      icon: Icons.qr_code_scanner_rounded,
-                      title: 'Scan KaamCard QR',
-                      subtitle: 'Verify worker credentials instantly',
-                      onTap: () {
-                        context.push('/qr_scan');
-                      },
+                      subtitle: 'Update name or city',
+                      onTap: customer == null ? null : () => _showEditProfileDialog(context, ref, customer),
                     ),
                     const Divider(height: 1, indent: 50, color: AppColors.borderGray),
                     _buildListTile(
@@ -193,7 +231,7 @@ class ProfileScreen extends ConsumerWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
   }) {
     return ListTile(
       onTap: onTap,

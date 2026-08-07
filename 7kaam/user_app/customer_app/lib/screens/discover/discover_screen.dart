@@ -28,11 +28,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   ];
 
   final List<String> _tiers = ['Any', 'SILVER+', 'GOLD+', 'EXPERT'];
-  final List<String> _sortOptions = ['Best Score', 'Nearest', 'Most Reviews'];
+  final List<String> _sortOptions = ['Best Score', 'Nearest', 'Newest'];
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(discoveryStateNotifierProvider);
+    final state = ref.watch(discoveryProvider);
     final notifier = ref.read(discoveryProvider.notifier);
     final filteredWorkers = state.filteredWorkers;
 
@@ -56,36 +56,66 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
               child: Column(
                 children: [
-                  // Row 1: City & View Toggle
+                  // Row 1: Location (GPS chip or city dropdown) & View Toggle
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on, color: AppColors.primaryTeal, size: 22),
-                          const SizedBox(width: 4),
-                          DropdownButton<String>(
-                            value: state.selectedCity,
-                            underline: const SizedBox(),
-                            icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.navy),
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.navy,
-                            ),
-                            items: ['Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai']
-                                .map((city) => DropdownMenuItem(
-                                      value: city,
-                                      child: Text(city),
-                                    ))
-                                .toList(),
-                            onChanged: (city) {
-                              if (city != null) {
-                                notifier.setCity(city);
-                              }
-                            },
-                          ),
-                        ],
+                      Expanded(
+                        child: state.useGps
+                            ? InkWell(
+                                onTap: notifier.useCitySelection,
+                                borderRadius: BorderRadius.circular(20),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.my_location_rounded, color: AppColors.primaryTeal, size: 20),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Workers near you',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.navy,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.edit_location_alt_outlined, size: 16, color: AppColors.grayText),
+                                  ],
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on, color: AppColors.primaryTeal, size: 22),
+                                  const SizedBox(width: 4),
+                                  DropdownButton<String>(
+                                    value: state.selectedCity,
+                                    underline: const SizedBox(),
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.navy),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.navy,
+                                    ),
+                                    items: ['Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai']
+                                        .map((city) => DropdownMenuItem(
+                                              value: city,
+                                              child: Text(city),
+                                            ))
+                                        .toList(),
+                                    onChanged: (city) {
+                                      if (city != null) {
+                                        notifier.setCity(city);
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: notifier.useMyLocation,
+                                    child: const Icon(Icons.my_location_outlined, size: 18, color: AppColors.grayText),
+                                  ),
+                                ],
+                              ),
                       ),
 
                       // List / Map Toggle Button (Airbnb style)
@@ -199,9 +229,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Secondary Filter Row: Tier & Sort
+                  // Secondary Filter Row: KaamCard Only, Tier & Sort
                   Row(
                     children: [
+                      FilterChip(
+                        label: Text('KaamCard Only'),
+                        selected: state.hasKaamCardOnly,
+                        onSelected: (_) => notifier.toggleHasKaamCardOnly(),
+                        selectedColor: AppColors.primaryTeal.withOpacity(0.15),
+                        checkmarkColor: AppColors.primaryTeal,
+                        labelStyle: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: state.hasKaamCardOnly ? AppColors.primaryTeal : AppColors.darkText,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'Tier: ',
                         style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grayText),
@@ -301,7 +345,3 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 }
-
-final discoveryStateNotifierProvider = StateNotifierProvider<DiscoveryNotifier, DiscoveryState>((ref) {
-  return ref.watch(discoveryProvider.notifier);
-});

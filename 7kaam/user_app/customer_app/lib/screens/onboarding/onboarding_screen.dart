@@ -18,25 +18,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> _slides = [
     {
-      'title': 'Find Verified Workers',
-      'subtitle': 'Every worker on 7 Kaam is AI-certified with a score out of 100',
+      'title': 'Find Skilled Workers Near You',
+      'subtitle': 'Browse AI-certified electricians, plumbers & more in your area',
       'icon': '🔍',
     },
     {
-      'title': 'See Their Score Before You Hire',
-      'subtitle': 'View skill scores, sub-skill breakdown, and employer ratings',
+      'title': 'See Their Skill Score',
+      'subtitle': 'Every worker has a verified score based on AI assessments and real work history',
       'icon': '⭐',
     },
     {
-      'title': 'Book with Confidence',
-      'subtitle': "Scan their QR code to instantly verify their certificate",
+      'title': 'Verified by 7 Kaam',
+      'subtitle': 'KaamCard holders are manually verified by our team. Contact them directly and hire with confidence.',
       'icon': '🛡️',
     },
   ];
 
-  void _onFinishOnboarding() async {
+  Future<void> _markOnboardingDone() async {
     final storage = SecureStorageService();
     await storage.setOnboardingComplete();
+  }
+
+  void _browseWorkers() async {
+    await _markOnboardingDone();
+    if (mounted) {
+      context.go('/home');
+    }
+  }
+
+  void _signIn() async {
+    await _markOnboardingDone();
     if (mounted) {
       context.go('/login');
     }
@@ -66,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   if (_currentPage < _slides.length - 1)
                     TextButton(
-                      onPressed: _onFinishOnboarding,
+                      onPressed: _browseWorkers,
                       child: Text(
                         'Skip',
                         style: GoogleFonts.poppins(
@@ -164,22 +175,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Button
-                  CustomButton(
-                    text: _currentPage == _slides.length - 1
-                        ? 'Get Started'
-                        : 'Continue',
-                    onPressed: () {
-                      if (_currentPage < _slides.length - 1) {
+                  if (_currentPage < _slides.length - 1)
+                    CustomButton(
+                      text: 'Continue',
+                      onPressed: () {
                         _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                         );
-                      } else {
-                        _onFinishOnboarding();
-                      }
-                    },
-                  ),
+                      },
+                    )
+                  else ...[
+                    CustomButton(
+                      text: 'Browse Workers',
+                      onPressed: _browseWorkers,
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _signIn,
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.primaryTeal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

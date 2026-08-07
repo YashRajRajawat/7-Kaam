@@ -1,165 +1,162 @@
-class EmployerHistory {
-  final String employerName;
-  final String role;
-  final double rating;
-  final bool isVerified;
+class CertificateSummary {
+  final String title;
+  final String category;
+  final String difficulty;
+  final double score;
+  final String issuedAt;
 
-  EmployerHistory({
-    required this.employerName,
-    required this.role,
-    required this.rating,
-    this.isVerified = true,
+  CertificateSummary({
+    required this.title,
+    required this.category,
+    required this.difficulty,
+    required this.score,
+    required this.issuedAt,
   });
 
-  factory EmployerHistory.fromJson(Map<String, dynamic> json) {
-    return EmployerHistory(
-      employerName: json['employerName'] ?? json['employer'] ?? 'Employer',
-      role: json['role'] ?? 'Technician',
-      rating: (json['rating'] ?? 5.0).toDouble(),
-      isVerified: json['isVerified'] ?? json['verified'] ?? true,
+  factory CertificateSummary.fromJson(Map<String, dynamic> json) {
+    return CertificateSummary(
+      title: json['title']?.toString() ?? 'Skill Certificate',
+      category: json['category']?.toString() ?? 'General',
+      difficulty: json['difficulty']?.toString() ?? 'BEGINNER',
+      score: (json['score'] ?? 0).toDouble(),
+      issuedAt: json['issuedAt']?.toString() ?? '',
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'employerName': employerName,
-      'role': role,
-      'rating': rating,
-      'isVerified': isVerified,
-    };
   }
 }
 
-class ScoreBreakdown {
-  final int videoScore;
-  final int testScore;
-  final int workHistoryScore;
+class WorkHistorySummary {
+  final String clientName;
+  final String projectTitle;
+  final int durationMonths;
+  final String projectScale;
 
-  ScoreBreakdown({
-    required this.videoScore,
-    required this.testScore,
-    required this.workHistoryScore,
+  WorkHistorySummary({
+    required this.clientName,
+    required this.projectTitle,
+    required this.durationMonths,
+    required this.projectScale,
   });
 
-  factory ScoreBreakdown.fromJson(Map<String, dynamic> json) {
-    return ScoreBreakdown(
-      videoScore: (json['videoScore'] ?? json['video'] ?? 80).toInt(),
-      testScore: (json['testScore'] ?? json['test'] ?? 85).toInt(),
-      workHistoryScore: (json['workHistoryScore'] ?? json['workHistory'] ?? 90).toInt(),
+  factory WorkHistorySummary.fromJson(Map<String, dynamic> json) {
+    return WorkHistorySummary(
+      clientName: json['clientName']?.toString() ?? 'Client',
+      projectTitle: json['projectTitle']?.toString() ?? 'Project',
+      durationMonths: json['durationMonths'] is int ? json['durationMonths'] : int.tryParse(json['durationMonths']?.toString() ?? '') ?? 0,
+      projectScale: json['projectScale']?.toString() ?? 'SMALL',
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'videoScore': videoScore,
-      'testScore': testScore,
-      'workHistoryScore': workHistoryScore,
-    };
   }
 }
 
+/// Backs both the discovery-list item (GET /public/workers) and the
+/// profile-detail response (GET /public/workers/:id) — the two payloads are
+/// genuinely different shapes, so most fields below are nullable depending
+/// on which endpoint produced this instance rather than defaulted to fake
+/// placeholder values.
 class WorkerPublicModel {
   final String id;
-  final String name;
-  final String phone;
+  final String fullName;
   final String trade;
   final String city;
-  final String locality;
-  final String photoUrl;
-  final int score;
-  final String tier;
-  final ScoreBreakdown scoreBreakdown;
+  final String? locality;
+  final String? profilePhotoUrl;
+  final double? finalScore;
+  final String? tier;
+  final int certificatesEarned;
+  final String credibilityLevel;
   final bool hasKaamCard;
-  final String kaamCardUrl;
-  final String qrToken;
-  final double distanceKm;
-  final double latitude;
-  final double longitude;
-  final String validUntil;
-  final String memberSince;
+  final String? kaamCardTier;
+  final double? distanceKm;
+  final String status;
+  final bool underReview;
+
+  // Detail-only fields
+  final double? videoScore;
+  final double? testScore;
+  final double? workHistoryScore;
+  final int? totalTestsTaken;
+  final int? totalVideosTaken;
+  final String? kaamCardIssuedAt;
+  final String? kaamCardExpiresAt;
   final bool aadhaarVerified;
-  final List<EmployerHistory> workHistories;
+  final List<CertificateSummary> certificates;
+  final List<WorkHistorySummary> workHistory;
+
+  // Only present when the caller is authenticated as a customer.
+  final String? phoneNumber;
+
+  // Map markers only — absent unless a lat/lng discovery search was used.
+  final double? latitude;
+  final double? longitude;
 
   WorkerPublicModel({
     required this.id,
-    required this.name,
-    this.phone = '9876543210',
+    required this.fullName,
     required this.trade,
     required this.city,
-    required this.locality,
-    required this.photoUrl,
-    required this.score,
-    required this.tier,
-    required this.scoreBreakdown,
+    this.locality,
+    this.profilePhotoUrl,
+    this.finalScore,
+    this.tier,
+    this.certificatesEarned = 0,
+    this.credibilityLevel = 'EMERGING',
     this.hasKaamCard = false,
-    required this.kaamCardUrl,
-    required this.qrToken,
-    required this.distanceKm,
-    required this.latitude,
-    required this.longitude,
-    required this.validUntil,
-    required this.memberSince,
-    this.aadhaarVerified = true,
-    required this.workHistories,
+    this.kaamCardTier,
+    this.distanceKm,
+    this.status = 'ACTIVE',
+    this.underReview = false,
+    this.videoScore,
+    this.testScore,
+    this.workHistoryScore,
+    this.totalTestsTaken,
+    this.totalVideosTaken,
+    this.kaamCardIssuedAt,
+    this.kaamCardExpiresAt,
+    this.aadhaarVerified = false,
+    this.certificates = const [],
+    this.workHistory = const [],
+    this.phoneNumber,
+    this.latitude,
+    this.longitude,
   });
 
   factory WorkerPublicModel.fromJson(Map<String, dynamic> json) {
-    var rawHistories = json['workHistories'] as List? ?? [];
-    List<EmployerHistory> histories = rawHistories
-        .map((h) => EmployerHistory.fromJson(h as Map<String, dynamic>))
-        .toList();
-
-    final qrTok = json['qrToken'] ?? '';
-    final hasCard = json['hasKaamCard'] ?? (qrTok.toString().isNotEmpty);
+    final kaamCard = json['kaamCard'] as Map<String, dynamic>?;
 
     return WorkerPublicModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      name: json['name'] ?? json['fullName'] ?? 'Worker Name',
-      phone: json['phone'] ?? json['phoneNumber'] ?? '9876543210',
-      trade: json['trade'] ?? 'Electrician',
-      city: json['city'] ?? 'Bangalore',
-      locality: json['locality'] ?? 'Koramangala',
-      photoUrl: json['photoUrl'] ?? json['photo'] ?? 'https://i.pravatar.cc/150?img=12',
-      score: (json['score'] ?? json['finalScore'] ?? 85).toInt(),
-      tier: json['tier'] ?? 'EXPERT',
-      scoreBreakdown: ScoreBreakdown.fromJson(
-        json['scoreBreakdown'] ?? json['breakdown'] ?? {},
-      ),
-      hasKaamCard: hasCard,
-      kaamCardUrl: json['kaamCardUrl'] ?? '',
-      qrToken: qrTok,
-      distanceKm: (json['distanceKm'] ?? json['distance'] ?? 2.4).toDouble(),
-      latitude: (json['latitude'] ?? json['lat'] ?? 12.9352).toDouble(),
-      longitude: (json['longitude'] ?? json['lng'] ?? 77.6245).toDouble(),
-      validUntil: json['validUntil'] ?? 'Dec 2026',
-      memberSince: json['memberSince'] ?? 'Jan 2025',
-      aadhaarVerified: json['aadhaarVerified'] ?? true,
-      workHistories: histories,
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? 'Worker',
+      trade: json['trade']?.toString() ?? 'ELECTRICIAN',
+      city: json['city']?.toString() ?? '',
+      locality: json['locality']?.toString(),
+      profilePhotoUrl: json['profilePhotoUrl']?.toString(),
+      finalScore: json['finalScore'] != null ? (json['finalScore'] as num).toDouble() : null,
+      tier: json['tier']?.toString(),
+      certificatesEarned: json['certificatesEarned'] is int ? json['certificatesEarned'] : (json['certificates'] as List?)?.length ?? 0,
+      credibilityLevel: json['credibilityLevel']?.toString() ?? 'EMERGING',
+      hasKaamCard: json['hasKaamCard'] == true || kaamCard != null,
+      kaamCardTier: json['kaamCardTier']?.toString() ?? kaamCard?['tier']?.toString(),
+      distanceKm: json['distanceKm'] != null ? (json['distanceKm'] as num).toDouble() : null,
+      status: json['status']?.toString() ?? 'ACTIVE',
+      underReview: json['underReview'] == true,
+      videoScore: json['videoScore'] != null ? (json['videoScore'] as num).toDouble() : null,
+      testScore: json['testScore'] != null ? (json['testScore'] as num).toDouble() : null,
+      workHistoryScore: json['workHistoryScore'] != null ? (json['workHistoryScore'] as num).toDouble() : null,
+      totalTestsTaken: json['totalTestsTaken'] as int?,
+      totalVideosTaken: json['totalVideosTaken'] as int?,
+      kaamCardIssuedAt: kaamCard?['issuedAt']?.toString(),
+      kaamCardExpiresAt: kaamCard?['expiresAt']?.toString(),
+      aadhaarVerified: json['aadhaarVerified'] == true,
+      certificates: (json['certificates'] as List<dynamic>?)
+              ?.map((c) => CertificateSummary.fromJson(Map<String, dynamic>.from(c)))
+              .toList() ??
+          [],
+      workHistory: (json['workHistory'] as List<dynamic>?)
+              ?.map((h) => WorkHistorySummary.fromJson(Map<String, dynamic>.from(h)))
+              .toList() ??
+          [],
+      phoneNumber: json['phoneNumber']?.toString(),
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'phone': phone,
-      'trade': trade,
-      'city': city,
-      'locality': locality,
-      'photoUrl': photoUrl,
-      'score': score,
-      'tier': tier,
-      'scoreBreakdown': scoreBreakdown.toJson(),
-      'hasKaamCard': hasKaamCard,
-      'kaamCardUrl': kaamCardUrl,
-      'qrToken': qrToken,
-      'distanceKm': distanceKm,
-      'latitude': latitude,
-      'longitude': longitude,
-      'validUntil': validUntil,
-      'memberSince': memberSince,
-      'aadhaarVerified': aadhaarVerified,
-      'workHistories': workHistories.map((h) => h.toJson()).toList(),
-    };
   }
 }

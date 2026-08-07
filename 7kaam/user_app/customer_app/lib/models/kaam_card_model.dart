@@ -1,5 +1,6 @@
+/// GET /api/v1/verify/:qrToken response — used only by the QR scanner flow.
 class KaamCardModel {
-  final String status; // VERIFIED, REVOKED, EXPIRED, NOT_FOUND
+  final String status; // VALID, REVOKED, EXPIRED, NOT_FOUND
   final String qrToken;
   final String workerName;
   final String trade;
@@ -22,30 +23,19 @@ class KaamCardModel {
   });
 
   factory KaamCardModel.fromJson(Map<String, dynamic> json) {
-    return KaamCardModel(
-      status: (json['status'] ?? json['verificationStatus'] ?? 'VERIFIED').toString().toUpperCase(),
-      qrToken: json['qrToken'] ?? json['token'] ?? '',
-      workerName: json['workerName'] ?? json['name'] ?? 'Worker',
-      trade: json['trade'] ?? 'Electrician',
-      score: (json['score'] ?? json['finalScore'] ?? 85).toInt(),
-      tier: json['tier'] ?? 'EXPERT',
-      validUntil: json['validUntil'] ?? 'Dec 2026',
-      revocationReason: json['revocationReason'] ?? json['reason'],
-      kaamCardUrl: json['kaamCardUrl'] ?? json['pdfUrl'],
-    );
-  }
+    final worker = json['worker'] as Map<String, dynamic>?;
+    final scoreBreakdown = json['scoreBreakdown'] as Map<String, dynamic>?;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'status': status,
-      'qrToken': qrToken,
-      'workerName': workerName,
-      'trade': trade,
-      'score': score,
-      'tier': tier,
-      'validUntil': validUntil,
-      'revocationReason': revocationReason,
-      'kaamCardUrl': kaamCardUrl,
-    };
+    return KaamCardModel(
+      status: (json['verificationStatus'] ?? json['status'] ?? 'VALID').toString().toUpperCase(),
+      qrToken: json['qrToken']?.toString() ?? '',
+      workerName: worker?['fullName']?.toString() ?? 'Worker',
+      trade: worker?['trade']?.toString() ?? 'ELECTRICIAN',
+      score: ((scoreBreakdown?['finalScore'] ?? json['score'] ?? 0) as num).toInt(),
+      tier: scoreBreakdown?['tier']?.toString() ?? json['tier']?.toString() ?? 'BRONZE',
+      validUntil: json['expiresAt']?.toString() ?? json['validUntil']?.toString() ?? '',
+      revocationReason: json['revokedReason']?.toString() ?? json['revocationReason']?.toString(),
+      kaamCardUrl: json['pdfUrl']?.toString() ?? json['kaamCardUrl']?.toString(),
+    );
   }
 }

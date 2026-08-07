@@ -4,19 +4,28 @@ class SecureStorageService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   static const String _keyToken = 'auth_token';
+  static const String _keyRefreshToken = 'refresh_token';
   static const String _keyCustomerId = 'customer_id';
   static const String _keyCustomerName = 'customer_name';
   static const String _keyCustomerPhone = 'customer_phone';
   static const String _keyCustomerCity = 'customer_city';
   static const String _keyOnboardingDone = 'onboarding_done';
 
-  // Token
+  // Tokens
   Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);
   }
 
   Future<String?> getToken() async {
     return await _storage.read(key: _keyToken);
+  }
+
+  Future<void> saveRefreshToken(String token) async {
+    await _storage.write(key: _keyRefreshToken, value: token);
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _keyRefreshToken);
   }
 
   // Customer Data

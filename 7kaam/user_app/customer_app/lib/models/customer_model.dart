@@ -1,30 +1,30 @@
 class CustomerModel {
   final String id;
-  final String name;
-  final String phone;
+  final String fullName;
+  final String phoneNumber;
   final String city;
 
   CustomerModel({
     required this.id,
-    required this.name,
-    required this.phone,
+    required this.fullName,
+    required this.phoneNumber,
     required this.city,
   });
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
     return CustomerModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      name: json['name'] ?? '',
-      phone: json['phone'] ?? '',
-      city: json['city'] ?? '',
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'phone': phone,
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
       'city': city,
     };
   }

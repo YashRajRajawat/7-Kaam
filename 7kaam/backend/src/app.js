@@ -12,6 +12,7 @@ const analyticsRoutes = require('./routes/analytics');
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const reportRoutes = require('./routes/reports');
+const customerRoutes = require('./routes/customers');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/customers', customerRoutes);
 // Mounted last and bare (no sub-path) since its routes mix /workers/:id/...
 // and /certificates/:id prefixes — every other, more specific router above
 // must get first shot at matching, otherwise this router's blanket

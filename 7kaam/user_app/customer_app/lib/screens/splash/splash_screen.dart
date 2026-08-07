@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/storage/secure_storage.dart';
-import '../../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -28,14 +27,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     final storage = SecureStorageService();
     final onboardingDone = await storage.isOnboardingComplete();
-    final authState = ref.read(authProvider);
 
-    if (authState.status == AuthStatus.authenticated) {
-      context.go('/home');
-    } else if (!onboardingDone) {
+    if (!onboardingDone) {
       context.go('/onboarding');
     } else {
-      context.go('/login');
+      // Browsing never requires login (see spec) — authenticated or not,
+      // a returning user always lands on Discover. Login is only prompted
+      // when an action actually needs it (viewing a phone number, reporting).
+      context.go('/home');
     }
   }
 

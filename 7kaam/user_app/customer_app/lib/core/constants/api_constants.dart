@@ -2,16 +2,18 @@ class ApiConstants {
   static const String baseUrl = 'http://localhost:8000/api/v1';
 
   // Auth Endpoints
-  static const String customerRegister = '/mobile/customers/register';
+  static const String customerRegister = '/auth/customer/register';
   static const String customerLogin = '/auth/customer/login';
+  static const String refreshToken = '/auth/refresh';
 
   // Worker & Discovery Endpoints
-  static const String nearbyWorkers = '/mobile/workers/nearby';
-  static String workerPublic(String id) => '/mobile/workers/$id/public';
+  static const String publicWorkers = '/public/workers';
+  static String publicWorkerDetail(String id) => '/public/workers/$id';
   static String verifyQrToken(String token) => '/verify/$token';
 
-  // Booking Endpoints
-  static const String bookings = '/mobile/bookings';
-  static String bookingDetail(String id) => '/mobile/bookings/$id';
-  static String customerBookings(String customerId) => '/mobile/customers/$customerId/bookings';
+  // Customer profile
+  static String customerDetail(String id) => '/customers/$id';
+
+  // Moderation
+  static const String reports = '/reports';
 }
