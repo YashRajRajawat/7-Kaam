@@ -178,10 +178,11 @@ async function getVideoUploadUrl(req, res) {
 async function scoreVideo(req, res) {
   try {
     const { id } = req.params;
+    const { score: customScore, notes } = req.body || {};
     const worker = await prisma.worker.findUnique({ where: { id } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
 
-    const score = mockVideoScore();
+    const score = customScore != null ? Number(customScore) : mockVideoScore();
     const now = new Date();
 
     await prisma.worker.update({
@@ -195,12 +196,12 @@ async function scoreVideo(req, res) {
         signalType: 'VIDEO',
         inputData: { videoUrl: worker.videoUrl },
         outputScore: score,
-        notes: 'CV model video score assessment',
+        notes: notes || 'Admin / AI video score assessment',
       },
     });
 
     // Recompute score (rolling average) and update KaamCard version if present
-    const updated = await internalComputeScore(id);
+    const updatedScores = await internalComputeScore(id);
 
     // If first video + test passed, auto-issue KaamCard
     const existingKaamCard = await prisma.kaamCard.findFirst({ where: { workerId: id } });

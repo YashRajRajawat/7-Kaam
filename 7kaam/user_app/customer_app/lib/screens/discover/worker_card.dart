@@ -2,19 +2,33 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/worker_public_model.dart';
 import '../../widgets/tier_badge.dart';
 
 class WorkerCard extends StatelessWidget {
   final WorkerPublicModel worker;
-  final VoidCallback? onBookNow;
+  final VoidCallback? onCall;
 
   const WorkerCard({
     super.key,
     required this.worker,
-    this.onBookNow,
+    this.onCall,
   });
+
+  void _callWorker(BuildContext context, String phoneNumber) async {
+    final uri = Uri.parse('tel:$phoneNumber');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Calling $phoneNumber...')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +45,12 @@ class WorkerCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: AppColors.borderGray.withOpacity(0.6)),
+          border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.6)),
         ),
         child: Column(
           children: [
@@ -84,7 +98,7 @@ class WorkerCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Name, Trade & Score
+                // Name, Trade, KaamCard Status & Score
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +121,7 @@ class WorkerCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.navy.withOpacity(0.08),
+                              color: AppColors.navy.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -123,7 +137,7 @@ class WorkerCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
 
-                      // Score & Tier
+                      // KaamCard Status Badge & Score
                       Row(
                         children: [
                           const Icon(Icons.star_rounded, color: AppColors.gold, size: 18),
@@ -136,8 +150,26 @@ class WorkerCard extends StatelessWidget {
                               color: AppColors.darkText,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           TierBadge(tier: worker.tier, isSmall: true),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: worker.hasKaamCard
+                                  ? Colors.green.withValues(alpha: 0.12)
+                                  : Colors.orange.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              worker.hasKaamCard ? '✓ KaamCard' : 'Listed',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: worker.hasKaamCard ? Colors.green : Colors.orange,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -170,7 +202,7 @@ class WorkerCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.borderGray),
             const SizedBox(height: 10),
 
-            // Bottom Bar: Mini score pills + Book Now button
+            // Bottom Bar: Mini score pills + Call Worker button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -183,26 +215,24 @@ class WorkerCard extends StatelessWidget {
                     _buildMiniPill('💼', '${worker.scoreBreakdown.workHistoryScore}'),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: onBookNow ??
-                      () {
-                        context.push('/worker/${worker.id}', extra: worker);
-                      },
+                ElevatedButton.icon(
+                  onPressed: onCall ?? () => _callWorker(context, worker.phone),
+                  icon: const Icon(Icons.phone, size: 14, color: Colors.white),
+                  label: Text(
+                    'Call Worker',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryTeal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     minimumSize: const Size(0, 32),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Book Now',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

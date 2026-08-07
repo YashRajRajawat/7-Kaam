@@ -59,7 +59,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'No KaamCard Yet',
+                  'Profile Listed with Score',
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -68,7 +68,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Complete at least 1 trade test + 1 video assessment to generate your living KaamCard.',
+                  'Your profile and score are LIVE for nearby customers to contact you! Your official digital KaamCard is currently under Admin Review.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,

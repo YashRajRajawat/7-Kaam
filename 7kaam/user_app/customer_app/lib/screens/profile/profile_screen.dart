@@ -132,14 +132,13 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _buildListTile(
-                      icon: Icons.calendar_today_rounded,
-                      title: 'My Bookings',
-                      subtitle: 'View booking status and history',
+                      icon: Icons.qr_code_scanner_rounded,
+                      title: 'Scan KaamCard QR',
+                      subtitle: 'Verify worker credentials instantly',
                       onTap: () {
-                        context.go('/home', extra: 1);
+                        context.push('/qr_scan');
                       },
                     ),
-                    const Divider(height: 1, indent: 50, color: AppColors.borderGray),
                     _buildListTile(
                       icon: Icons.edit_note_rounded,
                       title: 'Edit Profile',

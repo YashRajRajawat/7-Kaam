@@ -61,6 +61,7 @@ class ScoreBreakdown {
 class WorkerPublicModel {
   final String id;
   final String name;
+  final String phone;
   final String trade;
   final String city;
   final String locality;
@@ -68,6 +69,7 @@ class WorkerPublicModel {
   final int score;
   final String tier;
   final ScoreBreakdown scoreBreakdown;
+  final bool hasKaamCard;
   final String kaamCardUrl;
   final String qrToken;
   final double distanceKm;
@@ -81,6 +83,7 @@ class WorkerPublicModel {
   WorkerPublicModel({
     required this.id,
     required this.name,
+    this.phone = '9876543210',
     required this.trade,
     required this.city,
     required this.locality,
@@ -88,6 +91,7 @@ class WorkerPublicModel {
     required this.score,
     required this.tier,
     required this.scoreBreakdown,
+    this.hasKaamCard = false,
     required this.kaamCardUrl,
     required this.qrToken,
     required this.distanceKm,
@@ -105,9 +109,13 @@ class WorkerPublicModel {
         .map((h) => EmployerHistory.fromJson(h as Map<String, dynamic>))
         .toList();
 
+    final qrTok = json['qrToken'] ?? '';
+    final hasCard = json['hasKaamCard'] ?? (qrTok.toString().isNotEmpty);
+
     return WorkerPublicModel(
       id: json['id'] ?? json['_id'] ?? '',
-      name: json['name'] ?? 'Worker Name',
+      name: json['name'] ?? json['fullName'] ?? 'Worker Name',
+      phone: json['phone'] ?? json['phoneNumber'] ?? '9876543210',
       trade: json['trade'] ?? 'Electrician',
       city: json['city'] ?? 'Bangalore',
       locality: json['locality'] ?? 'Koramangala',
@@ -117,8 +125,9 @@ class WorkerPublicModel {
       scoreBreakdown: ScoreBreakdown.fromJson(
         json['scoreBreakdown'] ?? json['breakdown'] ?? {},
       ),
+      hasKaamCard: hasCard,
       kaamCardUrl: json['kaamCardUrl'] ?? '',
-      qrToken: json['qrToken'] ?? '',
+      qrToken: qrTok,
       distanceKm: (json['distanceKm'] ?? json['distance'] ?? 2.4).toDouble(),
       latitude: (json['latitude'] ?? json['lat'] ?? 12.9352).toDouble(),
       longitude: (json['longitude'] ?? json['lng'] ?? 77.6245).toDouble(),
@@ -133,6 +142,7 @@ class WorkerPublicModel {
     return {
       'id': id,
       'name': name,
+      'phone': phone,
       'trade': trade,
       'city': city,
       'locality': locality,
@@ -140,6 +150,7 @@ class WorkerPublicModel {
       'score': score,
       'tier': tier,
       'scoreBreakdown': scoreBreakdown.toJson(),
+      'hasKaamCard': hasKaamCard,
       'kaamCardUrl': kaamCardUrl,
       'qrToken': qrToken,
       'distanceKm': distanceKm,

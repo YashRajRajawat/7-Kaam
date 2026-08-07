@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
-import '../booking/my_bookings_screen.dart';
 import '../discover/discover_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -24,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialTab;
+    _currentIndex = widget.initialTab.clamp(0, 2);
   }
 
   @override
@@ -32,21 +31,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialTab != widget.initialTab) {
       setState(() {
-        _currentIndex = widget.initialTab;
+        _currentIndex = widget.initialTab.clamp(0, 2);
       });
     }
   }
 
   final List<Widget> _screens = const [
     DiscoverScreen(),
-    MyBookingsScreen(),
     SizedBox(), // Placeholder for Scan QR action
     ProfileScreen(),
   ];
 
   void _onTabTapped(int index) {
-    if (index == 2) {
-      // Tab 3: Scan QR launches full screen QR scanner
+    if (index == 1) {
+      // Tab 2: Scan QR launches full screen QR scanner
       context.push('/qr_scan');
     } else {
       setState(() {
@@ -67,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, -4),
             ),
@@ -88,11 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.search_rounded),
               activeIcon: Icon(Icons.search_rounded, color: AppColors.primaryTeal),
               label: 'Discover',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month_outlined),
-              activeIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primaryTeal),
-              label: 'Bookings',
             ),
             BottomNavigationBarItem(
               icon: Container(

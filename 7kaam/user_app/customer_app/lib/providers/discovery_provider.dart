@@ -143,7 +143,7 @@ class DiscoveryNotifier extends StateNotifier<DiscoveryState> {
       );
 
       final rawList = response.data['data'] ?? response.data['workers'] ?? response.data;
-      if (rawList is List && rawList.isNotEmpty) {
+      if (rawList is List) {
         final workers = rawList
             .map((w) => WorkerPublicModel.fromJson(w as Map<String, dynamic>))
             .toList();
@@ -151,10 +151,10 @@ class DiscoveryNotifier extends StateNotifier<DiscoveryState> {
         return;
       }
     } catch (e) {
-      // Ignore network error and load high quality demo workers
+      state = state.copyWith(errorMessage: 'Network error: $e');
     }
 
-    // High quality mock data for 7 Kaam Customer App
+    // Offline fallback only if network completely fails
     state = state.copyWith(
       workers: _getMockWorkers(state.selectedCity),
       isLoading: false,

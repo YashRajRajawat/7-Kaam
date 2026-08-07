@@ -18,24 +18,7 @@ class WorkerDetailScreen extends ConsumerWidget {
     required this.worker,
   });
 
-  String _getPriceRange(String trade) {
-    switch (trade.toLowerCase()) {
-      case 'electrician':
-        return '₹300 – ₹600 / hour';
-      case 'plumber':
-        return '₹250 – ₹500 / hour';
-      case 'ac technician':
-        return '₹400 – ₹800 / hour';
-      case 'carpenter':
-        return '₹350 – ₹700 / hour';
-      case 'painter':
-        return '₹200 – ₹450 / hour';
-      case 'welder':
-        return '₹400 – ₹850 / hour';
-      default:
-        return '₹300 – ₹600 / hour';
-    }
-  }
+
 
   void _openCertificate(BuildContext context, String qrToken) async {
     final url = Uri.parse('http://localhost:8000/api/v1/verify/$qrToken');
@@ -505,14 +488,14 @@ class WorkerDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          // STICKY BOTTOM BOOKING BAR
+          // STICKY BOTTOM DIRECT CONTACT BAR
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 16,
                   offset: const Offset(0, -4),
                 ),
@@ -520,33 +503,30 @@ class WorkerDetailScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Estimated Price',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: AppColors.grayText,
-                      ),
-                    ),
-                    Text(
-                      _getPriceRange(worker.trade),
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.navy,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
                 Expanded(
                   child: CustomButton(
-                    text: 'Book Now',
-                    onPressed: () {
-                      context.push('/booking_form', extra: worker);
+                    text: 'Call ${worker.phone}',
+                    icon: Icons.phone,
+                    onPressed: () async {
+                      final uri = Uri.parse('tel:${worker.phone}');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CustomButton(
+                    text: 'WhatsApp',
+                    icon: Icons.chat_bubble_outline_rounded,
+                    isOutlined: true,
+                    onPressed: () async {
+                      final cleanPhone = worker.phone.replaceAll(RegExp(r'\D'), '');
+                      final uri = Uri.parse('https://wa.me/91$cleanPhone?text=Hi%20${worker.name},%20I%20found%20your%20verified%20profile%20on%207%20Kaam!');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
                     },
                   ),
                 ),

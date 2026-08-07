@@ -65,6 +65,7 @@ export default function WorkerDetailPage() {
   const [testAssignOpen, setTestAssignOpen] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState('');
   const [answers, setAnswers] = useState<string[]>([]);
+  const [manualVideoScore, setManualVideoScore] = useState('');
 
   const { data: worker, isLoading } = useQuery<Worker>({
     queryKey: ['worker', id],
@@ -77,7 +78,7 @@ export default function WorkerDetailPage() {
   });
 
   const scoreVideo = useMutation({
-    mutationFn: () => api.post(`/workers/${id}/score-video`),
+    mutationFn: (data?: { score?: number; notes?: string }) => api.post(`/workers/${id}/score-video`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['worker', id] }),
   });
 
@@ -224,6 +225,50 @@ export default function WorkerDetailPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Skill Demonstration Video Player */}
+        <div className="bg-white border border-[#e0e3e5] rounded-xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Video size={16} className="text-[#4648d4]" />
+            <h3 className="text-sm font-bold text-[#191c1e]">Skill Demonstration Video</h3>
+          </div>
+          {worker.videoUrl ? (
+            <div className="space-y-3">
+              <video
+                src={worker.videoUrl}
+                controls
+                className="w-full max-h-64 rounded-xl border border-[#e0e3e5] bg-black"
+              />
+              <div className="flex flex-wrap items-center gap-3 bg-[#f8f9fa] p-3 rounded-xl border border-[#e0e3e5]">
+                <div className="flex-1 min-w-[140px]">
+                  <label className="block text-[11px] font-bold text-[#565e74] mb-1">Manual Video Score (0–100)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={manualVideoScore}
+                    onChange={e => setManualVideoScore(e.target.value)}
+                    placeholder="e.g. 85"
+                    className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#e0e3e5] text-xs font-bold text-[#191c1e]"
+                  />
+                </div>
+                <button
+                  onClick={() => scoreVideo.mutate({ score: Number(manualVideoScore) })}
+                  disabled={!manualVideoScore || scoreVideo.isPending}
+                  className="mt-4 px-4 py-2 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {scoreVideo.isPending ? 'Saving...' : 'Submit Video Score'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 rounded-xl bg-[#f8f9fa] text-center border border-[#e0e3e5]">
+              <Video size={24} className="mx-auto text-[#767586] mb-2" />
+              <p className="text-xs font-bold text-[#191c1e]">No skill video uploaded yet</p>
+              <p className="text-[11px] text-[#767586] mt-0.5">Worker can upload a 60-second practical demonstration video via the Worker Mobile App.</p>
+            </div>
+          )}
         </div>
 
         {/* Score Breakdown */}

@@ -7,5 +7,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: SevenKaamWorkerApp()));
     expect(find.text('7'), findsOneWidget);
     expect(find.text('Kaam'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
   });
 }

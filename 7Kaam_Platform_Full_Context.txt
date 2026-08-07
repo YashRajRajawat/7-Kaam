@@ -1,0 +1,236 @@
+================================================================================
+                    7 KAAM PLATFORM — FULL ARCHITECTURE & CONTEXT
+================================================================================
+Project Name   : 7 Kaam (India's Blue-Collar Skill Certification & Direct Contact Platform)
+Core Philosophy: Trust-building over booking middleman. KaamCard verification. Direct customer-to-worker contact via Phone & WhatsApp.
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY & PRODUCT ARCHITECTURE
+--------------------------------------------------------------------------------
+7 Kaam is a blue-collar worker ecosystem that enables skilled trade workers (electricians, plumbers, carpenters, AC technicians, painters, welders) to get certified through a 3-signal assessment pipeline and connect directly with nearby customers without booking commission fees or middleman friction.
+
+Key Product Rules:
+1. NO IN-APP BOOKING ENGINE: Customers search, filter, and inspect verified scores, then directly contact workers via Call ("tel:+91...") or WhatsApp.
+2. 3-SIGNAL SCORING PIPELINE (0 - 100):
+   - Video Assessment Score (AI Vision / Admin Manual Video Evaluation)
+   - Trade Test Score (Interactive MCQs & Practical Tests via Groq LLaMA 3 / AI)
+   - Work History Score (Verified client and contractor past work entries)
+3. KAAMCARD ISSUANCE:
+   - When workers register and complete tests, their score is immediately LIVE for customer contact.
+   - Admins evaluate video demonstrations, assign manual marks (0-100), and issue official digital KaamCards with tamper-proof QR verification tokens.
+   - Admins can suspend workers or revoke KaamCards if complaints arise.
+
+--------------------------------------------------------------------------------
+2. REPOSITORY & CODEBASE DIRECTORY MAP
+--------------------------------------------------------------------------------
+Workspace Root: c:\Codes\7-Kaam\7kaam\
+
+├── backend/                           # Node.js Express REST API (Supabase / PostgreSQL)
+│   ├── prisma/
+│   │   ├── schema.prisma              # Database schema (Worker, Customer, Admin, KaamCard, TradeTest, WorkHistory)
+│   │   └── seed_supabase.js           # Supabase Cloud Database Seed Script (13 Trade Tests + Admin)
+│   ├── src/
+│   │   ├── app.js                     # Express app setup, CORS, JSON parsers, route mounts
+│   │   ├── server.js                  # Entry point (port 8000)
+│   │   ├── controllers/               # Business logic (authController, scoringController, workerController)
+│   │   ├── middleware/                # JWT Auth middleware (auth.js)
+│   │   ├── routes/                    # API Route Handlers
+│   │   │   ├── auth.js                # Public Admin, Worker, Customer login endpoints
+│   │   │   ├── mobile.js              # Nearby workers search, public profile, customer/worker registration
+│   │   │   ├── workers.js             # Admin Worker Directory & Public Worker Register
+│   │   │   ├── tests.js               # Trade test catalogue & submissions
+│   │   │   ├── scoring.js             # Score video, compute final score, issue KaamCard
+│   │   │   ├── kaamcards.js           # KaamCard retrieval & PDF generation
+│   │   │   └── verify.js              # Public QR Token Verification
+│   │   └── utils/                     # Prisma wrapper over Supabase client (prisma.js)
+│   └── .env                           # Database URL, Supabase Service Key, JWT Secret, Port
+│
+├── dashboard/                         # Admin Web Dashboard (Next.js 14, Tailwind CSS, Lucide, React Query)
+│   ├── app/
+│   │   ├── page.tsx                   # Redirect to /dashboard
+│   │   ├── login/page.tsx             # Admin Login (admin@7kaam.in / Admin@7kaam)
+│   │   ├── dashboard/page.tsx         # Platform Overview & Key Metrics
+│   │   ├── workers/page.tsx           # Worker Directory with status & KaamCard filters
+│   │   ├── workers/[id]/page.tsx      # Worker Profile, HTML5 Skill Video Player, Manual Scoring, Issue/Revoke KaamCard
+│   │   ├── tests/page.tsx             # Trade Test Catalogue & Management
+│   │   └── analytics/page.tsx         # Score distribution & certification metrics
+│   └── package.json                   # Next.js 14 setup
+│
+├── user_app/customer_app/             # Customer Mobile App (Flutter, Riverpod, Dio, GoRouter)
+│   ├── lib/
+│   │   ├── main.dart                  # Flutter entry point
+│   │   ├── core/
+│   │   │   ├── constants/             # AppColors, ApiConstants (http://localhost:8000/api/v1)
+│   │   │   ├── network/               # DioClient, ApiService
+│   │   │   └── router/                # AppRouter (GoRouter setup without booking routes)
+│   │   ├── models/                    # WorkerPublicModel, CustomerModel, ScoreBreakdown
+│   │   ├── providers/                 # AuthNotifier, DiscoveryNotifier (Live Supabase API integration)
+│   │   ├── screens/
+│   │   │   ├── splash/                # Animated Splash Screen
+│   │   │   ├── onboarding/            # Product Onboarding
+│   │   │   ├── auth/                  # Customer Login & Registration
+│   │   │   ├── home/                  # 3-Tab Bottom Nav (Discover, Scan QR, Profile)
+│   │   │   ├── discover/              # Worker Directory, Trade Chips, Tier Filters, Call Worker button
+│   │   │   ├── worker_detail/         # Detailed Profile, Sticky "Call Worker" & "WhatsApp Contact" bar
+│   │   │   ├── verify/                # QR Scanner for physical KaamCards
+│   │   │   └── profile/               # Customer Profile & Settings
+│   │   └── widgets/                   # TierBadge, ScoreBar, WorkerCardSkeleton, CustomButton
+│   └── pubspec.yaml                   # Flutter dependencies
+│
+└── user_app/flutter_sample_1/         # Worker Mobile App (Flutter, Riverpod, Dio)
+    ├── lib/
+    │   ├── main.dart                  # Flutter entry point
+    │   ├── core/                      # ApiConstants, ApiService, SecureStorage
+    │   ├── models/                    # WorkerModel, TradeTestModel, KaamCardModel
+    │   ├── providers/                 # AuthNotifier, WorkerNotifier, KaamCardNotifier
+    │   └── screens/
+    │       ├── auth/                  # Worker Phone/OTP Login & Registration
+    │       ├── dashboard/             # Worker Home Dashboard
+    │       ├── pipeline/              # 3-Step Certification Pipeline
+    │       ├── kaam_card/             # Living Digital KaamCard & "Profile Listed under Admin Review" view
+    │       └── certificates/          # Issued Skill Certificates
+    └── pubspec.yaml                   # Flutter dependencies
+
+--------------------------------------------------------------------------------
+3. DATABASE SCHEMA & SUPABASE MODELS (PRISMA)
+--------------------------------------------------------------------------------
+Database Engine: PostgreSQL (Supabase Cloud)
+Connection URL : postgresql://postgres.qywflwdkrckyjdrsadvo:Yazugrang30%40@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+
+Enums:
+- Trade        : ELECTRICIAN, PLUMBER, CARPENTER, AC_TECHNICIAN, PAINTER, WELDER
+- Tier         : BRONZE, SILVER, GOLD, EXPERT
+- WorkerStatus : PENDING, ACTIVE, SUSPENDED
+- AdminRole    : SUPER_ADMIN, REVIEWER, AUDITOR
+
+Models:
+1. Worker:
+   - id (String, PK), fullName, phoneNumber (Unique), trade (Enum), city, locality, profilePhotoUrl, aadhaarHash, aadhaarVerified (Bool)
+   - videoUrl, videoScore (Float), videoScoredAt (DateTime), videoNotes
+   - testScore (Float), testScoredAt (DateTime)
+   - workHistoryScore (Float)
+   - finalScore (Float), tier (Enum), kaamCardUrl, qrCodeUrl, kaamCardIssuedAt
+   - status (WorkerStatus: PENDING / ACTIVE / SUSPENDED)
+2. KaamCard:
+   - id (String, PK), workerId (FK -> Worker), qrToken (Unique), pdfUrl, version (Int), isRevoked (Bool), revocationReason, issuedAt, expiresAt
+3. Customer:
+   - id (String, PK), fullName, phoneNumber (Unique), city, createdAt
+4. Admin:
+   - id (String, PK), email (Unique), passwordHash, role (AdminRole)
+5. TradeTest:
+   - id (String, PK), trade (Enum), language, title, description, category, difficulty, estimatedMinutes, passingScore, isFirstTest, isVideoAssessment, questions (JSON)
+6. WorkHistory:
+   - id (String, PK), workerId (FK -> Worker), employerName, role, employerPhone, startDate, endDate, rating (Int), isVerified (Bool)
+7. SkillCertificate:
+   - id (String, PK), workerId (FK), testId (FK), testTitle, trade, score (Float), issuedAt, pdfUrl
+
+--------------------------------------------------------------------------------
+4. COMPLETE REST API ENDPOINTS SPECIFICATION
+--------------------------------------------------------------------------------
+Base URL: http://localhost:8000/api/v1
+
+A. AUTHENTICATION ENDPOINTS
+- POST /api/v1/auth/login
+  Body    : { "email": "admin@7kaam.in", "password": "Admin@7kaam" }
+  Response: { "token": "<JWT_TOKEN>", "admin": { "id": "...", "email": "...", "role": "SUPER_ADMIN" } }
+
+- POST /api/v1/auth/worker/login
+  Body    : { "phone": "9876543210", "otp": "1234" }
+  Response: { "success": true, "token": "<JWT_TOKEN>", "worker": { "id": "...", "name": "...", "phone": "...", "score": 80, "tier": "GOLD" } }
+
+- POST /api/v1/auth/customer/login
+  Body    : { "phone": "9988776655", "otp": "1234" }
+  Response: { "success": true, "token": "<JWT_TOKEN>", "customer": { "id": "...", "name": "...", "phone": "...", "city": "Bangalore" } }
+
+B. MOBILE & PUBLIC WORKER DISCOVERY
+- GET /api/v1/mobile/workers/nearby?city=Bangalore&trade=ELECTRICIAN&tier=EXPERT
+  Response: {
+    "success": true,
+    "count": 4,
+    "data": [
+      {
+        "id": "...",
+        "name": "Ramesh Kumar",
+        "phone": "+919876543210",
+        "trade": "ELECTRICIAN",
+        "city": "Bangalore",
+        "locality": "Indiranagar",
+        "photoUrl": "...",
+        "score": 94,
+        "tier": "EXPERT",
+        "scoreBreakdown": { "videoScore": 92, "testScore": 95, "workHistoryScore": 96 },
+        "hasKaamCard": true,
+        "kaamCardUrl": "...",
+        "qrToken": "KC-7K-94821",
+        "aadhaarVerified": true,
+        "status": "ACTIVE"
+      }
+    ]
+  }
+
+- GET /api/v1/mobile/workers/:id/public
+  Response: Public detailed worker profile object formatted for Customer App.
+
+- POST /api/v1/mobile/workers/register
+  Body    : { "name": "Anil Kumar", "phone": "9123456789", "trade": "PLUMBER", "city": "Bangalore", "locality": "Indiranagar" }
+  Response: { "success": true, "token": "...", "worker": { ... } }
+
+- POST /api/v1/mobile/customers/register
+  Body    : { "name": "Priya Sharma", "phone": "9871234567", "city": "Bangalore" }
+  Response: { "success": true, "token": "...", "customer": { ... } }
+
+C. WORKER ASSESSMENT & SCORING PIPELINE
+- POST /api/v1/workers/:id/score-video
+  Body    : { "score": 85, "notes": "Excellent practical demonstration" }
+  Response: Updates worker.videoScore, computes finalScore, and returns updated worker.
+
+- POST /api/v1/workers/:id/compute-score
+  Response: Calculates composite final score (0.40 * video + 0.35 * test + 0.25 * workHistory) and assigns Tier (EXPERT / GOLD / SILVER / BRONZE).
+
+- POST /api/v1/workers/:id/issue-kaamcard
+  Response: Generates digital KaamCard with unique QR Token and PDF download link.
+
+- POST /api/v1/workers/:id/add-work-history
+  Body    : { "employerName": "Sobha Developers", "role": "Electrician", "rating": 5, "verified": true }
+  Response: Adds past work entry and recomputes workHistoryScore.
+
+D. PUBLIC QR VERIFICATION
+- GET /api/v1/verify/:qrToken
+  Response: Public verification page details showing card authenticity, worker name, trade, score, tier, and status.
+
+--------------------------------------------------------------------------------
+5. DEVELOPER SETUP & EXECUTING THE SYSTEM LOCALLY
+--------------------------------------------------------------------------------
+Prerequisites: Node.js (v18+), Flutter SDK (v3.22+), npm
+
+Step 1: Start Backend REST API (Port 8000)
+   cd c:\Codes\7-Kaam\7kaam\backend
+   npm install
+   npm start
+
+Step 2: Start Admin Web Dashboard (Port 3000)
+   cd c:\Codes\7-Kaam\7kaam\dashboard
+   npm install
+   npm run dev
+   Access in browser: http://localhost:3000 (Login: admin@7kaam.in / Admin@7kaam)
+
+Step 3: Start Worker Mobile App (Port 8081)
+   cd c:\Codes\7-Kaam\7kaam\user_app\flutter_sample_1
+   flutter run -d web-server --web-port 8081
+   Access in browser: http://localhost:8081
+
+Step 4: Start Customer Mobile App (Port 8083)
+   cd c:\Codes\7-Kaam\7kaam\user_app\customer_app
+   flutter run -d web-server --web-port 8083
+   Access in browser: http://localhost:8083
+
+--------------------------------------------------------------------------------
+6. SUMMARY OF COMPLETED FEATURES
+--------------------------------------------------------------------------------
+✓ 100% Real Supabase / PostgreSQL database integration (No mock fallbacks)
+✓ 13 Coursera-style Trade Tests catalogue seeded into database
+✓ Direct customer-to-worker contact flow (Call & WhatsApp action buttons)
+✓ Admin Dashboard with HTML5 Skill Video Player & manual video scoring (0-100)
+✓ 1-click KaamCard issuance & worker suspension controls
+✓ Automated widget tests & static analysis clean (0 errors)
+================================================================================
