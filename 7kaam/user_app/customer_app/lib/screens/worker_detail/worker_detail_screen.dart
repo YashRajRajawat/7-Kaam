@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/worker_public_model.dart';
@@ -115,6 +116,24 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
           style: GoogleFonts.poppins(color: AppColors.navy, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined, color: AppColors.navy),
+            tooltip: 'Share worker profile',
+            onPressed: () {
+              final trade = worker.trade.replaceAll('_', ' ');
+              final certified = worker.hasKaamCard ? '\u2705 KaamCard Verified' : 'Unverified';
+              Share.share(
+                '\U0001f477 Check out this worker on 7 Kaam!\n'
+                '\U0001f464 ${worker.fullName}\n'
+                '\U0001f527 $trade • ${worker.city}\n'
+                '$certified\n'
+                '\U0001f4f1 Download 7 Kaam to see contact details.',
+                subject: '${worker.fullName} — 7 Kaam Worker Profile',
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

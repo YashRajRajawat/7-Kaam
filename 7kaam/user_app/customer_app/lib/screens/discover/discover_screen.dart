@@ -314,10 +314,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.search_off_rounded, size: 64, color: AppColors.grayText),
+                                  Icon(
+                                    state.useGps
+                                        ? Icons.location_off_rounded
+                                        : Icons.search_off_rounded,
+                                    size: 64,
+                                    color: AppColors.grayText,
+                                  ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'No verified workers found',
+                                    state.useGps
+                                        ? 'No workers near you yet'
+                                        : 'No verified workers found',
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -326,10 +334,35 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Try adjusting your search query or trade/tier filters',
+                                    state.useGps
+                                        ? 'Workers in your area haven\'t registered their location yet. Try searching by city instead.'
+                                        : 'Try adjusting your search query or trade/tier filters',
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 13, color: AppColors.grayText),
                                   ),
+                                  if (state.useGps) ...[
+                                    const SizedBox(height: 20),
+                                    GestureDetector(
+                                      onTap: notifier.useCitySelection,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryTeal,
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                        child: Text(
+                                          'Switch to City Search',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             )

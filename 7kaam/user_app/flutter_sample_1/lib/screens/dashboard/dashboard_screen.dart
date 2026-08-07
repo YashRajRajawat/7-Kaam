@@ -12,13 +12,28 @@ import '../../providers/catalogue_provider.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/custom_button.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   final Function(int)? onNavigateTab;
 
   const DashboardScreen({super.key, this.onNavigateTab});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Save GPS coordinates once when the dashboard opens so the worker
+    // appears on the customer map. Fire-and-forget — never blocks UI.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workerProvider.notifier).saveLocation();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final workerState = ref.watch(workerProvider);
     final kaamCardState = ref.watch(kaamCardProvider);
@@ -98,6 +113,51 @@ class DashboardScreen extends ConsumerWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   color: Colors.red.shade700,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // ── Under Review Banner ───────────────────────────────────────
+                if (worker?.underReview == true) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.pending_actions_rounded, color: Colors.amber.shade700, size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Profile Under Review',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.amber.shade800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'The 7 Kaam team is reviewing your profile. You may need to retake some assessments. Your listing remains visible in the meantime.',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.amber.shade800,
                                   height: 1.4,
                                 ),
                               ),
