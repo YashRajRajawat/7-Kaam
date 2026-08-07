@@ -550,14 +550,14 @@ class _LoginBottomSheetState extends ConsumerState<_LoginBottomSheet> {
                   });
                   return;
                 }
+                final nav = Navigator.of(context);
                 final success = await ref.read(authProvider.notifier).login(
                       _phoneController.text.trim(),
                       _otpController.text.trim(),
                     );
                 if (success && mounted) {
                   widget.onLoggedIn();
-                  if (!mounted) return;
-                  Navigator.of(context).pop();
+                  nav.pop();
                 } else if (mounted) {
                   setState(() => _error = ref.read(authProvider).errorMessage ?? 'Login failed');
                 }
@@ -607,7 +607,7 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
             Text('Reason', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkText)),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _reason,
+              initialValue: _reason,
               items: _reasons.map((r) => DropdownMenuItem(value: r, child: Text(r, style: GoogleFonts.poppins(fontSize: 13)))).toList(),
               onChanged: (val) {
                 if (val != null) setState(() => _reason = val);
@@ -628,15 +628,16 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
               text: 'Submit Report',
               isLoading: reportState.isSubmitting,
               onPressed: () async {
+                final nav = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await ref.read(reportProvider.notifier).submitReport(
                       workerId: widget.workerId,
                       reason: _reason,
                       description: _descController.text.trim(),
                     );
                 if (success && mounted) {
-                  Navigator.of(context).pop();
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  nav.pop();
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('Report submitted — the 7 Kaam team will review it.')),
                   );
                 }

@@ -136,7 +136,7 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 45,
-                      backgroundColor: AppColors.primaryTeal.withOpacity(0.1),
+                      backgroundColor: AppColors.primaryTeal.withValues(alpha: 0.1),
                       child: worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(45),
@@ -382,7 +382,7 @@ class ProfileScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isDone ? AppColors.successGreen.withOpacity(0.12) : Colors.grey.shade100,
+        color: isDone ? AppColors.successGreen.withValues(alpha: 0.12) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

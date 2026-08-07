@@ -192,7 +192,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedCity,
+                      initialValue: _selectedCity,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.location_city_rounded, color: AppColors.primaryTeal),
                         filled: true,

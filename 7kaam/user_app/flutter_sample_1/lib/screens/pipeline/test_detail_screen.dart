@@ -69,9 +69,9 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: diffColor.withOpacity(0.12),
+                      color: diffColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: diffColor.withOpacity(0.4)),
+                      border: Border.all(color: diffColor.withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       test.difficulty,
@@ -81,7 +81,7 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryTeal.withOpacity(0.1),
+                      color: AppColors.primaryTeal.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -180,9 +180,9 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isPassed ? AppColors.successGreen.withOpacity(0.06) : Colors.amber.withOpacity(0.08),
+                    color: isPassed ? AppColors.successGreen.withValues(alpha: 0.06) : Colors.amber.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: isPassed ? AppColors.successGreen.withOpacity(0.3) : Colors.amber.shade300),
+                    border: Border.all(color: isPassed ? AppColors.successGreen.withValues(alpha: 0.3) : Colors.amber.shade300),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
