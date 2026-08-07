@@ -124,11 +124,11 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
               final trade = worker.trade.replaceAll('_', ' ');
               final certified = worker.hasKaamCard ? '\u2705 KaamCard Verified' : 'Unverified';
               Share.share(
-                '\U0001f477 Check out this worker on 7 Kaam!\n'
-                '\U0001f464 ${worker.fullName}\n'
-                '\U0001f527 $trade • ${worker.city}\n'
+                '👷 Check out this worker on 7 Kaam!\n'
+                '👤 ${worker.fullName}\n'
+                '🔧 $trade \u2022 ${worker.city}\n'
                 '$certified\n'
-                '\U0001f4f1 Download 7 Kaam to see contact details.',
+                '📱 Download 7 Kaam to see contact details.',
                 subject: '${worker.fullName} — 7 Kaam Worker Profile',
               );
             },
@@ -174,7 +174,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: child,
@@ -206,7 +206,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.navy.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: AppColors.navy.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
                 child: Text(worker.trade.replaceAll('_', ' '), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.navy)),
               ),
               const SizedBox(width: 8),
@@ -237,7 +237,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
   Widget _pillChip(IconData icon, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -265,7 +265,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primaryTeal, width: 6),
-                  color: AppColors.primaryTeal.withOpacity(0.06),
+                  color: AppColors.primaryTeal.withValues(alpha: 0.06),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -386,7 +386,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: AppColors.primaryTeal.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                      decoration: BoxDecoration(color: AppColors.primaryTeal.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
                       child: const Icon(Icons.business_rounded, color: AppColors.primaryTeal),
                     ),
                     const SizedBox(width: 12),
@@ -418,9 +418,9 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.navy.withOpacity(0.04),
+        color: AppColors.navy.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.navy.withOpacity(0.12)),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,6 +556,7 @@ class _LoginBottomSheetState extends ConsumerState<_LoginBottomSheet> {
                     );
                 if (success && mounted) {
                   widget.onLoggedIn();
+                  if (!mounted) return;
                   Navigator.of(context).pop();
                 } else if (mounted) {
                   setState(() => _error = ref.read(authProvider).errorMessage ?? 'Login failed');
@@ -634,6 +635,7 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
                     );
                 if (success && mounted) {
                   Navigator.of(context).pop();
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Report submitted — the 7 Kaam team will review it.')),
                   );

@@ -24,16 +24,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-
     final storage = SecureStorageService();
     final onboardingDone = await storage.isOnboardingComplete();
 
     if (!onboardingDone) {
+      if (!mounted) return;
       context.go('/onboarding');
     } else {
       // Browsing never requires login (see spec) — authenticated or not,
       // a returning user always lands on Discover. Login is only prompted
       // when an action actually needs it (viewing a phone number, reporting).
+      if (!mounted) return;
       context.go('/home');
     }
   }
@@ -54,7 +55,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -88,7 +89,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             )
                 .animate()

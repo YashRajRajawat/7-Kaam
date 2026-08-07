@@ -147,7 +147,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: AppColors.primaryTeal.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: AppColors.primaryTeal.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -427,7 +427,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,7 +436,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: diffColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6), border: Border.all(color: diffColor.withOpacity(0.4))),
+                  decoration: BoxDecoration(color: diffColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6), border: Border.all(color: diffColor.withValues(alpha: 0.4))),
                   child: Text(test.difficulty, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: diffColor)),
                 ),
                 const SizedBox(width: 6),
@@ -558,7 +558,7 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
               const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: diffColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: diffColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
                 child: Text(v.difficulty, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: diffColor)),
               ),
               const Spacer(),

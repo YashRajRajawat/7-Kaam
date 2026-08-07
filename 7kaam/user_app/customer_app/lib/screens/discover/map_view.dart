@@ -156,8 +156,8 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                               boxShadow: [
                                 BoxShadow(
                                   color: isSelected
-                                      ? AppColors.primaryTeal.withOpacity(0.15)
-                                      : Colors.black.withOpacity(0.04),
+                                      ? AppColors.primaryTeal.withValues(alpha: 0.15)
+                                      : Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 8,
                                 ),
                               ],

@@ -92,7 +92,7 @@ class ProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -173,7 +173,7 @@ class ProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -238,7 +238,7 @@ class ProfileScreen extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.primaryTeal.withOpacity(0.08),
+          color: AppColors.primaryTeal.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: AppColors.primaryTeal),

@@ -48,7 +48,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -127,9 +127,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.navy.withOpacity(0.08),
+                            color: AppColors.navy.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.navy.withOpacity(0.2)),
+                            border: Border.all(color: AppColors.navy.withValues(alpha: 0.2)),
                           ),
                           child: Row(
                             children: [
@@ -236,7 +236,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         label: Text('KaamCard Only'),
                         selected: state.hasKaamCardOnly,
                         onSelected: (_) => notifier.toggleHasKaamCardOnly(),
-                        selectedColor: AppColors.primaryTeal.withOpacity(0.15),
+                        selectedColor: AppColors.primaryTeal.withValues(alpha: 0.15),
                         checkmarkColor: AppColors.primaryTeal,
                         labelStyle: GoogleFonts.poppins(
                           fontSize: 11,
@@ -367,7 +367,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                             )
                           else
-                            ...filteredWorkers.map((worker) => WorkerCard(worker: worker)).toList(),
+                            ...filteredWorkers.map((worker) => WorkerCard(worker: worker)),
                         ],
                       ),
                     ),

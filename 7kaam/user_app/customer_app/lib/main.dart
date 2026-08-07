@@ -69,7 +69,7 @@ class CustomerApp extends StatelessWidget {
           primary: AppColors.primaryTeal,
           secondary: AppColors.navy,
           tertiary: AppColors.gold,
-          background: AppColors.background,
+          surface: AppColors.background,
         ),
         textTheme: GoogleFonts.poppinsTextTheme(
           Theme.of(context).textTheme,

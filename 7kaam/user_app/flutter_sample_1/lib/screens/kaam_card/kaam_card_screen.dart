@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -59,7 +58,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                     width: 140,
                     height: 140,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryTeal.withOpacity(0.1),
+                      color: AppColors.primaryTeal.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -281,7 +280,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                           dotData: const FlDotData(show: true),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: AppColors.primaryTeal.withOpacity(0.12),
+                            color: AppColors.primaryTeal.withValues(alpha: 0.12),
                           ),
                         ),
                       ],

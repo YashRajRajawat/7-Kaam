@@ -52,9 +52,9 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
 
     int begCount = 0, intCount = 0, advCount = 0;
     for (final c in allCerts) {
-      if (c.difficulty.toUpperCase() == 'BEGINNER') begCount++;
-      else if (c.difficulty.toUpperCase() == 'INTERMEDIATE') intCount++;
-      else if (c.difficulty.toUpperCase() == 'ADVANCED') advCount++;
+      if (c.difficulty.toUpperCase() == 'BEGINNER') { begCount++; }
+      else if (c.difficulty.toUpperCase() == 'INTERMEDIATE') { intCount++; }
+      else if (c.difficulty.toUpperCase() == 'ADVANCED') { advCount++; }
     }
 
     return Scaffold(
@@ -91,7 +91,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
-                            BoxShadow(color: AppColors.primaryTeal.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                            BoxShadow(color: AppColors.primaryTeal.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
                           ],
                         ),
                         child: Column(
@@ -231,7 +231,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 3)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 3)),
           ],
         ),
         child: Column(

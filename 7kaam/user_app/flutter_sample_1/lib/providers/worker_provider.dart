@@ -164,7 +164,7 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) return;
+          permission == LocationPermission.denied) { return; }
 
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,

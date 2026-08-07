@@ -191,7 +191,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryTeal.withOpacity(0.15),
+                                color: AppColors.primaryTeal.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -289,7 +289,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   text: 'Browse All Assessments',
                   isOutlined: true,
                   onPressed: () {
-                    if (onNavigateTab != null) onNavigateTab!(1); // Go to Certify tab
+                    if (widget.onNavigateTab != null) widget.onNavigateTab!(1); // Go to Certify tab
                   },
                 ),
                 const SizedBox(height: 24),
@@ -331,7 +331,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   '📝 Take a Trade Test',
                   'Choose from available assessments',
                   'Browse Tests',
-                  () => onNavigateTab?.call(1),
+                  () => widget.onNavigateTab?.call(1),
                 ),
               ),
               const SizedBox(width: 10),

@@ -43,7 +43,7 @@ class TierBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(
-            color: badgeColor.withOpacity(0.3),
+            color: badgeColor.withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
