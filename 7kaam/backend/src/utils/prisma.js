@@ -16,10 +16,28 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   );
 }
 
+// We use Supabase REST only (no realtime subscriptions).
+// @supabase/realtime-js requires Node 22+ native WebSocket, but this project
+// runs on Node 20 in many environments. Providing a no-op WebSocket class
+// prevents the startup crash while keeping all .from() REST calls functional.
+class _NoOpWS {
+  constructor() { this.readyState = 3; } // CLOSED
+  addEventListener() {}
+  removeEventListener() {}
+  send() {}
+  close() {}
+}
+
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_SERVICE_KEY,
-  { auth: { persistSession: false } }
+  {
+    auth: { persistSession: false },
+    realtime: {
+      transport: _NoOpWS,
+      heartbeatIntervalMs: 0,
+    },
+  }
 );
 
 const REL_TO_TABLE = {
@@ -376,10 +394,17 @@ const db = {
   // so historical rows remain queryable, but no route calls this.
   booking:          makeModel('Booking'),
 
-  $queryRaw: async (query) => {
-    const { data, error } = await supabase.rpc('exec_sql', { sql: String(query) });
-    if (error) throw new Error(error.message);
-    return data;
+  // $queryRaw is intentionally unsupported in this Supabase REST proxy.
+  // Supabase's PostgREST layer does not expose a generic exec_sql RPC by
+  // default. If you need raw SQL, create a dedicated Supabase RPC function in
+  // the database and call it with: supabase.rpc('your_function_name', { ... })
+  // All current controllers use the typed model methods above — no caller
+  // actually uses $queryRaw in the codebase today.
+  $queryRaw: async (_query) => {
+    throw new Error(
+      '$queryRaw is not supported in the Supabase REST proxy. ' +
+      'Use a dedicated supabase.rpc() call for raw SQL.'
+    );
   },
 
   $disconnect: async () => {},

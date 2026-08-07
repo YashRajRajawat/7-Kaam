@@ -1,8 +1,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permissions required by the app -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+
     <application
-        android:label="customer_app"
+        android:label="7 Kaam"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Google Maps API Key
+             Replace YOUR_GOOGLE_MAPS_API_KEY with a real key from
+             https://console.cloud.google.com/ → Maps SDK for Android.
+             Then add to your local environment or CI:
+               MAPS_API_KEY=AIza...
+             and reference it here as ${MAPS_API_KEY}.
+             For local dev you can paste the key directly (don't commit it). -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -41,5 +59,14 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Required for url_launcher (tel: links) -->
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.CALL"/>
+            <data android:scheme="tel"/>
+        </intent>
     </queries>
 </manifest>
+

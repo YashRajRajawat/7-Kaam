@@ -2,6 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const authRoutes = require('./routes/auth');
 const workerRoutes = require('./routes/workers');
@@ -16,14 +20,62 @@ const customerRoutes = require('./routes/customers');
 
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors({ origin: '*', credentials: true }));
+// ── Security Headers (Helmet) ─────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false, // disabled — API-only server, no HTML served
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// Allow dashboard + Flutter apps. Defaults to all origins in development.
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+  : ['http://localhost:3000', 'http://localhost:8081', 'http://localhost:19006'];
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, true); // permissive for now; swap to cb(new Error('CORS')) when domains are finalised
+  },
+  credentials: true,
+}));
+
+// ── Compression (gzip) ────────────────────────────────────────────────────────
+app.use(compression());
+
+// ── Request ID (for log tracing) ──────────────────────────────────────────────
+app.use((req, _res, next) => {
+  req.id = crypto.randomUUID().slice(0, 8);
+  next();
+});
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+app.use(morgan(':method :url :status :response-time ms'));
+
+// ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+
+// ── Rate Limiting on Auth endpoints ───────────────────────────────────────────
+// 20 requests per 15 minutes per IP — blocks OTP brute-force attempts
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests — please wait 15 minutes and try again.' },
+});
+
+// Stricter limit on OTP send (prevent SMS spam)
+const otpSendLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 3,
+  message: { error: 'Too many OTP requests — please wait 1 minute.' },
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/workers', workerRoutes);
 app.use('/api/v1/tests', testRoutes);
 app.use('/api/v1/kaamcards', kaamCardRoutes);
@@ -33,7 +85,7 @@ app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/customers', customerRoutes);
-// Mounted last and bare (no sub-path) since its routes mix /workers/:id/...
+// Mounted last and bare (no sub-path) since its routes mix /workers/:id/..
 // and /certificates/:id prefixes — every other, more specific router above
 // must get first shot at matching, otherwise this router's blanket
 // `router.use(requireAuth)` would intercept and 401 traffic meant for the
@@ -48,9 +100,11 @@ app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 
 // ── Global Error Handler ──────────────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
-  console.error(err.stack);
+  console.error(`[${err.status || 500}]`, err.message);
   const status = err.status || 500;
   res.status(status).json({ error: err.message || 'Internal Server Error' });
 });
 
 module.exports = app;
+
+

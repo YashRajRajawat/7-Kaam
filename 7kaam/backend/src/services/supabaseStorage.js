@@ -9,10 +9,25 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   );
 }
 
+// No-op WebSocket — Supabase Storage only uses REST, never realtime.
+// Prevents crash on Node 20 where native WebSocket isn't available.
+class _NoOpWS {
+  constructor() { this.readyState = 3; } // CLOSED
+  addEventListener() {}
+  removeEventListener() {}
+  send() {}
+  close() {}
+}
+
 const supabase = createClient(
   SUPABASE_URL,
-  SUPABASE_SERVICE_KEY
+  SUPABASE_SERVICE_KEY,
+  {
+    auth: { persistSession: false },
+    realtime: { transport: _NoOpWS, heartbeatIntervalMs: 0 },
+  }
 );
+
 
 const BUCKET = '7kaam-assets';
 

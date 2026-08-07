@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
 const { hashAadhaar } = require('../utils/hash');
+const { geocodeAddress } = require('../services/geocoding');
 
 const VALID_TRADES = ['ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAINTER', 'WELDER'];
 const FIXED_OTP = '1234'; // TODO: integrate a real SMS OTP provider (e.g. MSG91/Twilio)
@@ -110,6 +111,17 @@ async function workerRegister(req, res) {
         profilePhotoUrl: profilePhotoUrl || null,
         status: 'ACTIVE',
       },
+    });
+
+    // Geocode city + locality in the background so the worker appears on the
+    // customer map immediately. Fire-and-forget — never blocks the response.
+    const geoQuery = [locality, city, 'India'].filter(Boolean).join(', ');
+    geocodeAddress(geoQuery).then((coords) => {
+      if (!coords) return;
+      prisma.worker.update({
+        where: { id: worker.id },
+        data: { latitude: coords.lat, longitude: coords.lng },
+      }).catch(() => {}); // silent — lat/lng is optional
     });
 
     const accessToken = signAccessToken(worker, 'WORKER');

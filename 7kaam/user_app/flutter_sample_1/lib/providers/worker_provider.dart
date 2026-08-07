@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/network/api_service.dart';
 import '../models/worker_model.dart';
 import '../models/work_history_model.dart';
@@ -149,6 +150,32 @@ class WorkerNotifier extends StateNotifier<WorkerState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: _extractError(e, 'Failed to add work history: $e'));
       return false;
+    }
+  }
+
+  /// Request GPS permission and save current lat/lng to the backend.
+  /// Called once from the dashboard after the worker logs in so the worker
+  /// appears on the customer's GPS map view automatically.
+  Future<void> saveLocation() async {
+    if (state.worker == null) return;
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+
+      await updateProfile({
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      });
+    } catch (_) {
+      // Location is best-effort — never crash if GPS fails.
     }
   }
 }

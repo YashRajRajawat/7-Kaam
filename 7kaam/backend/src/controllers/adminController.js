@@ -15,6 +15,14 @@ async function issueKaamCardAdmin(req, res) {
     if (!kaamCard) {
       return res.status(400).json({ error: 'Worker has no assessments yet — cannot issue a KaamCard' });
     }
+
+    // Clear the underReview flag once the card is issued — admin has completed
+    // their review cycle.
+    await prisma.worker.update({
+      where: { id },
+      data: { underReview: false, recertificationTestIds: [], recertificationReason: null },
+    });
+
     res.status(201).json(kaamCard);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -72,8 +80,22 @@ async function requireRecertification(req, res) {
 // active, at least one test submission, no active KaamCard yet.
 async function pendingReviewQueue(req, res) {
   try {
+    // Step 1: find workerIds that already have an active KaamCard (in DB)
+    const activeCards = await prisma.kaamCard.findMany({
+      where: { isRevoked: false },
+    });
+    const workerIdsWithCard = activeCards.map((c) => c.workerId);
+
+    // Step 2: find workerIds that have at least one test submission
+    const submittedWorkers = await prisma.testSubmission.findMany({});
+    const workerIdsWithTests = [...new Set(submittedWorkers.map((s) => s.workerId))];
+
+    // Step 3: fetch ACTIVE workers who have tests but no card yet
+    const eligibleIds = workerIdsWithTests.filter((id) => !workerIdsWithCard.includes(id));
+    if (eligibleIds.length === 0) return res.json({ workers: [], total: 0 });
+
     const workers = await prisma.worker.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status: 'ACTIVE', id: { in: eligibleIds } },
       include: {
         kaamCards: { where: { isRevoked: false }, take: 1 },
         _count: { select: { testSubmissions: true } },
@@ -81,11 +103,7 @@ async function pendingReviewQueue(req, res) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const pending = workers.filter(
-      (w) => (w.kaamCards?.length ?? 0) === 0 && (w._count?.testSubmissions ?? 0) >= 1
-    );
-
-    res.json({ workers: pending, total: pending.length });
+    res.json({ workers, total: workers.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

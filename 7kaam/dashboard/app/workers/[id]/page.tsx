@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import type { Worker, SkillCertificate } from '@/types';
@@ -96,51 +97,62 @@ export default function WorkerDetailPage() {
 
   const scoreVideo = useMutation({
     mutationFn: (data?: { score?: number; notes?: string }) => api.post(`/workers/${id}/score-video`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setManualVideoScore(''); setVideoScoreNotes(''); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setManualVideoScore(''); setVideoScoreNotes(''); toast.success('Video scored successfully'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to score video'),
   });
 
   const computeScore = useMutation({
     mutationFn: () => api.post(`/workers/${id}/compute-score`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['worker', id] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); toast.success('Score recomputed'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to compute score'),
   });
 
   const issueKaamCard = useMutation({
     mutationFn: () => api.post(`/admin/workers/${id}/issue-kaamcard`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setIssueCardOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setIssueCardOpen(false); toast.success('KaamCard issued! Worker is now certified.'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to issue KaamCard'),
   });
 
   const suspendWorker = useMutation({
     mutationFn: () => api.post(`/admin/workers/${id}/suspend`, { reason: suspendReason }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setSuspendOpen(false); setSuspendReason(''); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setSuspendOpen(false); setSuspendReason(''); toast.success('Worker suspended'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to suspend worker'),
   });
 
   const reactivateWorker = useMutation({
     mutationFn: () => api.post(`/admin/workers/${id}/reactivate`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['worker', id] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); toast.success('Worker reactivated'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to reactivate worker'),
   });
 
   const requireRecertification = useMutation({
     mutationFn: () => api.post(`/admin/workers/${id}/require-recertification`, { testIds: recertTestIds, reason: recertReason }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setRecertOpen(false); setRecertTestIds([]); setRecertReason(''); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setRecertOpen(false); setRecertTestIds([]); setRecertReason(''); toast.success('Worker flagged for recertification'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to require recertification'),
   });
 
   const addWorkHistory = useMutation({
     mutationFn: () => api.post(`/workers/${id}/add-work-history`, historyForm),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setAddHistoryOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setAddHistoryOpen(false); toast.success('Work history added'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to add work history'),
   });
 
   const submitTest = useMutation({
     mutationFn: () => api.post(`/workers/${id}/submit-test`, { testId: selectedTestId, answers }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setTestAssignOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setTestAssignOpen(false); toast.success('Test submitted & scored'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to submit test'),
   });
 
   const revokeCard = useMutation({
     mutationFn: () => {
       const latestCard = worker?.kaamCards?.[0];
-      return api.post(`/kaamcards/${latestCard?.id}/revoke`, { reason: revokeReason });
+      if (!latestCard?.id) throw new Error('No active KaamCard to revoke.');
+      return api.post(`/admin/kaamcards/${latestCard.id}/revoke`, { reason: revokeReason });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setRevokeOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['worker', id] }); setRevokeOpen(false); toast.success('KaamCard revoked'); },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to revoke KaamCard'),
   });
+
 
   function copyLink() {
     if (worker?.qrCodeUrl) {

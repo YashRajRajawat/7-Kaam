@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import type { Worker, PaginatedResponse } from '@/types';
 import { cn, tierColor, statusColor, tradeLabel, formatScore, formatDate } from '@/lib/utils';
+
 import {
   Plus, Search, ChevronLeft, ChevronRight, Eye,
   UserX, UserCheck, Award, Users, Filter,
@@ -44,13 +46,24 @@ export default function WorkersPage() {
       qc.invalidateQueries({ queryKey: ['workers'] });
       setSuspendTarget(null);
       setSuspendReason('');
+      toast.success('Worker suspended successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to suspend worker');
     },
   });
 
   const reactivate = useMutation({
     mutationFn: (id: string) => api.post(`/admin/workers/${id}/reactivate`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['workers'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workers'] });
+      toast.success('Worker reactivated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to reactivate worker');
+    },
   });
+
 
   const totalPages = Math.ceil((data?.total || 0) / limit);
 

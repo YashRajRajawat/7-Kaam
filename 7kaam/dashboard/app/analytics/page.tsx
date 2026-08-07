@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
@@ -13,9 +14,11 @@ import { BarChart3, TrendingUp, MapPin, Layers, Sparkles } from 'lucide-react';
 const TRADE_COLORS = ['#4648d4', '#2563eb', '#7c3aed', '#d97706', '#059669', '#0891b2'];
 
 export default function AnalyticsPage() {
+  const [certDays, setCertDays] = useState(30);
+
   const { data: certData } = useQuery<CertificationDataPoint[]>({
-    queryKey: ['analytics', 'certs-over-time'],
-    queryFn: () => api.get('/analytics/certifications-over-time').then(r => r.data),
+    queryKey: ['analytics', 'certs-over-time', certDays],
+    queryFn: () => api.get('/analytics/certifications-over-time', { params: { days: certDays } }).then(r => r.data),
   });
 
   const { data: tradeData } = useQuery<TradeBreakdown[]>({
@@ -77,9 +80,25 @@ export default function AnalyticsPage() {
             <div>
               <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
                 <TrendingUp size={18} className="text-[#059669]" />
-                Certifications Issued Velocity (30-Day Trend)
+                Certifications Issued Velocity ({certDays}-Day Trend)
               </h3>
               <p className="text-xs text-[#565e74]">Daily volume of issued digital KaamCards.</p>
+            </div>
+            {/* Date range picker */}
+            <div className="flex items-center gap-1">
+              {[7, 30, 90, 365].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setCertDays(d)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border ${
+                    certDays === d
+                      ? 'bg-[#4648d4] text-white border-[#4648d4]'
+                      : 'bg-[#f2f4f6] text-[#565e74] border-[#e0e3e5] hover:bg-[#e6e8ea]'
+                  }`}
+                >
+                  {d === 365 ? '1Y' : `${d}D`}
+                </button>
+              ))}
             </div>
           </div>
           <ResponsiveContainer width="100%" height={240}>
