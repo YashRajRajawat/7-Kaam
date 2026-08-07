@@ -93,7 +93,7 @@ class WorkerModel {
   // Derived state — the backend has no "pipeline step" concept, it's
   // computed here from the real fields the worker actually has.
   bool get hasVideo => videoUrl != null;
-  bool get hasKaamCard => kaamCardUrl != null;
+  bool get hasKaamCard => (kaamCard != null && !kaamCard!.isRevoked) || kaamCardUrl != null;
   bool get isSuspended => status == 'SUSPENDED';
 
   factory WorkerModel.fromJson(Map<String, dynamic> json) {

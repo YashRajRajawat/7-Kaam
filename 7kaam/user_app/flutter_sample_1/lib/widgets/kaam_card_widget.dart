@@ -310,7 +310,7 @@ class KaamCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: QrImageView(
-                  data: 'https://7kaam.in/verify/${card.qrToken.isNotEmpty ? card.qrToken : card.workerId}',
+                  data: 'http://192.168.1.6:8000/api/v1/verify/${card.qrToken.isNotEmpty ? card.qrToken : card.workerId}',
                   version: QrVersions.auto,
                   size: isCompact ? 50 : 64,
                 ),

@@ -23,6 +23,7 @@ class KaamCardModel {
   final int totalVideosTaken;
   final int certificatesEarned;
   final String credibilityLevel; // EMERGING (1-3) / ESTABLISHED (4-8) / EXPERT (9+)
+  final bool isRevoked;
 
   KaamCardModel({
     required this.id,
@@ -40,6 +41,7 @@ class KaamCardModel {
     this.totalVideosTaken = 0,
     this.certificatesEarned = 0,
     this.credibilityLevel = 'EMERGING',
+    this.isRevoked = false,
     required this.aadhaarVerified,
     required this.issueDate,
     required this.expiryDate,
@@ -108,6 +110,7 @@ class KaamCardModel {
       totalVideosTaken: tVideos,
       certificatesEarned: certs,
       credibilityLevel: cred,
+      isRevoked: json['isRevoked'] == true || json['is_revoked'] == true,
       aadhaarVerified: json['aadhaarVerified'] ?? json['aadhaar_verified'] ?? worker?['aadhaarVerified'] ?? true,
       issueDate: json['issuedAt'] != null
           ? DateTime.parse(json['issuedAt'])

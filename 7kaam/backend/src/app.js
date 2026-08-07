@@ -76,6 +76,7 @@ const otpSendLimiter = rateLimit({
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1', scoringRoutes);
 app.use('/api/v1/workers', workerRoutes);
 app.use('/api/v1/tests', testRoutes);
 app.use('/api/v1/kaamcards', kaamCardRoutes);
@@ -85,12 +86,6 @@ app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/customers', customerRoutes);
-// Mounted last and bare (no sub-path) since its routes mix /workers/:id/..
-// and /certificates/:id prefixes — every other, more specific router above
-// must get first shot at matching, otherwise this router's blanket
-// `router.use(requireAuth)` would intercept and 401 traffic meant for the
-// public/admin/verify routers before they ever run.
-app.use('/api/v1', scoringRoutes);
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));

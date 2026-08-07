@@ -13,7 +13,13 @@ echo.
 
 :: ── Paths ──────────────────────────────────────────────────────────────────
 set ROOT=%~dp0
-set FLUTTER=C:\Users\letss\OneDrive\Desktop\fluttersdk\flutter\bin\flutter.bat
+if exist "C:\Users\%USERNAME%\Flutter\flutter\bin\flutter.bat" (
+    set FLUTTER=C:\Users\%USERNAME%\Flutter\flutter\bin\flutter.bat
+) else if exist "C:\Users\Yazor\Flutter\flutter\bin\flutter.bat" (
+    set FLUTTER=C:\Users\Yazor\Flutter\flutter\bin\flutter.bat
+) else (
+    set FLUTTER=flutter
+)
 set BACKEND=%ROOT%backend
 set DASHBOARD=%ROOT%dashboard
 set WORKER_APP=%ROOT%user_app\flutter_sample_1

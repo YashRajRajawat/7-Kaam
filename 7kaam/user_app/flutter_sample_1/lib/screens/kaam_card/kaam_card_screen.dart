@@ -1,3 +1,5 @@
+import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +26,17 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
   bool _isBreakdownExpanded = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final worker = ref.read(workerProvider).worker ?? ref.read(authProvider).currentWorker;
+      if (worker != null) {
+        ref.read(kaamCardProvider.notifier).fetchKaamCard(worker.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final workerState = ref.watch(workerProvider);
@@ -33,8 +46,9 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
     final worker = workerState.worker ?? authState.currentWorker;
     final card = kaamCardState.kaamCard ?? worker?.kaamCard;
     final certificates = certState.certificates;
+    final isCardActive = card != null && !card.isRevoked;
 
-    if (card == null || worker?.hasKaamCard != true) {
+    if (!isCardActive) {
       final assessmentCount = (worker?.testScore != null ? 1 : 0) + (worker?.videoScore != null ? 1 : 0);
       final scoreEstimate = worker?.finalScore;
 
@@ -354,12 +368,16 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                 text: 'Download PDF',
                 icon: Icons.picture_as_pdf,
                 onPressed: () {
+                  final pdfUrl = 'http://localhost:8000/api/v1/kaamcards/${card.workerId}/pdf?force=true';
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Downloading official KaamCard PDF from ${card.kaamCardUrl ?? 'backend'}...'),
+                    const SnackBar(
+                      content: Text('Downloading official KaamCard PDF certificate...'),
                       backgroundColor: AppColors.successGreen,
                     ),
                   );
+                  if (kIsWeb) {
+                    html.window.open(pdfUrl, '_blank');
+                  }
                 },
               ),
               const SizedBox(height: 12),
@@ -369,7 +387,7 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                 isOutlined: true,
                 icon: Icons.share,
                 onPressed: () {
-                  final link = 'https://7kaam.in/verify/${card.qrToken.isNotEmpty ? card.qrToken : card.workerId}';
+                  final link = 'http://192.168.1.6:8000/api/v1/verify/${card.qrToken.isNotEmpty ? card.qrToken : card.workerId}';
                   Share.share('Check out my verified KaamCard certificate on 7 Kaam: $link');
                 },
               ),

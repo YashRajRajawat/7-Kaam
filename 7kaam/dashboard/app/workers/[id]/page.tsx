@@ -155,8 +155,12 @@ export default function WorkerDetailPage() {
 
 
   function copyLink() {
-    if (worker?.qrCodeUrl) {
-      navigator.clipboard.writeText(worker.qrCodeUrl);
+    const latestCard = worker?.kaamCards?.[0];
+    const targetUrl = latestCard?.qrToken
+      ? `http://localhost:8000/api/v1/verify/${latestCard.qrToken}`
+      : worker?.qrCodeUrl || '';
+    if (targetUrl) {
+      navigator.clipboard.writeText(targetUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -548,22 +552,18 @@ export default function WorkerDetailPage() {
                   <p className="mt-0.5">{latestCard.isRevoked ? <span className="text-red-400 font-bold">● Revoked</span> : <span className="text-emerald-400 font-bold">● Valid</span>}</p>
                 </div>
                 <div className="ml-auto flex gap-2">
-                  {latestCard.pdfUrl && (
-                    <a href={latestCard.pdfUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all shadow-sm">
-                      <Download size={12} /> Download PDF
-                    </a>
-                  )}
+                  <a href={latestCard.pdfUrl || `http://localhost:8000/api/v1/kaamcards/${id}/pdf`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all shadow-sm">
+                    <Download size={12} /> Download PDF
+                  </a>
                   <button onClick={copyLink}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-all">
                     {copied ? <><CheckCheck size={12} className="text-emerald-400" /> Copied!</> : <><Copy size={12} /> Copy Link</>}
                   </button>
-                  {worker.qrCodeUrl && (
-                    <a href={worker.qrCodeUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-all">
-                      <ExternalLink size={12} /> Verify QR
-                    </a>
-                  )}
+                  <a href={latestCard.qrToken ? `http://localhost:8000/api/v1/verify/${latestCard.qrToken}` : (worker.qrCodeUrl || '#')} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-all">
+                    <ExternalLink size={12} /> Verify QR
+                  </a>
                 </div>
               </div>
             </div>

@@ -506,10 +506,15 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
 
   // ── SUB-TAB 2: VIDEO ASSESSMENTS ─────────────────────────────────────────────
   Widget _buildVideoAssessmentsSubTab(CatalogueState catalogueState) {
+    final worker = ref.watch(workerProvider).worker ?? ref.watch(authProvider).currentWorker;
+    final trade = worker?.trade ?? 'ELECTRICIAN';
+
     final videoAssessments = catalogueState.categoryGroups
         .expand((g) => g.tests)
-        .where((t) => t.isVideoAssessment)
+        .where((t) => t.isVideoAssessment || t.category.toLowerCase().contains('video'))
         .toList();
+
+    final displayList = videoAssessments.isNotEmpty ? videoAssessments : _getTradeVideoPrompts(trade);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -523,18 +528,190 @@ class _PipelineScreenState extends ConsumerState<PipelineScreen> with SingleTick
 
           if (catalogueState.isLoading)
             const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primaryTeal)))
-          else if (videoAssessments.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text('No video assessments available for your trade yet.', style: GoogleFonts.poppins(color: Colors.grey.shade600)),
-              ),
-            )
           else
-            ...videoAssessments.map((v) => _buildVideoAssessmentCard(v)),
+            ...displayList.map((v) => _buildVideoAssessmentCard(v)),
         ],
       ),
     );
+  }
+
+  List<TradeTestModel> _getTradeVideoPrompts(String trade) {
+    switch (trade.toUpperCase()) {
+      case 'PLUMBER':
+        return [
+          TradeTestModel(
+            id: 'v-plumb-01',
+            title: 'CPVC Solvent Welding & 10-Bar Leak Test',
+            description: 'Record 60s video demonstrating pipe cutting, deburring, solvent cement coat, and 90° joint pressure hold.',
+            trade: 'PLUMBER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 12,
+            isVideoAssessment: true,
+            rubrics: {'Safety PPE': 25, 'Cut Chamfer': 25, 'Solvent Coat': 25, 'Zero-Leak Test': 25},
+          ),
+          TradeTestModel(
+            id: 'v-plumb-02',
+            title: 'Submersible Pump & Tank Automation',
+            description: 'Record 60s video showing float switch wiring, non-return valve installation, and auto-cutoff test.',
+            trade: 'PLUMBER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 8,
+            isVideoAssessment: true,
+            rubrics: {'Wiring Isolation': 25, 'Valve Direction': 25, 'Float Calibration': 25, 'Auto Cutoff': 25},
+          ),
+        ];
+      case 'CARPENTER':
+        return [
+          TradeTestModel(
+            id: 'v-carp-01',
+            title: 'Mortise & Tenon Wood Joint Fit',
+            description: 'Record 60s video showing chisel cleaning, tenon joint snug fit, wood glue application, and Try Square 90° check.',
+            trade: 'CARPENTER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 15,
+            isVideoAssessment: true,
+            rubrics: {'Chisel Edge': 25, 'Friction Fit': 25, 'Glue Spreading': 25, '90° Accuracy': 25},
+          ),
+          TradeTestModel(
+            id: 'v-carp-02',
+            title: 'Concealed 110° Hinge Installation',
+            description: 'Record 60s video demonstrating 35mm cup drilling, plate alignment, and door gap adjustment.',
+            trade: 'CARPENTER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 9,
+            isVideoAssessment: true,
+            rubrics: {'Drill Depth': 25, 'Hinge Squareness': 25, 'Soft-Close Test': 25, 'Gap Uniformity': 25},
+          ),
+        ];
+      case 'AC_TECHNICIAN':
+        return [
+          TradeTestModel(
+            id: 'v-ac-01',
+            title: 'Copper Tube Flaring & 500-Micron Vacuum',
+            description: 'Record 60s video demonstrating copper tube reaming, 45° flare tool execution, and vacuum gauge reading.',
+            trade: 'AC_TECHNICIAN',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 18,
+            isVideoAssessment: true,
+            rubrics: {'Reaming Clean': 25, 'Flare Lip': 25, 'Torque Wrench': 25, '<500 Micron Hold': 25},
+          ),
+          TradeTestModel(
+            id: 'v-ac-02',
+            title: 'PCB Diagnostics & MFD Capacitor Test',
+            description: 'Record 60s video showing multimeter MFD reading, IPM module diode check, and communication voltage test.',
+            trade: 'AC_TECHNICIAN',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 11,
+            isVideoAssessment: true,
+            rubrics: {'Safety Discharge': 25, 'Multimeter Setting': 25, 'MFD Accuracy': 25, 'Error Diagnosis': 25},
+          ),
+        ];
+      case 'PAINTER':
+        return [
+          TradeTestModel(
+            id: 'v-paint-01',
+            title: 'Wall Putty Sanding & Dual Primer Application',
+            description: 'Record 60s video showing putty levelling, dust wiping, roller load control, and uniform primer coat.',
+            trade: 'PAINTER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 14,
+            isVideoAssessment: true,
+            rubrics: {'Surface Moisture': 25, 'Smooth Sanding': 25, 'Roller Load': 25, 'Uniform Coat': 25},
+          ),
+          TradeTestModel(
+            id: 'v-paint-02',
+            title: 'Airless Spray & Metallic Texture Coating',
+            description: 'Record 60s video demonstrating spray gun tip selection, 12-inch distance control, and texture roller pattern.',
+            trade: 'PAINTER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 7,
+            isVideoAssessment: true,
+            rubrics: {'Masking Tape': 25, 'Spray Distance': 25, 'Overlap Rate': 25, 'Texture Symmetry': 25},
+          ),
+        ];
+      case 'WELDER':
+        return [
+          TradeTestModel(
+            id: 'v-weld-01',
+            title: '3G Vertical Up Arc Welding Demonstration',
+            description: 'Record 60s video showing E7018 arc strike, root pass weave motion, slag chipping, and bead check.',
+            trade: 'WELDER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 20,
+            isVideoAssessment: true,
+            rubrics: {'Safety Mask & Leather': 25, 'Arc Length': 25, 'Slag Clean': 25, 'No Undercut': 25},
+          ),
+          TradeTestModel(
+            id: 'v-weld-02',
+            title: 'TIG Pipe Welding & Argon Gas Calibration',
+            description: 'Record 60s video demonstrating TIG torch angle, tungsten tip grinding, and keyhole root pass.',
+            trade: 'WELDER',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 13,
+            isVideoAssessment: true,
+            rubrics: {'Argon LPM Flow': 25, 'Tungsten Tip': 25, 'Filler Feed': 25, 'Penetration': 25},
+          ),
+        ];
+      default: // ELECTRICIAN
+        return [
+          TradeTestModel(
+            id: 'v-elec-01',
+            title: '2-Min MCB & Switchboard Wiring Demonstration',
+            description: 'Record 60s video showing wire stripping, proper phase color selection, MCB terminal tightening, and voltage check.',
+            trade: 'ELECTRICIAN',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'INTERMEDIATE',
+            estimatedMinutes: 5,
+            totalAttempts: 24,
+            isVideoAssessment: true,
+            rubrics: {'Insulated Tools': 25, 'Wire Stripping': 25, 'MCB Tightening': 25, 'Voltage Check': 25},
+          ),
+          TradeTestModel(
+            id: 'v-elec-02',
+            title: '3-Phase Motor & Solar Inverter Wiring',
+            description: 'Record 60s video showing contactor wiring, thermal overload relay setting, and Megger insulation resistance test.',
+            trade: 'ELECTRICIAN',
+            language: 'HINDI',
+            questions: [],
+            difficulty: 'ADVANCED',
+            estimatedMinutes: 10,
+            totalAttempts: 16,
+            isVideoAssessment: true,
+            rubrics: {'Earthing Test': 25, 'Star-Delta Interlock': 25, 'Overload Setting': 25, 'Megger Reading': 25},
+          ),
+        ];
+    }
   }
 
   Widget _buildVideoAssessmentCard(TradeTestModel v) {

@@ -14,6 +14,7 @@ import {
   Plus,
   Shield,
   ShieldAlert,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/dashboard',   label: 'Overview',    icon: LayoutDashboard },
   { href: '/workers',     label: 'Workers',      icon: Users },
   { href: '/tests',       label: 'Tests',        icon: ClipboardList },
+  { href: '/assessments', label: 'Video Assessments', icon: Video },
   { href: '/kaamcards',   label: 'KaamCards',    icon: Award },
   { href: '/moderation',  label: 'Moderation',   icon: ShieldAlert },
   { href: '/analytics',   label: 'Analytics',    icon: BarChart3 },

@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
@@ -57,6 +57,29 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
     }
   }
 
+  Future<void> _pickVideoFile() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(seconds: 60),
+      );
+      if (video != null && mounted) {
+        setState(() {
+          _recordedVideoFile = video;
+          _recordingFinished = true;
+          _isRecording = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not pick video file: $e'), backgroundColor: AppColors.errorRed),
+        );
+      }
+    }
+  }
+
   Future<void> _toggleRecording() async {
     if (_isRecording) {
       // Stop recording
@@ -71,7 +94,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
         setState(() {
           _isRecording = false;
           _recordingFinished = true;
-          _recordedVideoFile = file;
+          _recordedVideoFile = file ?? _recordedVideoFile;
         });
       }
     } else {
@@ -107,7 +130,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
             setState(() {
               _isRecording = false;
               _recordingFinished = true;
-              _recordedVideoFile = file;
+              _recordedVideoFile = file ?? _recordedVideoFile;
             });
           }
         }
@@ -123,14 +146,14 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
 
     if (_recordedVideoFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No recorded video found — please record again.'), backgroundColor: AppColors.errorRed),
+        const SnackBar(content: Text('No recorded video found — please record or choose a video file.'), backgroundColor: AppColors.errorRed),
       );
       return;
     }
 
     List<int> bytes;
     try {
-      bytes = await File(_recordedVideoFile!.path).readAsBytes();
+      bytes = await _recordedVideoFile!.readAsBytes();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -149,7 +172,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Video uploaded! Admin will score it shortly.'),
+          content: Text('Video uploaded successfully! Saved to admin dashboard for evaluation.'),
           backgroundColor: AppColors.successGreen,
         ),
       );
@@ -195,7 +218,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _isRecording ? 'Recording Work Demonstration...' : 'Position camera at your work area',
+                    _isRecording ? 'Recording Work Demonstration...' : 'Record camera video or select video file',
                     style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
                   ),
                   Container(
@@ -239,7 +262,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                                 const Icon(Icons.check_circle_outline, color: AppColors.gold, size: 80),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'Video Recorded (60 Seconds)',
+                                  'Video Ready for Submission',
                                   style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -248,7 +271,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Ready to upload for AI & Admin trade evaluation',
+                                  'Ready to upload for Admin trade evaluation & scoring',
                                   style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
                                 ),
                               ],
@@ -260,10 +283,20 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                                 child: CameraPreview(_cameraController!),
                               )
                             : Center(
-                                child: Icon(
-                                  _isRecording ? Icons.videocam : Icons.camera_front,
-                                  size: 100,
-                                  color: _isRecording ? AppColors.errorRed : Colors.white38,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      _isRecording ? Icons.videocam : Icons.video_camera_back,
+                                      size: 90,
+                                      color: _isRecording ? AppColors.errorRed : Colors.white38,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      'Tap "Record Camera" or "Upload Video File" below',
+                                      style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
+                                    ),
+                                  ],
                                 ),
                               )),
                   ),
@@ -284,7 +317,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Uploading video to cloud server...',
+                            'Uploading video demonstration to server...',
                             style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
                           ),
                         ],
@@ -308,7 +341,7 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                         ),
                         const SizedBox(height: 12),
                         CustomButton(
-                          text: 'Re-record',
+                          text: 'Choose / Record New Video',
                           isOutlined: true,
                           backgroundColor: Colors.white,
                           onPressed: () {
@@ -321,27 +354,68 @@ class _VideoUploadScreenState extends ConsumerState<VideoUploadScreen> {
                         ),
                       ],
                     )
-                  : GestureDetector(
-                      onTap: _toggleRecording,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                        ),
-                        child: Center(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: _isRecording ? 36 : 64,
-                            height: _isRecording ? 36 : 64,
-                            decoration: BoxDecoration(
-                              color: AppColors.errorRed,
-                              borderRadius: BorderRadius.circular(_isRecording ? 8 : 40),
-                            ),
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        GestureDetector(
+                          onTap: _toggleRecording,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                ),
+                                child: Center(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: _isRecording ? 30 : 54,
+                                    height: _isRecording ? 30 : 54,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.errorRed,
+                                      borderRadius: BorderRadius.circular(_isRecording ? 6 : 35),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _isRecording ? 'Stop Recording' : 'Record Camera',
+                                style: GoogleFonts.poppins(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        if (!_isRecording)
+                          GestureDetector(
+                            onTap: _pickVideoFile,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryTeal,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 3),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.file_upload, color: Colors.white, size: 30),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Upload Video File',
+                                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
             ),
           ],

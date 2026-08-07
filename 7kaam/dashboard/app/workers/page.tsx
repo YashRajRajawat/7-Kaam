@@ -201,14 +201,22 @@ export default function WorkersPage() {
 
                       {/* KaamCard Status */}
                       <td className="px-6 py-4">
-                        {worker.kaamCardIssuedAt ? (
-                          <div className="flex items-center gap-1.5 text-[#059669] text-xs font-bold">
-                            <Award size={14} />
-                            <span>{formatDate(worker.kaamCardIssuedAt)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-[#767586]">Pending Verification</span>
-                        )}
+                        {(() => {
+                          const activeCard = worker.kaamCards?.find(c => !c.isRevoked);
+                          if (activeCard || worker.kaamCardIssuedAt) {
+                            return (
+                              <div className="flex items-center gap-1.5 text-[#059669] text-xs font-bold bg-[#d1fae5] px-2.5 py-1 rounded-full border border-emerald-200 w-fit">
+                                <Award size={14} />
+                                <span>✓ Issued ({formatDate(activeCard?.issuedAt || worker.kaamCardIssuedAt)})</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              ⏳ Pending Verification
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       {/* Action buttons */}
