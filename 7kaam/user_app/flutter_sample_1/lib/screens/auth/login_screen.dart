@@ -34,7 +34,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  // TODO: integrate SMS OTP
+  // NOTE: OTP is intentionally fixed to '1234' for the MVP/dev phase.
+  // To integrate a live SMS provider (MSG91/Twilio), replace the FIXED_OTP
+  // check in backend/src/controllers/authController.js with a real OTP service.
   Future<void> _handleSendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.length < 10) {
