@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import type { TradeTest } from '@/types';
-import { Plus, ToggleLeft, ToggleRight, Trash2, FileText, ClipboardList, Filter, Video, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Plus, ToggleLeft, ToggleRight, Trash2, Pencil, FileText, ClipboardList, Filter, Video, Sparkles, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 const PRACTICAL_VIDEO_PROMPTS = [
@@ -65,6 +66,16 @@ export default function TestsPage() {
   const [activeTab, setActiveTab] = useState<'mcq' | 'video'>('mcq');
   const [filter, setFilter] = useState({ trade: '', language: '' });
 
+  const [editTarget, setEditTarget] = useState<TradeTest | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    trade: '',
+    language: '',
+    isActive: true,
+  });
+
+  const [deleteTarget, setDeleteTarget] = useState<TradeTest | null>(null);
+
   const { data: tests, isLoading } = useQuery<TradeTest[]>({
     queryKey: ['tests', filter],
     queryFn: () => api.get('/tests', { params: filter }).then(r => r.data),
@@ -73,12 +84,38 @@ export default function TestsPage() {
   const toggleActive = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       api.patch(`/tests/${id}`, { isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tests'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tests'] });
+      toast.success('Test status updated');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to update test status');
+    },
+  });
+
+  const updateTest = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: typeof editForm }) =>
+      api.patch(`/tests/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tests'] });
+      setEditTarget(null);
+      toast.success('Test updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to update test');
+    },
   });
 
   const deleteTest = useMutation({
     mutationFn: (id: string) => api.delete(`/tests/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tests'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tests'] });
+      setDeleteTarget(null);
+      toast.success('Test deleted successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to delete test');
+    },
   });
 
   const filteredPrompts = filter.trade
@@ -206,12 +243,30 @@ export default function TestsPage() {
                           </button>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() => { if (confirm('Delete test?')) deleteTest.mutate(test.id); }}
-                            className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 text-[#767586] hover:text-red-700 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditTarget(test);
+                                setEditForm({
+                                  title: test.title,
+                                  trade: test.trade,
+                                  language: test.language,
+                                  isActive: test.isActive,
+                                });
+                              }}
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-amber-100 text-[#767586] hover:text-amber-700 transition-colors"
+                              title="Edit Test Details"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(test)}
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 text-[#767586] hover:text-red-700 transition-colors"
+                              title="Delete Test Permanently"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -266,6 +321,120 @@ export default function TestsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Test Modal */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+              <Pencil size={18} className="text-[#4648d4]" />
+              Edit Trade Test
+            </h3>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Test Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#565e74] font-bold mb-1">Trade</label>
+                  <select
+                    value={editForm.trade}
+                    onChange={e => setEditForm({ ...editForm, trade: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                  >
+                    <option value="ELECTRICIAN">Electrician</option>
+                    <option value="PLUMBER">Plumber</option>
+                    <option value="CARPENTER">Carpenter</option>
+                    <option value="AC_TECHNICIAN">AC Technician</option>
+                    <option value="PAINTER">Painter</option>
+                    <option value="WELDER">Welder</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[#565e74] font-bold mb-1">Language</label>
+                  <select
+                    value={editForm.language}
+                    onChange={e => setEditForm({ ...editForm, language: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                  >
+                    <option value="HINDI">Hindi</option>
+                    <option value="ENGLISH">English</option>
+                    <option value="HINGLISH">Hinglish</option>
+                    <option value="MARATHI">Marathi</option>
+                    <option value="TELUGU">Telugu</option>
+                    <option value="TAMIL">Tamil</option>
+                    <option value="KANNADA">Kannada</option>
+                    <option value="BENGALI">Bengali</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="editIsActive"
+                  checked={editForm.isActive}
+                  onChange={e => setEditForm({ ...editForm, isActive: e.target.checked })}
+                  className="rounded border-[#e0e3e5] text-[#4648d4] focus:ring-[#4648d4]"
+                />
+                <label htmlFor="editIsActive" className="text-xs font-bold text-[#191c1e] cursor-pointer">
+                  Test is Active & available for workers
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setEditTarget(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => updateTest.mutate({ id: editTarget.id, data: editForm })}
+                disabled={updateTest.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {updateTest.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Test Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+              <Trash2 size={18} />
+              Delete &quot;{deleteTarget.title}&quot;?
+            </h3>
+            <p className="text-xs text-[#565e74]">
+              This will permanently delete this trade test and all related test submissions. This action cannot be undone.
+            </p>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteTest.mutate(deleteTarget.id)}
+                disabled={deleteTest.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {deleteTest.isPending ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

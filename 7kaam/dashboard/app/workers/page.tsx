@@ -12,7 +12,7 @@ import { cn, tierColor, statusColor, tradeLabel, formatScore, formatDate } from 
 
 import {
   Plus, Search, ChevronLeft, ChevronRight, Eye,
-  UserX, UserCheck, Award, Users, Filter,
+  UserX, UserCheck, Award, Users, Filter, Pencil, Trash2,
 } from 'lucide-react';
 
 const TRADES = ['', 'ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAINTER', 'WELDER'];
@@ -29,6 +29,19 @@ export default function WorkersPage() {
   const [page, setPage] = useState(1);
   const [suspendTarget, setSuspendTarget] = useState<Worker | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
+
+  const [editTarget, setEditTarget] = useState<Worker | null>(null);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+    trade: '',
+    city: '',
+    locality: '',
+    status: '',
+  });
+
+  const [deleteTarget, setDeleteTarget] = useState<Worker | null>(null);
+
   const limit = 10;
 
   const { data, isLoading } = useQuery<PaginatedResponse<Worker>>({
@@ -64,6 +77,30 @@ export default function WorkersPage() {
     },
   });
 
+  const updateWorker = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: typeof editForm }) =>
+      api.patch(`/workers/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workers'] });
+      setEditTarget(null);
+      toast.success('Worker details updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to update worker');
+    },
+  });
+
+  const deleteWorker = useMutation({
+    mutationFn: (id: string) => api.delete(`/workers/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workers'] });
+      setDeleteTarget(null);
+      toast.success('Worker deleted successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to delete worker');
+    },
+  });
 
   const totalPages = Math.ceil((data?.total || 0) / limit);
 
@@ -221,7 +258,7 @@ export default function WorkersPage() {
 
                       {/* Action buttons */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => router.push(`/workers/${worker.id}`)}
                             className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-[#e1e0ff] hover:text-[#4648d4] text-[#565e74] transition-all"
@@ -229,6 +266,25 @@ export default function WorkersPage() {
                           >
                             <Eye size={14} />
                           </button>
+
+                          <button
+                            onClick={() => {
+                              setEditTarget(worker);
+                              setEditForm({
+                                fullName: worker.fullName || '',
+                                phoneNumber: worker.phoneNumber || '',
+                                trade: worker.trade || 'ELECTRICIAN',
+                                city: worker.city || '',
+                                locality: worker.locality || '',
+                                status: worker.status || 'ACTIVE',
+                              });
+                            }}
+                            className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-amber-100 hover:text-amber-700 text-[#565e74] transition-all"
+                            title="Edit Worker Details"
+                          >
+                            <Pencil size={14} />
+                          </button>
+
                           {worker.status === 'SUSPENDED' ? (
                             <button
                               onClick={() => reactivate.mutate(worker.id)}
@@ -241,12 +297,20 @@ export default function WorkersPage() {
                           ) : (
                             <button
                               onClick={() => setSuspendTarget(worker)}
-                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 hover:text-red-700 text-[#565e74] transition-all"
+                              className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-amber-100 hover:text-amber-700 text-[#565e74] transition-all"
                               title="Suspend Worker"
                             >
                               <UserX size={14} />
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setDeleteTarget(worker)}
+                            className="p-2 rounded-xl bg-[#f2f4f6] hover:bg-red-100 hover:text-red-700 text-[#565e74] transition-all"
+                            title="Delete Worker Permanently"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -284,11 +348,130 @@ export default function WorkersPage() {
         </div>
       </div>
 
+      {/* Edit Worker Modal */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+              <Pencil size={18} className="text-[#4648d4]" />
+              Edit Worker Details
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.fullName}
+                  onChange={e => setEditForm({ ...editForm, fullName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={editForm.phoneNumber}
+                  onChange={e => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Trade</label>
+                <select
+                  value={editForm.trade}
+                  onChange={e => setEditForm({ ...editForm, trade: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                >
+                  {TRADES.filter(Boolean).map(t => (
+                    <option key={t} value={t}>{tradeLabel(t)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Status</label>
+                <select
+                  value={editForm.status}
+                  onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">City</label>
+                <input
+                  type="text"
+                  value={editForm.city}
+                  onChange={e => setEditForm({ ...editForm, city: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Locality</label>
+                <input
+                  type="text"
+                  value={editForm.locality}
+                  onChange={e => setEditForm({ ...editForm, locality: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setEditTarget(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => updateWorker.mutate({ id: editTarget.id, data: editForm })}
+                disabled={updateWorker.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {updateWorker.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Worker Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+              <Trash2 size={18} />
+              Delete {deleteTarget.fullName} Permanently?
+            </h3>
+            <p className="text-xs text-[#565e74]">
+              This action cannot be undone. All associated certificates, test submissions, and history logs for this worker will be permanently removed from the system.
+            </p>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteWorker.mutate(deleteTarget.id)}
+                disabled={deleteWorker.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {deleteWorker.isPending ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Suspend Confirmation Modal */}
       {suspendTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+            <h3 className="text-base font-bold text-amber-600 flex items-center gap-2">
               <UserX size={18} />
               Suspend {suspendTarget.fullName}?
             </h3>
@@ -300,7 +483,7 @@ export default function WorkersPage() {
               onChange={e => setSuspendReason(e.target.value)}
               placeholder="Reason for suspension (required)..."
               rows={3}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] text-xs placeholder:text-[#767586] focus:outline-none focus:border-red-500 transition-colors resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] text-xs placeholder:text-[#767586] focus:outline-none focus:border-amber-500 transition-colors resize-none"
             />
             <div className="flex gap-2.5 pt-2">
               <button
@@ -312,7 +495,7 @@ export default function WorkersPage() {
               <button
                 onClick={() => suspend.mutate({ id: suspendTarget.id, reason: suspendReason })}
                 disabled={!suspendReason || suspend.isPending}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+                className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
               >
                 {suspend.isPending ? 'Suspending...' : 'Confirm Suspension'}
               </button>

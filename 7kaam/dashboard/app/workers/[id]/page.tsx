@@ -13,8 +13,10 @@ import {
   CheckCircle2, Clock, ChevronDown, ChevronUp, ChevronLeft,
   Video, FileText, Briefcase, Calculator, Award, XCircle,
   ExternalLink, Download, Copy, CheckCheck, UserX, UserCheck,
-  ShieldAlert, BadgeCheck,
+  ShieldAlert, BadgeCheck, Pencil, Trash2,
 } from 'lucide-react';
+
+const TRADES = ['', 'ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAINTER', 'WELDER'];
 
 const PIPELINE_STEPS = [
   { key: 'video', label: 'Video Upload',     desc: (w: Worker) => w.videoUrl ? 'Uploaded' : 'Pending' },
@@ -43,28 +45,54 @@ function ScoreRing({ score }: { score: number }) {
       <circle cx="64" cy="64" r={r} fill="none" stroke="#e0e3e5" strokeWidth="8" />
       <circle
         cx="64" cy="64" r={r} fill="none" stroke="#4648d4" strokeWidth="8"
-        strokeDasharray={`${circ * pct} ${circ * (1 - pct)}`}
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - pct)}
         strokeLinecap="round"
         transform="rotate(-90 64 64)"
-        style={{ transition: 'stroke-dasharray 1s ease' }}
+        className="transition-all duration-700 ease-out"
       />
-      <text x="64" y="60" textAnchor="middle" fill="#191c1e" fontSize="22" fontWeight="900">{Math.round(score)}</text>
-      <text x="64" y="76" textAnchor="middle" fill="#767586" fontSize="10">/100</text>
+      <text x="64" y="60" textAnchor="middle" fill="#191c1e" fontSize="22" fontWeight="bold">
+        {Math.round(score)}
+      </text>
+      <text x="64" y="78" textAnchor="middle" fill="#565e74" fontSize="10" fontWeight="600">
+        / 100
+      </text>
     </svg>
   );
 }
 
 export default function WorkerDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
   const router = useRouter();
+  const id = params?.id as string;
   const qc = useQueryClient();
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+    trade: '',
+    city: '',
+    locality: '',
+    status: '',
+  });
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   const [addHistoryOpen, setAddHistoryOpen] = useState(false);
   const [historyForm, setHistoryForm] = useState({
-    clientName: '', clientType: 'HOUSEHOLD', clientPhone: '', clientCity: '',
-    projectTitle: '', projectDescription: '', startDate: '', endDate: '',
-    projectScale: 'SMALL', isVerified: false,
+    clientName: '',
+    clientType: 'HOUSEHOLD',
+    clientPhone: '',
+    clientCity: '',
+    projectTitle: '',
+    projectDescription: '',
+    startDate: '',
+    endDate: '',
+    projectScale: 'SMALL',
+    isVerified: false,
   });
+
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [revokeReason, setRevokeReason] = useState('');
   const [copied, setCopied] = useState(false);
@@ -153,6 +181,25 @@ export default function WorkerDetailPage() {
     onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to revoke KaamCard'),
   });
 
+  const updateWorker = useMutation({
+    mutationFn: (data: typeof editForm) => api.patch(`/workers/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['worker', id] });
+      setEditOpen(false);
+      toast.success('Worker details updated successfully');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to update worker'),
+  });
+
+  const deleteWorker = useMutation({
+    mutationFn: () => api.delete(`/workers/${id}`),
+    onSuccess: () => {
+      toast.success('Worker deleted successfully');
+      router.push('/workers');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.error || 'Failed to delete worker'),
+  });
+
 
   function copyLink() {
     const latestCard = worker?.kaamCards?.[0];
@@ -201,6 +248,31 @@ export default function WorkerDetailPage() {
           >
             <ChevronLeft size={14} /> Back to Directory
           </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setEditOpen(true);
+                setEditForm({
+                  fullName: worker.fullName || '',
+                  phoneNumber: worker.phoneNumber || '',
+                  trade: worker.trade || 'ELECTRICIAN',
+                  city: worker.city || '',
+                  locality: worker.locality || '',
+                  status: worker.status || 'ACTIVE',
+                });
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-[#e0e3e5] hover:bg-amber-50 hover:border-amber-200 text-amber-700 text-xs font-bold transition-colors shadow-sm cursor-pointer"
+            >
+              <Pencil size={14} /> Edit Worker
+            </button>
+            <button
+              onClick={() => setDeleteOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-[#e0e3e5] hover:bg-red-50 hover:border-red-200 text-red-600 text-xs font-bold transition-colors shadow-sm cursor-pointer"
+            >
+              <Trash2 size={14} /> Delete Worker
+            </button>
+          </div>
         </div>
 
         {/* Top Hero Section */}
@@ -753,6 +825,124 @@ export default function WorkerDetailPage() {
               <button onClick={() => requireRecertification.mutate()} disabled={recertTestIds.length === 0 || requireRecertification.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm">
                 {requireRecertification.isPending ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Worker Modal */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+              <Pencil size={18} className="text-[#4648d4]" />
+              Edit Worker Details
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.fullName}
+                  onChange={e => setEditForm({ ...editForm, fullName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={editForm.phoneNumber}
+                  onChange={e => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Trade</label>
+                <select
+                  value={editForm.trade}
+                  onChange={e => setEditForm({ ...editForm, trade: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                >
+                  {TRADES.filter(Boolean).map(t => (
+                    <option key={t} value={t}>{tradeLabel(t)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Status</label>
+                <select
+                  value={editForm.status}
+                  onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">City</label>
+                <input
+                  type="text"
+                  value={editForm.city}
+                  onChange={e => setEditForm({ ...editForm, city: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#565e74] font-bold mb-1">Locality</label>
+                <input
+                  type="text"
+                  value={editForm.locality}
+                  onChange={e => setEditForm({ ...editForm, locality: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] text-[#191c1e] focus:outline-none focus:border-[#4648d4]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setEditOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => updateWorker.mutate(editForm)}
+                disabled={updateWorker.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {updateWorker.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Worker Confirmation Modal */}
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+              <Trash2 size={18} />
+              Delete {worker.fullName} Permanently?
+            </h3>
+            <p className="text-xs text-[#565e74]">
+              This action cannot be undone. All associated certificates, test submissions, and history logs for this worker will be permanently removed from the system.
+            </p>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={() => setDeleteOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#f2f4f6] hover:bg-[#e6e8ea] text-[#191c1e] text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteWorker.mutate()}
+                disabled={deleteWorker.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                {deleteWorker.isPending ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>
