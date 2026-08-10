@@ -7,6 +7,8 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/certificate_provider.dart';
+import '../../providers/kaam_card_provider.dart';
+import '../../providers/test_provider.dart';
 import '../../widgets/tier_badge.dart';
 import '../../widgets/custom_button.dart';
 
@@ -181,11 +183,32 @@ class ProfileScreen extends ConsumerWidget {
                       style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grayText),
                     ),
                     const SizedBox(height: 14),
-                    CustomButton(
-                      text: 'Edit Profile',
-                      isOutlined: true,
-                      height: 38,
-                      onPressed: () => _showEditProfileDialog(context, ref, worker),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomButton(
+                            text: 'Edit Profile',
+                            isOutlined: true,
+                            height: 38,
+                            onPressed: () => _showEditProfileDialog(context, ref, worker),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: CustomButton(
+                            text: 'Logout',
+                            isOutlined: true,
+                            height: 38,
+                            icon: Icons.logout,
+                            onPressed: () async {
+                              ref.read(kaamCardProvider.notifier).clearKaamCard();
+                              ref.read(testProvider.notifier).resetTestState();
+                              await ref.read(authProvider.notifier).logout();
+                              if (context.mounted) context.go('/login');
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

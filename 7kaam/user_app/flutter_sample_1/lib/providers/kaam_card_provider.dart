@@ -23,13 +23,14 @@ class KaamCardState {
     bool? isLoading,
     String? errorMessage,
     KaamCardModel? kaamCard,
+    bool clearKaamCard = false,
     KaamCardModel? verifiedCard,
     List<KaamCardHistoryModel>? history,
   }) {
     return KaamCardState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
-      kaamCard: kaamCard ?? this.kaamCard,
+      kaamCard: clearKaamCard ? null : (kaamCard ?? this.kaamCard),
       verifiedCard: verifiedCard ?? this.verifiedCard,
       history: history ?? this.history,
     );
@@ -40,6 +41,10 @@ class KaamCardNotifier extends StateNotifier<KaamCardState> {
   final ApiService _apiService = ApiService();
 
   KaamCardNotifier() : super(KaamCardState());
+
+  void clearKaamCard() {
+    state = KaamCardState();
+  }
 
   // No card yet is a normal, expected state — KaamCards are issued
   // manually by an admin after reviewing assessments (see 7Kaam sync
@@ -52,16 +57,16 @@ class KaamCardNotifier extends StateNotifier<KaamCardState> {
         final card = KaamCardModel.fromJson(Map<String, dynamic>.from(response.data));
         state = state.copyWith(isLoading: false, kaamCard: card);
       } else {
-        state = state.copyWith(isLoading: false);
+        state = state.copyWith(isLoading: false, clearKaamCard: true);
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        state = state.copyWith(isLoading: false, kaamCard: null);
+        state = state.copyWith(isLoading: false, clearKaamCard: true);
       } else {
-        state = state.copyWith(isLoading: false, errorMessage: 'Failed to load KaamCard');
+        state = state.copyWith(isLoading: false, errorMessage: 'Failed to load KaamCard', clearKaamCard: true);
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load KaamCard: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load KaamCard: $e', clearKaamCard: true);
     }
   }
 

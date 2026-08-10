@@ -76,16 +76,16 @@ const otpSendLimiter = rateLimit({
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authLimiter, authRoutes);
-app.use('/api/v1', scoringRoutes);
-app.use('/api/v1/workers', workerRoutes);
-app.use('/api/v1/tests', testRoutes);
 app.use('/api/v1/kaamcards', kaamCardRoutes);
 app.use('/api/v1/verify', require('./routes/verify'));
+app.use('/api/v1/workers', workerRoutes);
+app.use('/api/v1/tests', testRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/customers', customerRoutes);
+app.use('/api/v1', scoringRoutes);
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));

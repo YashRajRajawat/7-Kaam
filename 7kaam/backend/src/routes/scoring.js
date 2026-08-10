@@ -21,17 +21,14 @@ router.get('/workers/:id/video-assessments', getWorkerVideoAssessments);
 router.get('/workers/:id/kaamcard/history', getKaamCardHistory);
 router.get('/certificates/:id', getCertificateDetail);
 
-// Protected Routes
-router.use(requireAuth);
-
 // Worker-facing write operations (self-service assessment submission)
-router.post('/workers/:id/upload-video', getVideoUploadUrl);
-router.post('/workers/:id/submit-test', submitTest);
-router.post('/workers/:id/add-work-history', addWorkHistory);
+router.post('/workers/:id/upload-video', requireAuth, getVideoUploadUrl);
+router.post('/workers/:id/submit-test', requireAuth, submitTest);
+router.post('/workers/:id/add-work-history', requireAuth, addWorkHistory);
 
 // Admin-only write operations (manual video scoring, KaamCard issuance, forced recompute)
-router.post('/workers/:id/score-video', requireRole(...ADMIN_ROLES), scoreVideo);
-router.post('/workers/:id/compute-score', requireRole(...ADMIN_ROLES), computeScore);
-router.post('/workers/:id/issue-kaamcard', requireRole(...ADMIN_ROLES), issueKaamCard);
+router.post('/workers/:id/score-video', requireAuth, requireRole(...ADMIN_ROLES), scoreVideo);
+router.post('/workers/:id/compute-score', requireAuth, requireRole(...ADMIN_ROLES), computeScore);
+router.post('/workers/:id/issue-kaamcard', requireAuth, requireRole(...ADMIN_ROLES), issueKaamCard);
 
 module.exports = router;

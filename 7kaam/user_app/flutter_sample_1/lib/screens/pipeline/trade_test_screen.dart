@@ -24,6 +24,7 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      ref.read(testProvider.notifier).resetTestState();
       ref.read(testProvider.notifier).fetchTestById(widget.testId);
     });
   }
@@ -486,6 +487,7 @@ class _TradeTestScreenState extends ConsumerState<TradeTestScreen> {
               CustomButton(
                 text: 'Back to Pipeline',
                 onPressed: () {
+                  ref.read(testProvider.notifier).resetTestState();
                   context.pop();
                 },
               ),

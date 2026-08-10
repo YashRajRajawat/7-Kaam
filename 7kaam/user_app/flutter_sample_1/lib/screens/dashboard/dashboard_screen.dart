@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/kaam_card_provider.dart';
+import '../../core/storage/secure_storage.dart';
 import '../../providers/certificate_provider.dart';
 import '../../providers/catalogue_provider.dart';
 import '../../widgets/score_ring.dart';
@@ -25,9 +26,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Save GPS coordinates once when the dashboard opens so the worker
-    // appears on the customer map. Fire-and-forget — never blocks UI.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final workerId = await SecureStorage.instance.getWorkerId();
+      if (workerId != null) {
+        await ref.read(workerProvider.notifier).fetchWorkerProfile(workerId);
+        ref.read(kaamCardProvider.notifier).fetchKaamCard(workerId);
+      } else {
+        context.go('/login');
+      }
       ref.read(workerProvider.notifier).saveLocation();
     });
   }

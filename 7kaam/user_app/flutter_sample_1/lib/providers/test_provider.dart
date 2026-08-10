@@ -29,6 +29,7 @@ class TestState {
     int? currentQuestionIndex,
     Map<int, int>? selectedAnswers,
     TradeTestResultModel? result,
+    bool clearResult = false,
     String? selectedLanguage,
   }) {
     return TestState(
@@ -37,7 +38,7 @@ class TestState {
       currentTest: currentTest ?? this.currentTest,
       currentQuestionIndex: currentQuestionIndex ?? this.currentQuestionIndex,
       selectedAnswers: selectedAnswers ?? this.selectedAnswers,
-      result: result ?? this.result,
+      result: clearResult ? null : (result ?? this.result),
       selectedLanguage: selectedLanguage ?? this.selectedLanguage,
     );
   }
@@ -60,24 +61,32 @@ class TestNotifier extends StateNotifier<TestState> {
     state = state.copyWith(selectedLanguage: language);
   }
 
+  void resetTestState() {
+    state = TestState(selectedLanguage: state.selectedLanguage);
+  }
+
   Future<void> fetchTestById(String testId) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = TestState(
+      isLoading: true,
+      selectedLanguage: state.selectedLanguage,
+    );
     try {
       final response = await _apiService.getTestById(testId);
       if (response.statusCode == 200 && response.data != null) {
         final test = TradeTestModel.fromJson(Map<String, dynamic>.from(response.data));
-        state = state.copyWith(
+        state = TestState(
           isLoading: false,
           currentTest: test,
           currentQuestionIndex: 0,
           selectedAnswers: {},
           result: null,
+          selectedLanguage: state.selectedLanguage,
         );
       } else {
-        state = state.copyWith(isLoading: false, errorMessage: 'Could not load this assessment');
+        state = state.copyWith(isLoading: false, errorMessage: 'Could not load this assessment', clearResult: true);
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: _extractError(e, 'Failed to load test: $e'));
+      state = state.copyWith(isLoading: false, errorMessage: _extractError(e, 'Failed to load test: $e'), clearResult: true);
     }
   }
 

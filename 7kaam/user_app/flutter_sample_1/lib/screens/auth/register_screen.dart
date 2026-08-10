@@ -26,6 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _localityController = TextEditingController();
+  final TextEditingController _digiPinController = TextEditingController();
   String _selectedTrade = 'ELECTRICIAN';
 
   final List<String> _citySuggestions = [
@@ -56,17 +57,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _phoneController.dispose();
     _cityController.dispose();
     _localityController.dispose();
+    _digiPinController.dispose();
     _aadhaarController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final picked = await _picker.pickImage(source: source, imageQuality: 70);
-      if (picked != null) {
-        setState(() {
-          _profileImage = File(picked.path);
-        });
+      final picked = await _picker.pickImage(source: source, imageQuality: 85);
+      if (picked != null && mounted) {
+        _showImageCropModal(File(picked.path));
       }
     } catch (e) {
       if (!mounted) return;
@@ -74,6 +74,84 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         SnackBar(content: Text('Failed to pick image: $e')),
       );
     }
+  }
+
+  void _showImageCropModal(File file) {
+    double scale = 1.0;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              title: Text(
+                'Crop & Preview Profile Picture',
+                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 170,
+                    height: 170,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryTeal, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryTeal.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Image.file(file, fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Zoom & Adjust Crop', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+                  Slider(
+                    value: scale,
+                    min: 1.0,
+                    max: 2.2,
+                    activeColor: AppColors.primaryTeal,
+                    onChanged: (val) => setDialogState(() => scale = val),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey)),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal),
+                  onPressed: () {
+                    setState(() {
+                      _profileImage = file;
+                    });
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile photo cropped & selected ✓'),
+                        backgroundColor: AppColors.successGreen,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.check, size: 18, color: Colors.white),
+                  label: Text('Crop & Use Photo', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _nextStep() {
@@ -119,6 +197,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'trade': _selectedTrade,
       'city': _cityController.text.trim(),
       'locality': _localityController.text.trim().isNotEmpty ? _localityController.text.trim() : null,
+      'digiPin': _digiPinController.text.trim().isNotEmpty ? _digiPinController.text.trim() : null,
       'aadhaarHash': aadhaarHash,
       // No endpoint exists yet for a worker to upload a photo file during
       // self-registration (only the admin-created-worker path handles
@@ -190,7 +269,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Progress Indicator (Step X of 3)
+            // Animated Motion Progress Bar (Steps 1 to 3 Slider)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               color: AppColors.white,
@@ -207,23 +286,101 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           fontSize: 14,
                         ),
                       ),
-                      Text(
-                        _currentStep == 1
-                            ? 'Personal Info'
-                            : (_currentStep == 2 ? 'Identity' : 'Confirmation'),
-                        style: GoogleFonts.poppins(
-                          color: AppColors.grayText,
-                          fontSize: 13,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Text(
+                          _currentStep == 1
+                              ? 'Personal Info & DigiPin'
+                              : (_currentStep == 2 ? 'Identity & Photo' : 'Confirmation'),
+                          key: ValueKey<int>(_currentStep),
+                          style: GoogleFonts.poppins(
+                            color: AppColors.grayText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: _currentStep / 3.0,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryTeal),
-                    minHeight: 6,
+                  const SizedBox(height: 12),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: _currentStep / 3.0),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOutCubic,
+                    builder: (context, animValue, child) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: animValue,
+                                child: Container(
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [AppColors.primaryTeal, AppColors.gold],
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryTeal.withValues(alpha: 0.4),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(3, (stepIdx) {
+                              final stepNum = stepIdx + 1;
+                              final isCompleted = _currentStep > stepNum;
+                              final isCurrent = _currentStep == stepNum;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isCurrent
+                                      ? AppColors.primaryTeal
+                                      : (isCompleted ? AppColors.successGreen : Colors.grey.shade200),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isCompleted ? Icons.check_circle : (isCurrent ? Icons.edit : Icons.circle_outlined),
+                                      size: 13,
+                                      color: isCurrent || isCompleted ? Colors.white : Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Step $stepNum',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isCurrent || isCompleted ? Colors.white : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -383,6 +540,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           label: 'Locality (Optional)',
           icon: Icons.map,
           hint: 'e.g. Indiranagar, Whitefield',
+        ),
+        const SizedBox(height: 16),
+
+        // DigiPin Digital Address
+        _buildTextField(
+          controller: _digiPinController,
+          label: 'DigiPin Digital Address (Optional)',
+          icon: Icons.pin_drop,
+          hint: 'e.g. 560-001-E4K9',
         ),
       ],
     );

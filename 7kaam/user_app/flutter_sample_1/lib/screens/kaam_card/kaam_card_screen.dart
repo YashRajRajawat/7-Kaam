@@ -1,7 +1,8 @@
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
@@ -49,8 +50,10 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
     final isCardActive = card != null && !card.isRevoked;
 
     if (!isCardActive) {
-      final assessmentCount = (worker?.testScore != null ? 1 : 0) + (worker?.videoScore != null ? 1 : 0);
-      final scoreEstimate = worker?.finalScore;
+      final hasTradeTest = (worker?.testScore != null && worker!.testScore! > 0);
+      final hasVideoTest = (worker?.videoUrl != null && worker!.videoUrl!.isNotEmpty) || (worker?.videoScore != null && worker!.videoScore! > 0);
+      final stepsCompleted = (hasTradeTest ? 1 : 0) + (hasVideoTest ? 1 : 0);
+      final isEligibleToApply = stepsCompleted == 2;
 
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -65,65 +68,182 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(24.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Container(
-                    width: 140,
-                    height: 140,
+                    width: 110,
+                    height: 110,
                     decoration: BoxDecoration(
                       color: AppColors.primaryTeal.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.badge_outlined,
-                      size: 70,
+                      Icons.card_membership_outlined,
+                      size: 55,
                       color: AppColors.primaryTeal,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   Text(
-                    'Awaiting Admin Review',
+                    'Apply for Official KaamCard',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppColors.darkText,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
-                    'Our team reviews your assessments and issues your KaamCard. Keep taking tests to improve your chances!',
+                    'Complete the 2 mandatory skill assessments below to apply for your official verified KaamCard.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: AppColors.grayText,
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
+
+                  // Progress Box
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.grey.shade200),
                     ),
-                    child: Text(
-                      scoreEstimate != null
-                          ? '$assessmentCount assessment${assessmentCount == 1 ? '' : 's'} completed · current score estimate: ${scoreEstimate.toInt()}/100'
-                          : 'No assessments completed yet',
-                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.navy),
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Eligibility Criteria Progress',
+                              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy),
+                            ),
+                            Text(
+                              '$stepsCompleted / 2 Completed',
+                              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: isEligibleToApply ? AppColors.successGreen : AppColors.gold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          value: stepsCompleted / 2.0,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: AlwaysStoppedAnimation<Color>(isEligibleToApply ? AppColors.successGreen : AppColors.primaryTeal),
+                          minHeight: 8,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
+
+                  // Step 1 Checklist Card
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: hasTradeTest ? AppColors.successGreen.withValues(alpha: 0.4) : Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          hasTradeTest ? Icons.check_circle : Icons.radio_button_unchecked,
+                          color: hasTradeTest ? AppColors.successGreen : Colors.grey,
+                          size: 26,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '1. Trade Knowledge Assessment',
+                                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.navy),
+                              ),
+                              Text(
+                                hasTradeTest
+                                    ? 'Completed ✓ (Score: ${worker?.testScore?.toInt() ?? 0}/100)'
+                                    : 'Mandatory — 1 Trade MCQ test required',
+                                style: GoogleFonts.poppins(fontSize: 12, color: hasTradeTest ? AppColors.successGreen : AppColors.grayText),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!hasTradeTest)
+                          TextButton(
+                            onPressed: () {
+                              if (widget.onNavigateTab != null) widget.onNavigateTab!(1);
+                            },
+                            child: Text('Take Test', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Step 2 Checklist Card
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: hasVideoTest ? AppColors.successGreen.withValues(alpha: 0.4) : Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          hasVideoTest ? Icons.check_circle : Icons.radio_button_unchecked,
+                          color: hasVideoTest ? AppColors.successGreen : Colors.grey,
+                          size: 26,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '2. Practical Video Assessment',
+                                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.navy),
+                              ),
+                              Text(
+                                hasVideoTest
+                                    ? 'Submitted ✓ (Ready for review)'
+                                    : 'Mandatory — Record 1 practical skill video',
+                                style: GoogleFonts.poppins(fontSize: 12, color: hasVideoTest ? AppColors.successGreen : AppColors.grayText),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!hasVideoTest)
+                          TextButton(
+                            onPressed: () {
+                              context.push('/pipeline/video-upload');
+                            },
+                            child: Text('Record', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Submit Application Button
                   CustomButton(
-                    text: 'Browse Assessments',
-                    onPressed: () {
-                      if (widget.onNavigateTab != null) {
-                        widget.onNavigateTab!(1); // Go to Certify tab
-                      }
-                    },
+                    text: isEligibleToApply ? 'Submit Application for KaamCard Verification' : 'Complete Required Assessments',
+                    onPressed: isEligibleToApply
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('KaamCard application submitted! Admin will verify and issue your card.'),
+                                backgroundColor: AppColors.successGreen,
+                              ),
+                            );
+                          }
+                        : () {
+                            if (widget.onNavigateTab != null) widget.onNavigateTab!(1);
+                          },
                   ),
                 ],
               ),
@@ -375,9 +495,9 @@ class _KaamCardScreenState extends ConsumerState<KaamCardScreen> {
                       backgroundColor: AppColors.successGreen,
                     ),
                   );
-                  if (kIsWeb) {
-                    html.window.open(pdfUrl, '_blank');
-                  }
+                  try {
+                    launchUrl(Uri.parse(pdfUrl), mode: LaunchMode.externalApplication);
+                  } catch (_) {}
                 },
               ),
               const SizedBox(height: 12),

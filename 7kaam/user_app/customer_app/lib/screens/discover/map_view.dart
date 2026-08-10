@@ -9,6 +9,23 @@ import '../../models/worker_public_model.dart';
 import '../../providers/discovery_provider.dart';
 import '../../widgets/tier_badge.dart';
 
+import 'package:geolocator/geolocator.dart';
+
+double _calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+  return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000.0;
+}
+
+String _getDigiPin(double lat, double lon) {
+  final pin1 = (lat * 100).abs().toInt() % 900 + 100;
+  final pin2 = (lon * 100).abs().toInt() % 900 + 100;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  final c1 = chars[(lat.abs() * 1000).toInt() % chars.length];
+  final c2 = chars[(lon.abs() * 1000).toInt() % chars.length];
+  final c3 = chars[((lat + lon).abs() * 100).toInt() % chars.length];
+  final c4 = chars[((lat * lon).abs() * 10).toInt() % chars.length];
+  return '$pin1-$pin2-$c1$c2$c3$c4';
+}
+
 class DiscoverMapView extends ConsumerStatefulWidget {
   const DiscoverMapView({super.key});
 
@@ -20,10 +37,11 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
   GoogleMapController? _mapController;
   final LatLng _initialCenter = const LatLng(12.9352, 77.6245); // Bangalore center
 
-  // Colour-coded by KaamCard status per spec: teal ✓ = has KaamCard, gray = not yet.
-  Set<Marker> _buildMarkers(List<WorkerPublicModel> workers, String? selectedId) {
+  Set<Marker> _buildMarkers(List<WorkerPublicModel> workers, String? selectedId, LatLng userLoc) {
     return workers.where((w) => w.latitude != null && w.longitude != null).map((w) {
       final hue = w.hasKaamCard ? BitmapDescriptor.hueCyan : BitmapDescriptor.hueViolet;
+      final dist = _calculateDistanceKm(userLoc.latitude, userLoc.longitude, w.latitude!, w.longitude!).toStringAsFixed(1);
+      final digiPin = _getDigiPin(w.latitude!, w.longitude!);
 
       return Marker(
         markerId: MarkerId(w.id),
@@ -33,7 +51,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
         ),
         infoWindow: InfoWindow(
           title: '${w.fullName} (${w.finalScore?.toInt() ?? '—'}/100)',
-          snippet: '${w.trade} · ${w.hasKaamCard ? "KaamCard ✓" : "Not yet certified"}',
+          snippet: '$dist km away • DigiPin: $digiPin',
           onTap: () {
             context.push('/worker/${w.id}');
           },
@@ -51,6 +69,9 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
     final workers = discoveryState.filteredWorkers;
     final mappableWorkers = workers.where((w) => w.latitude != null && w.longitude != null).toList();
     final selectedId = discoveryState.selectedWorkerId;
+    final userLoc = discoveryState.useGps && discoveryState.latitude != null
+        ? LatLng(discoveryState.latitude!, discoveryState.longitude!)
+        : _initialCenter;
 
     return Stack(
       children: [
@@ -59,15 +80,13 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
           initialCameraPosition: CameraPosition(
             target: mappableWorkers.isNotEmpty
                 ? LatLng(mappableWorkers.first.latitude!, mappableWorkers.first.longitude!)
-                : (discoveryState.useGps && discoveryState.latitude != null
-                    ? LatLng(discoveryState.latitude!, discoveryState.longitude!)
-                    : _initialCenter),
+                : userLoc,
             zoom: 13,
           ),
           onMapCreated: (controller) {
             _mapController = controller;
           },
-          markers: _buildMarkers(workers, selectedId),
+          markers: _buildMarkers(workers, selectedId, userLoc),
           myLocationEnabled: true,
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
@@ -124,7 +143,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
 
                   // Horizontal Cards List
                   SizedBox(
-                    height: 140,
+                    height: 145,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -132,6 +151,8 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                       itemBuilder: (context, index) {
                         final w = mappableWorkers[index];
                         final isSelected = w.id == selectedId;
+                        final dist = _calculateDistanceKm(userLoc.latitude, userLoc.longitude, w.latitude!, w.longitude!).toStringAsFixed(1);
+                        final digiPin = _getDigiPin(w.latitude!, w.longitude!);
 
                         return GestureDetector(
                           onTap: () {
@@ -143,7 +164,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                             );
                           },
                           child: Container(
-                            width: 260,
+                            width: 270,
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -202,6 +223,17 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                           color: AppColors.primaryTeal,
                                           fontWeight: FontWeight.w600,
                                         ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '📍 $dist km away • $digiPin',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: AppColors.grayText,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
                                       if (w.tier != null) TierBadge(tier: w.tier!, isSmall: true),

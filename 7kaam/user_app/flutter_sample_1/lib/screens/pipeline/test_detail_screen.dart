@@ -254,6 +254,7 @@ class _TestDetailScreenState extends ConsumerState<TestDetailScreen> {
                     : (isPassed ? 'Retake to Improve Score' : 'Retake Assessment'),
                 isOutlined: isPassed,
                 onPressed: () {
+                  ref.read(testProvider.notifier).resetTestState();
                   ref.read(testProvider.notifier).setLanguage(_selectedLanguage);
                   context.push('/pipeline/trade-test/${test.id}');
                 },
