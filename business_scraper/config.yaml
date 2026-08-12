@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Local Business Data Collection Pipeline — Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Where all output files are saved (CSV, Excel, JSON).
+# Relative paths resolve against the repository root, so this points at
+# <repo>/Data_Scraped — the same directory the 7 Kaam backend reads from.
+# Override at runtime with the SCRAPER_OUTPUT_DIR environment variable.
+output_dir: "Data_Scraped"
+
+search:
+  city: "Bangalore"
+  areas:
+    - "SG Palya"
+    - "Jayanagar"
+    - "Indiranagar"
+    - "MG Road"
+    - "HSR Layout"
+    - "Koramangala"
+    - "Whitefield"
+
+  categories:
+    - "Electrician"
+    - "Plumber"
+    - "Mechanic"
+    - "Painter"
+    - "Hardware Shop"
+    - "Tailor"
+    - "Welder"
+    - "Carpenter"
+    - "Laundry"
+    - "Mobile Repair"
+    - "Bike Repair"
+    - "AC Repair"
+
+scraper:
+  # Which sites to scrape
+  # JustDial: blocked by Akamai Bot Manager (TLS fingerprint + behavioral check).
+  # Requires a commercial anti-bot proxy (ScraperAPI/BrightData) to bypass.
+  # Google Maps: fully working — domcontentloaded wait + stealth bypass.
+  target_sites:
+    - "google_maps"
+
+  # Save data to disk every N records (prevent data loss on crash)
+  checkpoint_interval: 10
+
+  # true  = no browser window (faster, server-friendly)
+  # false = browser window visible (easier to debug / inspect)
+  headless: false
+
+  # Page load timeout in milliseconds (45s for Google Maps which can be slow)
+  timeout_ms: 45000
+
+  # Automatically merge all per-site CSVs into one all_businesses.csv at the end
+  auto_merge_csv: true
+
+  filters:
+    # Skip businesses labelled "Permanently closed"
+    exclude_permanently_closed: true
+
+    # Skip businesses with no phone AND no address (incomplete records)
+    exclude_inconsistent_data: false   # relaxed for Google Maps (lat/lng compensates)

@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Asset URLs come from the environment so no project URL is committed.
+const SUPABASE_URL = process.env.SUPABASE_URL || '<configure SUPABASE_URL in .env>';
+
 function hashAadhaar(aadhaar) {
   return crypto.createHash('sha256').update(aadhaar).digest('hex');
 }
@@ -244,7 +247,7 @@ async function main() {
       qrToken: 'ravi-qr-token-001',
       version: 2,
       expiresAt: new Date('2027-01-17'),
-      pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/kaamcards/worker-ravi-001/kc-ravi-001.pdf',
+      pdfUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/kaamcards/worker-ravi-001/kc-ravi-001.pdf`,
       scoreBreakdown: { videoScore: 88, testScore: 86, workHistoryScore: 87.5, finalScore: 87, tier: 'EXPERT' },
     },
   ];
@@ -274,7 +277,7 @@ async function main() {
         trade: 'ELECTRICIAN',
         score: 86.0,
         issuedAt: new Date('2026-01-16'),
-        pdfUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/certificates/worker-ravi-001_test-electrician-001.pdf',
+        pdfUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/certificates/worker-ravi-001_test-electrician-001.pdf`,
       },
     ],
   });

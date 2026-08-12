@@ -99,8 +99,11 @@ export default function NewWorkerPage() {
               }`}>
                 {i < step ? <Check size={14} /> : i + 1}
               </div>
-              <span className={`ml-2 text-xs font-bold ${i === step ? 'text-[#191c1e]' : 'text-[#767586]'}`}>{s}</span>
-              {i < STEPS.length - 1 && <div className={`mx-3 h-0.5 w-8 sm:w-12 ${i < step ? 'bg-[#4648d4]' : 'bg-[#e0e3e5]'}`} />}
+              {/* The label is dropped on the narrowest screens; the numbered
+                  circles still convey position, and three labels plus two
+                  connectors do not fit at 375px. */}
+              <span className={`ml-2 text-xs font-bold hidden sm:inline ${i === step ? 'text-[#191c1e]' : 'text-[#767586]'}`}>{s}</span>
+              {i < STEPS.length - 1 && <div className={`mx-2 sm:mx-3 h-0.5 w-6 sm:w-12 ${i < step ? 'bg-[#4648d4]' : 'bg-[#e0e3e5]'}`} />}
             </div>
           ))}
         </div>

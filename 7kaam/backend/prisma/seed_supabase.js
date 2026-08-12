@@ -3,6 +3,9 @@ const db = require('../src/utils/prisma');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+// Asset URLs come from the environment so no project URL is committed.
+const SUPABASE_URL = process.env.SUPABASE_URL || '<configure SUPABASE_URL in .env>';
+
 async function main() {
   console.log('🌱 Seeding 7 Kaam Coursera-style test catalogue database via Supabase API...');
 
@@ -276,7 +279,7 @@ async function main() {
       id: 'va-ravi-001',
       workerId: raviId,
       testId: 'test-elec-video-001',
-      videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/ravi_demo.mp4',
+      videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/ravi_demo.mp4`,
       score: 85.0,
       rubricScores: { safety_compliance: 88, technique_accuracy: 82, tool_handling: 85 },
       feedback: 'Excellent tool control and adherence to safety gloves during wire jointing.',

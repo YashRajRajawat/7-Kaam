@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -19,10 +19,30 @@ const TRADES = ['', 'ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAI
 const TIERS = ['', 'BRONZE', 'SILVER', 'GOLD', 'EXPERT'];
 const STATUSES = ['', 'PENDING', 'ACTIVE', 'SUSPENDED'];
 
+/**
+ * Reading ?search= makes this component client-only, so Next requires it to sit
+ * behind a Suspense boundary or the route cannot be prerendered.
+ */
 export default function WorkersPage() {
+  return (
+    <Suspense fallback={
+      <DashboardShell>
+        <div className="flex items-center justify-center py-24">
+          <div className="w-8 h-8 border-2 border-[#4648d4] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </DashboardShell>
+    }>
+      <WorkersDirectory />
+    </Suspense>
+  );
+}
+
+function WorkersDirectory() {
   const router = useRouter();
   const qc = useQueryClient();
-  const [search, setSearch] = useState('');
+  const searchParams = useSearchParams();
+  // Seeded from ?search= so the Topbar's search lands here pre-filtered.
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [trade, setTrade] = useState('');
   const [tier, setTier] = useState('');
   const [status, setStatus] = useState('');

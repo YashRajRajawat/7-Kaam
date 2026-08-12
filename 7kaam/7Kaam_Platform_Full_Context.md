@@ -93,7 +93,7 @@
 ## 🗄️ 3. Database Schema & Supabase Models
 
 - **Database Engine**: PostgreSQL (Supabase Cloud)
-- **Database URL**: `postgresql://postgres.qywflwdkrckyjdrsadvo:Yazugrang30%40@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`
+- **Database URL**: `postgresql://postgres.<PROJECT_REF>:<PASSWORD>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`
 
 ### Key Models:
 1. **Worker**:

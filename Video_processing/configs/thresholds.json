@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "Every numeric constant in the engine lives here, never inline in code.",
+    "Values marked (spec) are taken verbatim from the prototype spec; values",
+    "marked (product) are hypotheses this module had to choose because the spec",
+    "leaves them open. Spec section 11.1: 'The weights are product hypotheses,",
+    "not scientific truth. A qualified trade expert must review them.'",
+    "",
+    "thresholds_version is embedded in every decision and in the idempotency",
+    "key, so changing any number here re-assesses rather than silently drifting."
+  ],
+  "thresholds_version": "1.0.0",
+
+  "score_weights": {
+    "_source": "spec section 11.1 (must sum to 1.0 — asserted at import)",
+    "identity": 0.2,
+    "media": 0.15,
+    "workspace": 0.1,
+    "tool": 0.15,
+    "task": 0.25,
+    "safety": 0.1,
+    "knowledge": 0.05
+  },
+
+  "hard_rules": {
+    "_source": "spec section 11.2 — these are NOT averaged away",
+    "identity_pass_min": 0.6,
+    "safety_review_below": 0.4,
+    "task_not_passed_below": 0.45
+  },
+
+  "media_quality": {
+    "_source": "spec section 12.3 — award-if-at-least/at-most, weights sum to 1.0",
+    "min_duration_seconds": 10,
+    "duration_award": 0.25,
+    "min_blur_score": 0.6,
+    "blur_award": 0.25,
+    "min_person_visible_ratio": 0.7,
+    "person_award": 0.2,
+    "max_duplicate_frame_ratio": 0.2,
+    "duplicate_award": 0.15,
+    "max_scene_changes": 2,
+    "scene_award": 0.15,
+
+    "_product_cutoffs": [
+      "(product) Spec section 12.3 defines how media quality is scored but not",
+      "what counts as too poor to review. These two are this module's choice.",
+      "no_person_below is deliberately far stricter than",
+      "min_person_visible_ratio: barely-in-frame is a quality problem worth a",
+      "resubmission, whereas nobody in frame at all means there is no practical",
+      "evidence to assess and the outcome is insufficient_evidence instead."
+    ],
+    "min_acceptable_quality": 0.6,
+    "no_person_below": 0.3
+  },
+
+  "task_score": {
+    "_source": "spec section 12.4",
+    "completion_weight": 0.45,
+    "quality_weight": 0.3,
+    "safety_weight": 0.25
+  },
+
+  "bands": {
+    "_comment": [
+      "(product) Spec section 11.4 names the five bands but gives no cutoffs.",
+      "Coverage gates come first: a high score computed from thin evidence is",
+      "exactly the misleading number spec section 11.3 warns about."
+    ],
+    "min_coverage_for_any_verdict": 0.7,
+    "provisionally_verified_min_score": 0.65,
+    "strongly_verified_min_score": 0.8,
+    "strongly_verified_min_coverage": 0.9
+  },
+
+  "media_forensics": {
+    "_comment": "(product) supporting fraud signals, spec section 13",
+    "perceptual_hash_hamming_duplicate_max": 5,
+    "min_frames_sampled": 8
+  },
+
+  "knowledge": {
+    "_comment": "(product) low knowledge is a note, never an automatic fail — spec section 10.2 'Good video with low quiz score: mixed confidence; do not automatically fail'",
+    "low_knowledge_below": 0.5
+  }
+}

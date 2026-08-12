@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "Spec section 1.2 lists seven trades (incl. Barber and Mechanic). The live",
+    "Postgres `Trade` enum has six values (incl. WELDER, no barber/mechanic).",
+    "Verified in backend/prisma/schema.prisma.",
+    "",
+    "This file represents that mismatch rather than resolving it. A null value",
+    "means: assess fully offline, but REFUSE live writeback with",
+    "TRADE_NOT_SUPPORTED_BY_DB. Never coerce barber onto PAINTER or mechanic",
+    "onto AC_TECHNICIAN — that would silently corrupt worker records.",
+    "",
+    "Adding BARBER/MECHANIC to the enum is a business decision, not a technical",
+    "one; spec section 1.2 itself calls the seven 'a starting hypothesis'."
+  ],
+  "db_enum_name": "Trade",
+  "mapping": {
+    "electrician": "ELECTRICIAN",
+    "plumber": "PLUMBER",
+    "carpenter": "CARPENTER",
+    "ac_technician": "AC_TECHNICIAN",
+    "painter": "PAINTER",
+    "welder": "WELDER",
+    "barber": null,
+    "mechanic": null
+  }
+}

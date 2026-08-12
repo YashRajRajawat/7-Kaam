@@ -1,0 +1,34 @@
+{
+  "case_id": "barber_offline_only",
+  "trade_id": "barber",
+  "detections": [
+    { "label": "scissors", "confidence": 0.9 },
+    { "label": "comb", "confidence": 0.9 },
+    { "label": "trimmer", "confidence": 0.9 },
+    { "label": "cape", "confidence": 0.9 }
+  ],
+  "token": { "expected": "KC-90012", "observed": "KC-90012", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.85,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.92
+  },
+  "task": {
+    "step_ids": ["sanitize", "section", "cut", "style"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.85,
+    "safety_score": 0.9
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["salon_chair", "mirror", "station"],
+  "knowledge_score": 0.8,
+  "media": { "sha256": "f012", "phash": "5000000000000012" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "strongly_verified",
+    "reason_codes_include": ["TRADE_NOT_SUPPORTED_BY_DB"],
+    "writeback": "skipped_offline"
+  }
+}

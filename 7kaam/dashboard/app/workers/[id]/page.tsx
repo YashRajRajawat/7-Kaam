@@ -7,13 +7,13 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
-import type { Worker, SkillCertificate } from '@/types';
-import { cn, tierColor, statusColor, tradeLabel, formatDate } from '@/lib/utils';
+import type { Worker, SkillCertificate, VideoAssessment } from '@/types';
+import { cn, tierColor, statusColor, tradeLabel, formatDate, aiDecisionColor, aiDecisionLabel } from '@/lib/utils';
 import {
   CheckCircle2, Clock, ChevronDown, ChevronUp, ChevronLeft,
   Video, FileText, Briefcase, Calculator, Award, XCircle,
   ExternalLink, Download, Copy, CheckCheck, UserX, UserCheck,
-  ShieldAlert, BadgeCheck, Pencil, Trash2,
+  ShieldAlert, BadgeCheck, Pencil, Trash2, Sparkles, Lock,
 } from 'lucide-react';
 
 const TRADES = ['', 'ELECTRICIAN', 'PLUMBER', 'CARPENTER', 'AC_TECHNICIAN', 'PAINTER', 'WELDER'];
@@ -122,6 +122,12 @@ export default function WorkerDetailPage() {
     queryKey: ['worker', id, 'certificates'],
     queryFn: () => api.get(`/workers/${id}/certificates`).then(r => r.data),
   });
+
+  const { data: aiAssessments } = useQuery<VideoAssessment[]>({
+    queryKey: ['worker', id, 'video-assessments'],
+    queryFn: () => api.get(`/workers/${id}/video-assessments`).then(r => r.data),
+  });
+  const [expandedAssessment, setExpandedAssessment] = useState<string | null>(null);
 
   const scoreVideo = useMutation({
     mutationFn: (data?: { score?: number; notes?: string }) => api.post(`/workers/${id}/score-video`, data),
@@ -408,6 +414,117 @@ export default function WorkerDetailPage() {
             </div>
           )}
         </div>
+
+        {/* AI Video Assessments */}
+        {aiAssessments && aiAssessments.length > 0 && (
+          <div className="bg-white border border-[#e0e3e5] rounded-xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles size={16} className="text-[#4648d4]" />
+              <h3 className="text-sm font-bold text-[#191c1e]">AI Practical Assessments</h3>
+            </div>
+            <p className="text-[11px] text-[#767586] mb-4">
+              Automated review of the skill-demonstration video. Not a licence or legal certification —
+              one guided task does not guarantee performance on every job.
+            </p>
+            <div className="space-y-2">
+              {aiAssessments.map(a => {
+                const ai = a.rubricScores?.ai;
+                const decision = ai?.decision;
+                const isExpanded = expandedAssessment === a.id;
+                const promoted = a.score != null;
+                return (
+                  <div key={a.id}>
+                    <div
+                      className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-[#f8f9fa] border border-[#e0e3e5] cursor-pointer hover:bg-[#e1e0ff]/30 transition-colors"
+                      onClick={() => setExpandedAssessment(isExpanded ? null : a.id)}
+                    >
+                      <Sparkles size={14} className="text-[#4648d4] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs font-bold text-[#191c1e]">
+                            {a.test?.title || 'Practical Skill Assessment'}
+                          </p>
+                          <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold border', aiDecisionColor(decision))}>
+                            {aiDecisionLabel(decision)}
+                          </span>
+                          <span className="text-[10px] text-[#767586]">Attempt {a.attemptNumber}</span>
+                        </div>
+                        <p className="text-[11px] text-[#767586] mt-0.5">{formatDate(a.scoredAt || a.submittedAt)}</p>
+                      </div>
+                      {promoted ? (
+                        <span className="text-xs font-black text-[#059669] flex-shrink-0">{Math.round(a.score!)}/100</span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#767586] flex-shrink-0" title="Score withheld — has not been promoted into this worker's videoScore">
+                          <Lock size={10} /> Not promoted
+                        </span>
+                      )}
+                      {isExpanded ? <ChevronUp size={14} className="text-[#767586] flex-shrink-0" /> : <ChevronDown size={14} className="text-[#767586] flex-shrink-0" />}
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-2 ml-4 p-4 rounded-xl bg-[#f2f4f6] border border-[#e0e3e5] space-y-3 fade-in">
+                        {!promoted && (
+                          <p className="text-[11px] text-[#767586] italic">
+                            This result has not moved the worker&apos;s video score or tier. It is filed
+                            for review only.
+                          </p>
+                        )}
+                        {ai?.components && (
+                          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                            {Object.entries(ai.components).map(([key, value]) => (
+                              <div key={key} className="text-center">
+                                <p className="text-[9px] uppercase tracking-wide text-[#767586] font-bold">{key}</p>
+                                <p className="text-xs font-black text-[#191c1e]">{Math.round((value as number) * 100)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {ai?.evidenceCoverage != null && (
+                          <p className="text-[11px] text-[#565e74]">
+                            Evidence coverage: <span className="font-bold">{Math.round(ai.evidenceCoverage * 100)}%</span>
+                          </p>
+                        )}
+                        {ai?.report?.strengths?.length ? (
+                          <div>
+                            <p className="text-[10px] font-bold text-[#059669] uppercase mb-1">Strengths</p>
+                            <ul className="text-xs text-[#565e74] space-y-0.5 list-disc list-inside">
+                              {ai.report.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {ai?.report?.improvements?.length ? (
+                          <div>
+                            <p className="text-[10px] font-bold text-amber-700 uppercase mb-1">Improvements</p>
+                            <ul className="text-xs text-[#565e74] space-y-0.5 list-disc list-inside">
+                              {ai.report.improvements.map((s, i) => <li key={i}>{s}</li>)}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {ai?.report?.limitations?.length ? (
+                          <div>
+                            <p className="text-[10px] font-bold text-[#767586] uppercase mb-1">Limitations</p>
+                            <ul className="text-[11px] text-[#767586] space-y-0.5 list-disc list-inside">
+                              {ai.report.limitations.map((s, i) => <li key={i}>{s}</li>)}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {ai?.reasonCodes?.length ? (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {ai.reasonCodes.map(code => (
+                              <span key={code} className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-white border border-[#e0e3e5] text-[#565e74]">
+                                {code}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Score Breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

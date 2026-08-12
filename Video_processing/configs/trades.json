@@ -1,0 +1,159 @@
+{
+  "_comment": [
+    "Trade configuration per spec section 8. Product config: this file is allowed",
+    "to be ahead of the database. The spec/DB trade mismatch is represented",
+    "explicitly in trade_mapping.json, never resolved by coercion.",
+    "",
+    "expert_reviewed is false everywhere: spec section 8 states the practical",
+    "challenge must be designed by a qualified trade expert, and none of these",
+    "have been. reporting.py appends a limitations line while it is false.",
+    "",
+    "db_test_id pins the TradeTest row a VideoAssessment is filed against. It is",
+    "environment-specific. The three non-null values are the only video tests",
+    "seeded by backend/prisma/seed_supabase.js; the rest have no video TradeTest",
+    "row in the seed, so live writeback is impossible for them until rows are",
+    "created by hand. This module must not create them."
+  ],
+  "config_version": "1.0.0",
+  "trades": {
+    "electrician": {
+      "trade_id": "electrician",
+      "display_name": "Electrician",
+      "required_tools": [
+        { "id": "multimeter", "weight": 0.25, "required": true },
+        { "id": "insulated_screwdriver", "weight": 0.2, "required": true },
+        { "id": "wire_stripper", "weight": 0.2, "required": true },
+        { "id": "voltage_tester", "weight": 0.2, "required": true }
+      ],
+      "optional_tools": ["crimping_tool", "electrical_tape"],
+      "workspace_tags": ["distribution_board", "cable", "junction_box"],
+      "challenge_id": "safe_wire_connection_v1",
+      "knowledge_questions": ["neutral_vs_earth", "circuit_isolation"],
+      "safety_rules": ["isolate_power", "use_insulated_tools", "avoid_exposed_live_contact"],
+      "expert_reviewed": false,
+      "db_test_id": "test-elec-video-001"
+    },
+    "plumber": {
+      "trade_id": "plumber",
+      "display_name": "Plumber",
+      "required_tools": [
+        { "id": "pipe_wrench", "weight": 0.25, "required": true },
+        { "id": "pipe_cutter", "weight": 0.2, "required": true },
+        { "id": "seal_tape", "weight": 0.15, "required": true },
+        { "id": "pipe_fittings", "weight": 0.2, "required": true }
+      ],
+      "optional_tools": ["adjustable_spanner", "pvc_solvent", "plunger"],
+      "workspace_tags": ["pipe_run", "water_inlet", "drain"],
+      "challenge_id": "controlled_pipe_joint_v1",
+      "knowledge_questions": ["thread_sealing_direction", "isolating_water_supply"],
+      "safety_rules": ["isolate_water_supply", "no_pressurised_system_work", "protect_eyes_when_cutting"],
+      "expert_reviewed": false,
+      "db_test_id": "test-plumb-video-001"
+    },
+    "carpenter": {
+      "trade_id": "carpenter",
+      "display_name": "Carpenter",
+      "required_tools": [
+        { "id": "tape_measure", "weight": 0.2, "required": true },
+        { "id": "try_square", "weight": 0.2, "required": true },
+        { "id": "saw", "weight": 0.25, "required": true },
+        { "id": "drill", "weight": 0.2, "required": true }
+      ],
+      "optional_tools": ["clamps", "chisel", "sanding_block"],
+      "workspace_tags": ["workbench", "timber", "sawdust"],
+      "challenge_id": "simple_controlled_joint_v1",
+      "knowledge_questions": ["measure_twice_cut_once", "grain_direction"],
+      "safety_rules": ["secure_workpiece", "guard_blade", "eye_protection"],
+      "expert_reviewed": false,
+      "db_test_id": null
+    },
+    "ac_technician": {
+      "trade_id": "ac_technician",
+      "display_name": "AC Technician",
+      "required_tools": [
+        { "id": "manifold_gauge", "weight": 0.3, "required": true },
+        { "id": "spanner_set", "weight": 0.2, "required": true },
+        { "id": "electrical_tester", "weight": 0.2, "required": true },
+        { "id": "fin_comb", "weight": 0.15, "required": true }
+      ],
+      "optional_tools": ["vacuum_pump", "clamp_meter", "leak_detector"],
+      "workspace_tags": ["indoor_unit", "outdoor_unit", "training_rig"],
+      "challenge_id": "safe_diagnostic_workflow_v1",
+      "knowledge_questions": ["refrigerant_handling_basics", "isolating_before_service"],
+      "safety_rules": ["isolate_power", "no_refrigerant_release", "training_unit_only"],
+      "expert_reviewed": false,
+      "db_test_id": null
+    },
+    "painter": {
+      "trade_id": "painter",
+      "display_name": "Painter",
+      "required_tools": [
+        { "id": "roller", "weight": 0.25, "required": true },
+        { "id": "brush", "weight": 0.25, "required": true },
+        { "id": "paint_tray", "weight": 0.2, "required": true },
+        { "id": "masking_tape", "weight": 0.2, "required": true }
+      ],
+      "optional_tools": ["sandpaper", "putty_knife", "drop_cloth"],
+      "workspace_tags": ["prepared_surface", "drop_cloth", "test_panel"],
+      "challenge_id": "surface_prep_and_test_coat_v1",
+      "knowledge_questions": ["primer_before_topcoat", "surface_preparation"],
+      "safety_rules": ["ventilate_area", "protect_surroundings", "no_unsupported_height_work"],
+      "expert_reviewed": false,
+      "db_test_id": null
+    },
+    "welder": {
+      "_comment": [
+        "Spec section 8 provides NO welder rubric, and states practical",
+        "challenges must be designed by a qualified trade expert. Inventing one",
+        "here would be exactly the fabrication the master system prompt forbids.",
+        "required_tools is empty, so evidence_coverage stays below threshold and",
+        "rules.py routes welder submissions to insufficient_evidence on its own.",
+        "No special-casing is needed; the coverage maths does the gating."
+      ],
+      "trade_id": "welder",
+      "display_name": "Welder",
+      "required_tools": [],
+      "optional_tools": [],
+      "workspace_tags": [],
+      "challenge_id": null,
+      "knowledge_questions": [],
+      "safety_rules": [],
+      "expert_reviewed": false,
+      "db_test_id": null
+    },
+    "barber": {
+      "trade_id": "barber",
+      "display_name": "Barber",
+      "required_tools": [
+        { "id": "scissors", "weight": 0.3, "required": true },
+        { "id": "comb", "weight": 0.2, "required": true },
+        { "id": "trimmer", "weight": 0.3, "required": true },
+        { "id": "cape", "weight": 0.15, "required": true }
+      ],
+      "optional_tools": ["mirror", "spray_bottle", "clipper_guard"],
+      "workspace_tags": ["salon_chair", "mirror", "station"],
+      "challenge_id": "safe_tool_handling_sectioning_v1",
+      "knowledge_questions": ["tool_sanitisation", "guard_length_selection"],
+      "safety_rules": ["sanitise_tools", "no_unwilling_model", "blade_safety"],
+      "expert_reviewed": false,
+      "db_test_id": null
+    },
+    "mechanic": {
+      "trade_id": "mechanic",
+      "display_name": "Mechanic",
+      "required_tools": [
+        { "id": "ratchet", "weight": 0.25, "required": true },
+        { "id": "socket_set", "weight": 0.25, "required": true },
+        { "id": "torque_wrench", "weight": 0.25, "required": true },
+        { "id": "diagnostic_meter", "weight": 0.2, "required": true }
+      ],
+      "optional_tools": ["jack_stand", "trolley_jack", "feeler_gauge"],
+      "workspace_tags": ["garage", "vehicle_bay", "engine_bay"],
+      "challenge_id": "controlled_inspection_v1",
+      "knowledge_questions": ["torque_sequence", "supporting_a_vehicle_safely"],
+      "safety_rules": ["use_axle_stands", "engine_off_before_work", "no_unsupported_lifting"],
+      "expert_reviewed": false,
+      "db_test_id": null
+    }
+  }
+}

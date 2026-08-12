@@ -1,0 +1,34 @@
+{
+  "case_id": "carpenter_pass_001",
+  "trade_id": "carpenter",
+  "detections": [
+    { "label": "tape_measure", "confidence": 0.9 },
+    { "label": "try_square", "confidence": 0.9 },
+    { "label": "saw", "confidence": 0.9 },
+    { "label": "drill", "confidence": 0.9 }
+  ],
+  "token": { "expected": "KC-30001", "observed": "KC-30001", "readable": true },
+  "video": {
+    "duration_seconds": 16,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.9
+  },
+  "task": {
+    "step_ids": ["measure", "mark", "cut", "assemble"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.8,
+    "safety_score": 0.88
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["workbench", "timber", "sawdust"],
+  "knowledge_score": 0.8,
+  "media": { "sha256": "cc01", "phash": "2000000000000001" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "strongly_verified",
+    "reason_codes_include": ["ALL_REQUIRED_TOOLS_VISIBLE", "TASK_STEPS_COMPLETED"],
+    "writeback": "skipped_offline"
+  }
+}

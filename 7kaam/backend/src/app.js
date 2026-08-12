@@ -17,6 +17,7 @@ const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const reportRoutes = require('./routes/reports');
 const customerRoutes = require('./routes/customers');
+const businessRoutes = require('./routes/businesses');
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/customers', customerRoutes);
+app.use('/api/v1/businesses', businessRoutes);
 app.use('/api/v1', scoringRoutes);
 
 // ── Health ────────────────────────────────────────────────────────────────────

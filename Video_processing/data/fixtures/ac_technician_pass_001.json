@@ -1,0 +1,34 @@
+{
+  "case_id": "ac_technician_pass_001",
+  "trade_id": "ac_technician",
+  "detections": [
+    { "label": "manifold_gauge", "confidence": 0.92 },
+    { "label": "spanner_set", "confidence": 0.92 },
+    { "label": "electrical_tester", "confidence": 0.92 },
+    { "label": "fin_comb", "confidence": 0.92 }
+  ],
+  "token": { "expected": "KC-40001", "observed": "KC-40001", "readable": true },
+  "video": {
+    "duration_seconds": 17,
+    "blur_score": 0.82,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.92
+  },
+  "task": {
+    "step_ids": ["isolate", "diagnose", "test", "document"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.82,
+    "safety_score": 0.9
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["indoor_unit", "outdoor_unit", "training_rig"],
+  "knowledge_score": 0.78,
+  "media": { "sha256": "dd01", "phash": "3000000000000001" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "strongly_verified",
+    "reason_codes_include": ["ALL_REQUIRED_TOOLS_VISIBLE", "TASK_STEPS_COMPLETED"],
+    "writeback": "skipped_offline"
+  }
+}

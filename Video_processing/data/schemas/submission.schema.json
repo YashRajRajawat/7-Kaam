@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "MediaRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "media_id": {
+          "title": "Media Id",
+          "type": "string"
+        },
+        "type": {
+          "default": "video",
+          "enum": [
+            "video",
+            "image"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "capture_mode": {
+          "default": "unknown",
+          "enum": [
+            "in_app",
+            "gallery",
+            "unknown"
+          ],
+          "title": "Capture Mode",
+          "type": "string"
+        },
+        "challenge_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Challenge Token"
+        }
+      },
+      "required": [
+        "media_id"
+      ],
+      "title": "MediaRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "submission_id": {
+      "title": "Submission Id",
+      "type": "string"
+    },
+    "worker_id": {
+      "title": "Worker Id",
+      "type": "string"
+    },
+    "trade_id": {
+      "title": "Trade Id",
+      "type": "string"
+    },
+    "challenge_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Challenge Id"
+    },
+    "created_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "media": {
+      "items": {
+        "$ref": "#/$defs/MediaRecord"
+      },
+      "title": "Media",
+      "type": "array"
+    },
+    "declared_tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Declared Tools",
+      "type": "array"
+    },
+    "fixture_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fixture Id"
+    },
+    "test_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Test Id"
+    }
+  },
+  "required": [
+    "submission_id",
+    "worker_id",
+    "trade_id"
+  ],
+  "title": "Submission",
+  "type": "object"
+}

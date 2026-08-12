@@ -72,6 +72,45 @@ const REL_TO_TABLE = {
   dependentTests: 'TradeTest',
 };
 
+/**
+ * PostgREST caps a single response (Supabase's default max-rows is 1000).
+ * Anything that needs a whole table must therefore page through it.
+ */
+const PAGE_SIZE = 1000;
+
+/**
+ * Read every matching row by walking the result set in PAGE_SIZE chunks.
+ *
+ * `makeQuery` must build and return a NEW query each call — a Supabase query
+ * builder is single-use once awaited, so it cannot be reused across pages.
+ *
+ * Returns `{ rows, total, error }`. `total` is the exact server-side count of
+ * matching rows, taken from the first page.
+ */
+async function fetchAllRows(makeQuery, startAt = 0) {
+  const rows = [];
+  let total = null;
+  let offset = startAt;
+
+  for (;;) {
+    const { data, error, count } = await makeQuery().range(offset, offset + PAGE_SIZE - 1);
+    if (error) return { rows, total, error };
+
+    if (total === null && typeof count === 'number') total = count;
+    const batch = data ?? [];
+    rows.push(...batch);
+
+    // A short page means the end of the result set.
+    if (batch.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+
+    // Stop once we have everything the server said exists.
+    if (typeof total === 'number' && offset >= total) break;
+  }
+
+  return { rows, total, error: null };
+}
+
 /** Throw a Prisma-style error so controllers don't need changes */
 function dbError(op, table, msg) {
   const err = new Error(msg);
@@ -80,9 +119,77 @@ function dbError(op, table, msg) {
   throw err;
 }
 
+/**
+ * Render one Prisma condition object as PostgREST filter fragments.
+ * Used to build the comma-separated argument for `.or()`.
+ *
+ * Values are wrapped in double quotes so a search term containing a comma or
+ * parenthesis cannot break out of the filter expression.
+ */
+function toFilterFragments(condition) {
+  const fragments = [];
+  const quote = (v) => `"${String(v).replace(/"/g, '\\"')}"`;
+  const fmt = (v) => (v instanceof Date ? v.toISOString() : v);
+
+  for (const [key, val] of Object.entries(condition)) {
+    if (val === null) {
+      fragments.push(`${key}.is.null`);
+    } else if (val instanceof Date) {
+      fragments.push(`${key}.eq.${quote(val.toISOString())}`);
+    } else if (typeof val === 'object' && !Array.isArray(val)) {
+      // `mode: 'insensitive'` needs no translation — `contains` already maps
+      // to ilike, which is case-insensitive.
+      if (val.contains != null) fragments.push(`${key}.ilike.${quote(`%${val.contains}%`)}`);
+      else if (val.startsWith != null) fragments.push(`${key}.ilike.${quote(`${val.startsWith}%`)}`);
+      else if (val.endsWith != null) fragments.push(`${key}.ilike.${quote(`%${val.endsWith}`)}`);
+      else if (val.in) fragments.push(`${key}.in.(${val.in.map((v) => quote(fmt(v))).join(',')})`);
+      else if (val.gte != null) fragments.push(`${key}.gte.${quote(fmt(val.gte))}`);
+      else if (val.lte != null) fragments.push(`${key}.lte.${quote(fmt(val.lte))}`);
+      else if (val.gt != null) fragments.push(`${key}.gt.${quote(fmt(val.gt))}`);
+      else if (val.lt != null) fragments.push(`${key}.lt.${quote(fmt(val.lt))}`);
+      else if ('not' in val) {
+        fragments.push(val.not === null ? `${key}.not.is.null` : `${key}.neq.${quote(fmt(val.not))}`);
+      }
+    } else {
+      fragments.push(`${key}.eq.${quote(val)}`);
+    }
+  }
+  return fragments;
+}
+
 /** Convert Prisma `where` to Supabase filter chain */
 function applyWhere(query, where = {}) {
   for (const [key, val] of Object.entries(where)) {
+    // Prisma's boolean combinators are not columns — translate them before the
+    // generic column handling below, which would otherwise emit `eq('OR', ...)`
+    // and make PostgREST complain that column "OR" does not exist.
+    if (key === 'OR' && Array.isArray(val)) {
+      const fragments = val.flatMap(toFilterFragments);
+      if (fragments.length) query = query.or(fragments.join(','));
+      continue;
+    }
+    if (key === 'AND' && Array.isArray(val)) {
+      // AND is the default between chained filters, so just apply each in turn.
+      for (const condition of val) query = applyWhere(query, condition);
+      continue;
+    }
+    if (key === 'NOT' && val && typeof val === 'object') {
+      const conditions = Array.isArray(val) ? val : [val];
+      for (const condition of conditions) {
+        for (const [col, filter] of Object.entries(condition)) {
+          if (filter === null) query = query.not(col, 'is', null);
+          else if (filter && typeof filter === 'object' && filter.contains != null) {
+            query = query.not(col, 'ilike', `%${filter.contains}%`);
+          } else if (filter && typeof filter === 'object' && filter.in) {
+            query = query.not(col, 'in', `(${filter.in.join(',')})`);
+          } else {
+            query = query.neq(col, filter instanceof Date ? filter.toISOString() : filter);
+          }
+        }
+      }
+      continue;
+    }
+
     if (val === null) {
       query = query.is(key, null);
     } else if (val instanceof Date) {
@@ -204,20 +311,35 @@ function makeModel(table) {
     },
 
     async findMany({ where, include, orderBy, skip, take } = {}) {
-      let q = supabase.from(table).select(buildSelect(include), { count: 'exact' });
-      q = applyWhere(q, where);
-      if (orderBy) {
-        const orderObj = Array.isArray(orderBy)
-          ? orderBy.reduce((a, o) => ({ ...a, ...o }), {})
-          : orderBy;
-        for (const [col, dir] of Object.entries(orderObj)) {
-          q = q.order(col, { ascending: dir === 'asc' });
+      // Rebuilt per page — a Supabase query builder cannot be awaited twice.
+      const makeQuery = () => {
+        let q = supabase.from(table).select(buildSelect(include), { count: 'exact' });
+        q = applyWhere(q, where);
+        if (orderBy) {
+          const orderObj = Array.isArray(orderBy)
+            ? orderBy.reduce((a, o) => ({ ...a, ...o }), {})
+            : orderBy;
+          for (const [col, dir] of Object.entries(orderObj)) {
+            q = q.order(col, { ascending: dir === 'asc' });
+          }
         }
-      }
-      if (skip != null) q = q.range(skip, skip + (take ?? 1000) - 1);
-      else if (take != null) q = q.limit(take);
+        return q;
+      };
 
-      const { data, error, count } = await q;
+      let rows;
+      let count;
+      let error;
+
+      if (take != null) {
+        // An explicit page size — one request, exactly as asked for.
+        ({ data: rows, error, count } = await makeQuery().range(skip ?? 0, (skip ?? 0) + take - 1));
+      } else {
+        // No page size given: return every matching row. Previously this
+        // silently stopped at 1000, so callers that relied on getting the full
+        // table (analytics, exports) quietly under-reported once it grew.
+        ({ rows, total: count, error } = await fetchAllRows(makeQuery, skip ?? 0));
+      }
+
       if (error) {
         if (error.message.includes('schema cache')) {
           const empty = [];
@@ -225,7 +347,7 @@ function makeModel(table) {
         }
         dbError('findMany', table, error.message);
       }
-      const transformed = (data ?? []).map(r => transformRow(r, include));
+      const transformed = (rows ?? []).map(r => transformRow(r, include));
       return Object.assign(transformed, { _count: count });
     },
 
@@ -305,11 +427,30 @@ function makeModel(table) {
     },
 
     async aggregate({ where, _avg, _sum, _count } = {}) {
-      let q = supabase.from(table).select('*');
-      q = applyWhere(q, where);
-      const { data, error } = await q;
+      // Only the columns being aggregated are needed. Selecting '*' pulled
+      // every column of every row across the network to compute one average.
+      const needed = new Set([
+        ...Object.keys(_avg || {}),
+        ...Object.keys(_sum || {}),
+        ...(typeof _count === 'object' && _count ? Object.keys(_count) : []),
+      ]);
+
+      // A bare row count needs no rows at all — ask PostgREST for the count.
+      if (!needed.size) {
+        let q = supabase.from(table).select('*', { count: 'exact', head: true });
+        q = applyWhere(q, where);
+        const { count, error } = await q;
+        if (error) dbError('aggregate', table, error.message);
+        return _count ? { _count: count ?? 0 } : {};
+      }
+
+      const columns = [...needed].join(',');
+      const { rows: fetched, error } = await fetchAllRows(() => {
+        let q = supabase.from(table).select(columns, { count: 'exact' });
+        return applyWhere(q, where);
+      });
       if (error) dbError('aggregate', table, error.message);
-      const rows = data ?? [];
+      const rows = fetched ?? [];
       const result = {};
       if (_avg) {
         result._avg = {};
@@ -333,9 +474,19 @@ function makeModel(table) {
     },
 
     async groupBy({ by, where, _count, _avg, _sum, orderBy } = {}) {
-      let q = supabase.from(table).select('*');
-      q = applyWhere(q, where);
-      const { data, error } = await q;
+      // Grouping needs the key columns plus whatever is being aggregated —
+      // not the whole row. And it must page: stopping at the first 1000 rows
+      // silently produced analytics for a subset of the table.
+      const columns = [...new Set([
+        ...(by || []),
+        ...Object.keys(_avg || {}),
+        ...Object.keys(_sum || {}),
+      ])].join(',') || '*';
+
+      const { rows: data, error } = await fetchAllRows(() => {
+        let q = supabase.from(table).select(columns, { count: 'exact' });
+        return applyWhere(q, where);
+      });
       if (error) dbError('groupBy', table, error.message);
       const groups = {};
       for (const row of data ?? []) {
@@ -409,6 +560,20 @@ const db = {
 
   $disconnect: async () => {},
   supabase,
+
+  /**
+   * Internals exposed purely so the translation layer can be unit-tested
+   * without a live Supabase connection. Not part of the Prisma-like surface —
+   * application code must never reach into this.
+   */
+  __internals: {
+    applyWhere,
+    toFilterFragments,
+    fetchAllRows,
+    buildSelect,
+    transformRow,
+    PAGE_SIZE,
+  },
 };
 
 module.exports = db;

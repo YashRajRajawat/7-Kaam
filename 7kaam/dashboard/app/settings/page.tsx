@@ -277,7 +277,11 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#191c1e]">Supabase PostgreSQL</p>
-                        <p className="text-[11px] text-[#767586]">https://qywflwdkrckyjdrsadvo.supabase.co</p>
+                        {/* Read from the environment rather than hard-coded, so the
+                            project URL is not baked into the repository. */}
+                        <p className="text-[11px] text-[#767586]">
+                          {process.env.NEXT_PUBLIC_SUPABASE_URL || 'Configured via backend environment'}
+                        </p>
                       </div>
                     </div>
                     <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#d1fae5] text-[#059669] border border-emerald-200">
@@ -292,7 +296,9 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#191c1e]">Groq LLaMA 3.3 LLM API</p>
-                        <p className="text-[11px] text-[#767586]">gsk_K8h8p3d... (Versatile Mode)</p>
+                        {/* Never render key material, not even a prefix — the key
+                            lives in the backend environment and stays there. */}
+                        <p className="text-[11px] text-[#767586]">Key held server-side (Versatile Mode)</p>
                       </div>
                     </div>
                     <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">

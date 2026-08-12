@@ -95,7 +95,7 @@ Workspace Root: c:\Codes\7-Kaam\7kaam\
 3. DATABASE SCHEMA & SUPABASE MODELS (PRISMA)
 --------------------------------------------------------------------------------
 Database Engine: PostgreSQL (Supabase Cloud)
-Connection URL : postgresql://postgres.qywflwdkrckyjdrsadvo:Yazugrang30%40@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+Connection URL : postgresql://postgres.<PROJECT_REF>:<PASSWORD>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
 
 Enums:
 - Trade        : ELECTRICIAN, PLUMBER, CARPENTER, AC_TECHNICIAN, PAINTER, WELDER

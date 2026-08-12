@@ -1,0 +1,33 @@
+{
+  "case_id": "plumber_duplicate_hash",
+  "trade_id": "plumber",
+  "detections": [
+    { "label": "pipe_wrench", "confidence": 0.9 },
+    { "label": "pipe_cutter", "confidence": 0.9 }
+  ],
+  "token": { "expected": "KC-90003", "observed": "KC-90003", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.9
+  },
+  "task": {
+    "step_ids": ["measure", "cut", "seal", "join"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.7,
+    "safety_score": 0.7
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["pipe_run"],
+  "knowledge_score": 0.6,
+  "media": { "sha256": "f003", "phash": "5000000000000003" },
+  "metadata_consistent": true,
+  "duplicate_of": "sub_existing_777",
+  "expected": {
+    "decision": "human_review",
+    "reason_codes_include": ["DUPLICATE_MEDIA"],
+    "writeback": "skipped_offline"
+  }
+}

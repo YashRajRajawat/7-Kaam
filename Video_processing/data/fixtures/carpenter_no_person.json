@@ -1,0 +1,29 @@
+{
+  "case_id": "carpenter_no_person",
+  "trade_id": "carpenter",
+  "detections": [],
+  "token": { "expected": null, "observed": null, "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.5,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.05,
+    "person_visible_ratio": 0.05
+  },
+  "task": {
+    "step_ids": [],
+    "step_completion": [],
+    "quality_score": 0.0,
+    "safety_score": 0.8
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": [],
+  "knowledge_score": null,
+  "media": { "sha256": "f005", "phash": "5000000000000005" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "insufficient_evidence",
+    "reason_codes_include": ["NO_PERSON_DETECTED"],
+    "writeback": "skipped_offline"
+  }
+}

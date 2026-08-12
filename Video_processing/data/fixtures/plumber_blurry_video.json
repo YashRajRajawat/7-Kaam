@@ -1,0 +1,31 @@
+{
+  "case_id": "plumber_blurry_video",
+  "trade_id": "plumber",
+  "detections": [
+    { "label": "pipe_wrench", "confidence": 0.8 }
+  ],
+  "token": { "expected": null, "observed": null, "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.2,
+    "scene_changes": 1,
+    "duplicate_frame_ratio": 0.05,
+    "person_visible_ratio": 0.5
+  },
+  "task": {
+    "step_ids": ["measure", "cut", "seal"],
+    "step_completion": [1, 1, 0],
+    "quality_score": 0.6,
+    "safety_score": 0.7
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["pipe_run"],
+  "knowledge_score": 0.6,
+  "media": { "sha256": "f004", "phash": "5000000000000004" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "needs_resubmission",
+    "reason_codes_include": ["LOW_MEDIA_QUALITY"],
+    "writeback": "skipped_offline"
+  }
+}

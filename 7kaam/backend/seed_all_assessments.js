@@ -1,5 +1,8 @@
 const db = require('./src/utils/prisma');
 
+// Asset URLs come from the environment so no project URL is committed.
+const SUPABASE_URL = process.env.SUPABASE_URL || '<configure SUPABASE_URL in .env>';
+
 async function seed() {
   console.log('🚀 Seeding comprehensive Trade Tests, Video Assessments & Workers for all 6 trades...');
 
@@ -176,12 +179,12 @@ async function seed() {
 
   // 2. Ensure Workers exist for all 6 trades
   const workerTemplates = [
-    { id: 'worker-ravi-001', fullName: 'Ravi Kumar', trade: 'ELECTRICIAN', city: 'Bangalore', phone: '9876543210', score: 87, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-ravi-001/skill_demo.mp4' },
-    { id: 'worker-sunita-001', fullName: 'Sunita Patil', trade: 'PLUMBER', city: 'Mumbai', phone: '9876543211', score: 72, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-sunita-001/plumbing_demo.mp4' },
-    { id: 'worker-mohan-001', fullName: 'Mohan Reddy', trade: 'CARPENTER', city: 'Hyderabad', phone: '9876543212', score: 68, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-mohan-001/carpentry_demo.mp4' },
-    { id: 'worker-ac-001', fullName: 'Vikram Singh', trade: 'AC_TECHNICIAN', city: 'Delhi NCR', phone: '9876543213', score: 84, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-ac-001/ac_demo.mp4' },
-    { id: 'worker-painter-001', fullName: 'Rajesh Sharma', trade: 'PAINTER', city: 'Pune', phone: '9876543214', score: 79, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-painter-001/painter_demo.mp4' },
-    { id: 'worker-welder-001', fullName: 'Manish Verma', trade: 'WELDER', city: 'Chennai', phone: '9876543215', score: 91, videoUrl: 'https://qywflwdkrckyjdrsadvo.supabase.co/storage/v1/object/public/7kaam-assets/videos/worker-welder-001/welding_demo.mp4' }
+    { id: 'worker-ravi-001', fullName: 'Ravi Kumar', trade: 'ELECTRICIAN', city: 'Bangalore', phone: '9876543210', score: 87, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-ravi-001/skill_demo.mp4` },
+    { id: 'worker-sunita-001', fullName: 'Sunita Patil', trade: 'PLUMBER', city: 'Mumbai', phone: '9876543211', score: 72, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-sunita-001/plumbing_demo.mp4` },
+    { id: 'worker-mohan-001', fullName: 'Mohan Reddy', trade: 'CARPENTER', city: 'Hyderabad', phone: '9876543212', score: 68, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-mohan-001/carpentry_demo.mp4` },
+    { id: 'worker-ac-001', fullName: 'Vikram Singh', trade: 'AC_TECHNICIAN', city: 'Delhi NCR', phone: '9876543213', score: 84, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-ac-001/ac_demo.mp4` },
+    { id: 'worker-painter-001', fullName: 'Rajesh Sharma', trade: 'PAINTER', city: 'Pune', phone: '9876543214', score: 79, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-painter-001/painter_demo.mp4` },
+    { id: 'worker-welder-001', fullName: 'Manish Verma', trade: 'WELDER', city: 'Chennai', phone: '9876543215', score: 91, videoUrl: `${SUPABASE_URL}/storage/v1/object/public/7kaam-assets/videos/worker-welder-001/welding_demo.mp4` }
   ];
 
   for (const wTemp of workerTemplates) {

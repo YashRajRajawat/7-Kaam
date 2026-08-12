@@ -1,0 +1,32 @@
+{
+  "case_id": "painter_contradictory_metadata",
+  "trade_id": "painter",
+  "detections": [
+    { "label": "roller", "confidence": 0.85 },
+    { "label": "brush", "confidence": 0.85 }
+  ],
+  "token": { "expected": "KC-90007", "observed": "KC-90007", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.75,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.05,
+    "person_visible_ratio": 0.85
+  },
+  "task": {
+    "step_ids": ["prepare_surface", "mask", "prime", "apply_coat"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.75,
+    "safety_score": 0.8
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["prepared_surface"],
+  "knowledge_score": 0.6,
+  "media": { "sha256": "f007", "phash": "5000000000000007" },
+  "metadata_consistent": false,
+  "expected": {
+    "decision": "human_review",
+    "reason_codes_include": ["METADATA_INCONSISTENT"],
+    "writeback": "skipped_offline"
+  }
+}

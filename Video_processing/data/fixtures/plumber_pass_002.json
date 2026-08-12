@@ -1,0 +1,34 @@
+{
+  "case_id": "plumber_pass_002",
+  "trade_id": "plumber",
+  "detections": [
+    { "label": "pipe_wrench", "confidence": 0.65 },
+    { "label": "pipe_cutter", "confidence": 0.65 },
+    { "label": "seal_tape", "confidence": 0.65 },
+    { "label": "pipe_fittings", "confidence": 0.65 }
+  ],
+  "token": { "expected": "KC-20002", "observed": "KC-20002", "readable": true },
+  "video": {
+    "duration_seconds": 14,
+    "blur_score": 0.65,
+    "scene_changes": 1,
+    "duplicate_frame_ratio": 0.1,
+    "person_visible_ratio": 0.8
+  },
+  "task": {
+    "step_ids": ["measure", "cut", "seal", "join", "test_joint"],
+    "step_completion": [1, 1, 1, 1, 0],
+    "quality_score": 0.65,
+    "safety_score": 0.7
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["pipe_run"],
+  "knowledge_score": 0.5,
+  "media": { "sha256": "bb02", "phash": "1000000000000002" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "provisionally_verified",
+    "reason_codes_include": ["ALL_REQUIRED_TOOLS_VISIBLE"],
+    "writeback": "skipped_offline"
+  }
+}

@@ -1,0 +1,10 @@
+playwright
+playwright-stealth
+pandas
+openpyxl
+pydantic
+rich
+pyyaml
+beautifulsoup4
+pytest
+tqdm

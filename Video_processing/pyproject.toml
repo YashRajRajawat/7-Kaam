@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sevenkaam-trust"
+version = "0.1.0"
+description = "7Kaam Practical Skill Verification and Trust Engine (deterministic prototype)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "numpy>=1.26",
+    "opencv-python-headless>=4.9",
+    "PyJWT>=2.8",
+    "python-dotenv>=1.0",
+]
+
+# Deliberately NOT dependencies (see README "Adapter modes"):
+#   ultralytics, mediapipe, easyocr, pytesseract  -- real CV adapters are stubs.
+#   scikit-learn                                  -- calibration is a later phase.
+# The prototype must install and test on a clean machine with no model weights.
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "respx>=0.21",
+]
+
+[project.scripts]
+sevenkaam = "sevenkaam.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["error::DeprecationWarning:sevenkaam.*"]

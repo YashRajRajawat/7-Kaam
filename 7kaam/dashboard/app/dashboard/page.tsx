@@ -7,14 +7,19 @@ import { DashboardShell } from '@/components/layout/DashboardShell';
 import {
   Users, Award, TrendingUp, MapPin,
   Zap, BarChart2, Activity, Plus, ShieldCheck, ArrowUpRight, ClipboardCheck,
+  Store, Phone, Star, Radar, Loader2,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   BarChart, Bar,
 } from 'recharts';
-import type { AnalyticsOverview, CertificationDataPoint, PendingReviewResponse, ScoreBand, ScoringLog } from '@/types';
-import { timeAgo, formatScore } from '@/lib/utils';
+import type {
+  AnalyticsOverview, CertificationDataPoint, PendingReviewResponse, ScoreBand, ScoringLog,
+  BusinessListResponse, BusinessStats,
+} from '@/types';
+import { timeAgo, formatScore, formatDate } from '@/lib/utils';
+import { useScrapeJob } from '@/lib/useScrapeJob';
 
 const TIER_COLORS: Record<string, string> = {
   EXPERT: '#7c3aed',
@@ -60,6 +65,10 @@ function KpiCard({ title, value, sub, icon: Icon, color, trend }: {
 export default function DashboardPage() {
   const qc = useQueryClient();
 
+  // Keeps the business section below in sync when a scrape started elsewhere
+  // finishes while the operator is sitting on this page.
+  const { isRunning: scrapeRunning } = useScrapeJob();
+
   const { data: overview } = useQuery<AnalyticsOverview>({
     queryKey: ['analytics', 'overview'],
     queryFn: () => api.get('/analytics/overview').then(r => r.data),
@@ -91,6 +100,19 @@ export default function DashboardPage() {
   const { data: scoringLogs } = useQuery<ScoringLog[]>({
     queryKey: ['scoring-logs'],
     queryFn: () => api.get('/workers').then(r => r.data.data?.flatMap((w: { scoringLogs?: ScoringLog[] }) => w.scoringLogs || []) || []),
+  });
+
+  // ── Scraped business directory ─────────────────────────────────────────────
+  // Loaded on mount so previously collected businesses are on screen as soon as
+  // the dashboard opens, with no manual refresh and no file inspection needed.
+  const { data: businessStats } = useQuery<BusinessStats>({
+    queryKey: ['businesses', 'stats'],
+    queryFn: () => api.get('/businesses/stats').then(r => r.data),
+  });
+
+  const { data: recentBusinesses } = useQuery<BusinessListResponse>({
+    queryKey: ['businesses', 'list', 'recent'],
+    queryFn: () => api.get('/businesses', { params: { sort: 'recent', limit: 6 } }).then(r => r.data),
   });
 
   const tierData = overview?.tierBreakdown?.map(t => ({
@@ -233,6 +255,117 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="py-8 text-center text-[#767586] text-xs">No workers awaiting KaamCard review right now.</div>
+          )}
+        </div>
+
+        {/* Scraped Local Business Directory */}
+        <div className="bg-white border border-[#e0e3e5] rounded-xl shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#f2f4f6]">
+            <div>
+              <h3 className="text-base font-bold text-[#191c1e] flex items-center gap-2">
+                <Store size={18} className="text-[#4648d4]" />
+                Local Business Directory
+              </h3>
+              <p className="text-xs text-[#565e74] mt-0.5">
+                {businessStats?.total
+                  ? `${businessStats.total} businesses collected across ${businessStats.categoryCount} categories`
+                  : 'Businesses collected by the data collection pipeline'}
+                {businessStats?.latestCollectedAt && ` · last run ${formatDate(businessStats.latestCollectedAt)}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {scrapeRunning && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#e1e0ff] text-[#4648d4] border border-[#c0c1ff]">
+                  <Loader2 size={11} className="animate-spin" />
+                  Collecting…
+                </span>
+              )}
+              <Link href="/businesses" className="text-xs text-[#4648d4] hover:underline font-bold whitespace-nowrap">
+                View All Businesses →
+              </Link>
+            </div>
+          </div>
+
+          {businessStats && businessStats.total > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              {[
+                { label: 'Collected', value: businessStats.total, icon: Store },
+                { label: 'With Phone', value: businessStats.withPhone, icon: Phone },
+                { label: 'Areas Covered', value: businessStats.areaCount, icon: MapPin },
+                { label: 'Avg Rating', value: businessStats.averageRating != null ? `${businessStats.averageRating}★` : '—', icon: Star },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="bg-[#f7f9fb] border border-[#e0e3e5] rounded-xl px-4 py-3">
+                  <p className="text-[10px] font-bold text-[#767586] uppercase tracking-wider flex items-center gap-1.5">
+                    <Icon size={11} className="text-[#4648d4]" />
+                    {label}
+                  </p>
+                  <p className="text-xl font-black text-[#191c1e] mt-0.5">{value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {recentBusinesses && recentBusinesses.data.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {recentBusinesses.data.map(b => (
+                  <Link
+                    key={b.id}
+                    href="/businesses"
+                    className="p-3.5 rounded-xl bg-[#f7f9fb] border border-[#e0e3e5] hover:border-[#c0c1ff] transition-all block"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs font-bold text-[#191c1e] truncate">{b.name}</p>
+                      {b.rating != null && (
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-[#191c1e] flex-shrink-0">
+                          <Star size={10} className="text-amber-500 fill-amber-500" />
+                          {b.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#4648d4] font-semibold mt-0.5 truncate">{b.category}</p>
+                    {b.address && (
+                      <p className="text-[11px] text-[#767586] mt-1 line-clamp-1">{b.address}</p>
+                    )}
+                    {b.phoneNumber && (
+                      <p className="text-[11px] text-[#565e74] font-semibold mt-1 flex items-center gap-1">
+                        <Phone size={10} className="text-[#767586]" />
+                        {b.phoneNumber}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+
+              {businessStats && businessStats.topCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#f2f4f6]">
+                  {businessStats.topCategories.slice(0, 6).map(c => (
+                    <span
+                      key={c.name}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#e1e0ff] text-[#4648d4] border border-[#c0c1ff]"
+                    >
+                      {c.name} ({c.count})
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="py-10 text-center">
+              <Store size={28} className="mx-auto text-[#767586] mb-2.5" />
+              <p className="text-xs font-bold text-[#191c1e]">No business data collected yet</p>
+              <p className="text-[11px] text-[#767586] mt-1 max-w-md mx-auto">
+                Run the collector to gather local businesses. Saved results appear here automatically,
+                including after a restart.
+              </p>
+              <Link
+                href="/businesses"
+                className="mt-3.5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all"
+              >
+                <Radar size={14} />
+                Collect Business Data
+              </Link>
+            </div>
           )}
         </div>
 
