@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { hashAadhaar } = require('../utils/hash');
+const { PUBLIC_DIRECTORY, SELF_SIGNUP } = require('../utils/listing');
 const { uploadBuffer } = require('../services/supabaseStorage');
 const multer = require('multer');
 
@@ -30,11 +31,18 @@ async function createWorker(req, res) {
         aadhaarHash,
         aadhaarVerified: aadhaarVerified === 'true' || aadhaarVerified === true,
         profilePhotoUrl,
+        // Critique D10 — set explicitly, never left to the column default.
+        // This handler builds `data` from a fixed destructure, so a caller
+        // cannot inject provenance; a row created here is, by definition, a
+        // person entered into 7 Kaam by 7 Kaam — not a scraped listing.
+        listingSource: SELF_SIGNUP,
+        claimStatus: 'CLAIMED',
       },
     });
 
     res.status(201).json(worker);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2002') {
       return res.status(409).json({ error: 'Phone number or Aadhaar already registered' });
     }
@@ -46,7 +54,7 @@ async function createWorker(req, res) {
 // GET /api/v1/workers
 async function listWorkers(req, res) {
   try {
-    const { trade, city, tier, status, search, page = 1, limit = 10 } = req.query;
+    const { trade, city, tier, status, search, source, claimStatus, page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where = {};
@@ -54,6 +62,20 @@ async function listWorkers(req, res) {
     if (city) where.city = { contains: city, mode: 'insensitive' };
     if (tier) where.tier = tier;
     if (status) where.status = status;
+    // §D.8 — exact-match provenance filters. Without these the admin
+    // dashboard's listing-source filter chip is inert.
+    if (source) {
+      if (![SELF_SIGNUP, PUBLIC_DIRECTORY].includes(String(source))) {
+        return res.status(400).json({ error: `source must be ${SELF_SIGNUP} or ${PUBLIC_DIRECTORY}` });
+      }
+      where.listingSource = String(source);
+    }
+    if (claimStatus) {
+      if (!['UNCLAIMED', 'CLAIM_PENDING', 'CLAIMED'].includes(String(claimStatus))) {
+        return res.status(400).json({ error: 'claimStatus must be UNCLAIMED, CLAIM_PENDING or CLAIMED' });
+      }
+      where.claimStatus = String(claimStatus);
+    }
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
@@ -74,6 +96,7 @@ async function listWorkers(req, res) {
 
     res.json({ data: workers, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -93,6 +116,7 @@ async function getWorker(req, res) {
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
     res.json(worker);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -103,6 +127,9 @@ const ADMIN_ROLES = ['SUPER_ADMIN', 'CITY_ADMIN', 'REVIEWER'];
 async function updateWorker(req, res) {
   try {
     const isAdmin = ADMIN_ROLES.includes(req.auth?.role);
+    // §D.8 — NONE of the 13 provenance/claim columns belong in `allowed`.
+    // Provenance and claim state are not casually PATCHable; they move only via
+    // POST /workers/:id/suppress and PATCH /workers/:id/claim-status (admin).
     const allowed = isAdmin
       ? ['fullName', 'city', 'locality', 'profilePhotoUrl', 'status', 'aadhaarVerified']
       : ['fullName', 'city', 'locality', 'profilePhotoUrl'];
@@ -115,6 +142,7 @@ async function updateWorker(req, res) {
     });
     res.json(worker);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2025') return res.status(404).json({ error: 'Worker not found' });
     res.status(500).json({ error: err.message });
   }
@@ -129,6 +157,7 @@ async function deleteWorker(req, res) {
     });
     res.json({ message: 'Worker suspended', worker });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2025') return res.status(404).json({ error: 'Worker not found' });
     res.status(500).json({ error: err.message });
   }

@@ -1,0 +1,34 @@
+{
+  "case_id": "painter_pass_001",
+  "trade_id": "painter",
+  "detections": [
+    { "label": "roller", "confidence": 0.93 },
+    { "label": "brush", "confidence": 0.93 },
+    { "label": "paint_tray", "confidence": 0.93 },
+    { "label": "masking_tape", "confidence": 0.93 }
+  ],
+  "token": { "expected": "KC-50001", "observed": "KC-50001", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.9
+  },
+  "task": {
+    "step_ids": ["prepare_surface", "mask", "prime", "apply_coat"],
+    "step_completion": [1, 1, 1, 1],
+    "quality_score": 0.85,
+    "safety_score": 0.9
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["prepared_surface", "drop_cloth", "test_panel"],
+  "knowledge_score": 0.82,
+  "media": { "sha256": "ee01", "phash": "4000000000000001" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "strongly_verified",
+    "reason_codes_include": ["ALL_REQUIRED_TOOLS_VISIBLE", "TASK_STEPS_COMPLETED"],
+    "writeback": "skipped_offline"
+  }
+}

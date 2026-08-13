@@ -1,0 +1,34 @@
+{
+  "case_id": "plumber_high_quiz_poor_task",
+  "trade_id": "plumber",
+  "detections": [
+    { "label": "pipe_wrench", "confidence": 0.9 },
+    { "label": "pipe_cutter", "confidence": 0.9 },
+    { "label": "seal_tape", "confidence": 0.9 },
+    { "label": "pipe_fittings", "confidence": 0.9 }
+  ],
+  "token": { "expected": "KC-90009", "observed": "KC-90009", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.9
+  },
+  "task": {
+    "step_ids": ["measure", "cut", "seal", "join", "test_joint"],
+    "step_completion": [0, 0, 1, 0, 0],
+    "quality_score": 0.3,
+    "safety_score": 0.5
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["pipe_run", "water_inlet"],
+  "knowledge_score": 0.95,
+  "media": { "sha256": "f009", "phash": "5000000000000009" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "needs_resubmission",
+    "reason_codes_include": ["PRACTICAL_TASK_NOT_PASSED", "KNOWLEDGE_CHECK_STRONG"],
+    "writeback": "skipped_offline"
+  }
+}

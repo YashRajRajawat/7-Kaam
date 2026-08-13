@@ -9,11 +9,24 @@ export type SubmissionStatus = 'SUBMITTED' | 'EVALUATING' | 'COMPLETED' | 'FAILE
 export type SignalType = 'VIDEO' | 'TEST' | 'WORK_HISTORY' | 'FINAL';
 export type ReportStatus = 'OPEN' | 'DISMISSED' | 'ACTIONED';
 
+// ── Listing provenance ────────────────────────────────────────────────────────
+// Who put this row in the database. Orthogonal to WorkerStatus (lifecycle) and
+// to Tier (trust). 'PUBLIC_DIRECTORY' rows were scraped from a third-party
+// directory; the named person never signed up and never consented.
+export type ListingSource = 'SELF_SIGNUP' | 'PUBLIC_DIRECTORY';
+
+// Three states, not two. There is no `isClaimed` boolean anywhere — a boolean
+// plus a status is two sources of truth that will disagree.
+export type ClaimStatus = 'UNCLAIMED' | 'CLAIM_PENDING' | 'CLAIMED';
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 export interface Worker {
   id: string;
-  aadhaarHash: string;
+  // CHANGED: nullable. Directory imports write NULL — no placeholder hash is
+  // invented. getWorker/listWorkers return the raw row, so this key really does
+  // reach the dashboard.
+  aadhaarHash?: string | null;
   fullName: string;
   phoneNumber: string;
   profilePhotoUrl?: string;
@@ -36,6 +49,26 @@ export interface Worker {
   underReview?: boolean;
   recertificationTestIds?: string[];
   recertificationReason?: string;
+
+  // ── Listing provenance (see §A.2) ───────────────────────────────────────────
+  // listingSource and claimStatus are REQUIRED, never optional. An optional
+  // field is `undefined`, and `undefined` reads as "self-registered" in every
+  // truthiness check in this codebase — which is exactly how an unverified
+  // stranger silently becomes a verified-looking one.
+  listingSource: ListingSource;
+  claimStatus: ClaimStatus;
+  sourceName?: string | null;
+  sourceRef?: string | null;
+  sourceUrl?: string | null;
+  sourceAddress?: string | null;
+  importBatchId?: string | null;
+  importedAt?: string | null;
+  claimRequestedAt?: string | null;
+  claimedAt?: string | null;
+  suppressedAt?: string | null;
+  suppressionReason?: string | null;
+  tradeInferred?: boolean;
+
   createdAt: string;
   updatedAt: string;
   workHistories?: WorkHistory[];
@@ -158,6 +191,75 @@ export interface KaamCard {
   isRevoked: boolean;
   revokedReason?: string;
   worker?: Partial<Worker>;
+}
+
+// AI decision bands from Video_processing/src/sevenkaam/reason_codes.py.
+// Not truth, not a probability — an operational label over available evidence.
+export type AiDecision =
+  | 'insufficient_evidence'
+  | 'needs_resubmission'
+  | 'human_review'
+  | 'provisionally_verified'
+  | 'strongly_verified';
+
+export interface AiComponentScores {
+  identity: number;
+  media: number;
+  workspace: number;
+  tools: number;
+  task: number;
+  safety: number;
+  knowledge: number;
+}
+
+export interface AiAssessmentReport {
+  strengths: string[];
+  improvements: string[];
+  limitations: string[];
+}
+
+// The shape written into VideoAssessment.rubricScores.ai by
+// Video_processing/src/sevenkaam/integration/mapping.py — namespaced under
+// `ai` so it never collides with a human reviewer's own rubric conventions.
+export interface AiRubricScores {
+  ai: {
+    engineVersion: string;
+    ruleVersion: string;
+    tradeId: string;
+    challengeId?: string;
+    components: AiComponentScores;
+    initialScore: number;
+    score100: number;
+    evidenceCoverage: number;
+    decision: AiDecision;
+    reasonCodes: string[];
+    missingEvidence: string[];
+    adapterModes: Record<string, string>;
+    report: AiAssessmentReport;
+    writeback: {
+      scoringLogWritten: boolean;
+      scoringLogNoteTag?: string;
+      policyNote: string;
+    };
+  };
+}
+
+// VideoAssessment — written by the Video_processing AI engine, never by a
+// human directly. `score` is null unless the assessment was actually
+// promoted into Worker.videoScore (see writeback.ai.scoringLogWritten).
+export interface VideoAssessment {
+  id: string;
+  workerId: string;
+  testId: string;
+  videoUrl: string;
+  score?: number | null;
+  rubricScores?: AiRubricScores | null;
+  feedback?: string;
+  status: string; // e.g. "AI_STRONGLY_VERIFIED" — free text, AI_-prefixed by convention
+  attemptNumber: number;
+  submittedAt: string;
+  scoredAt?: string;
+  test?: TradeTest;
 }
 
 export interface ScoringLog {

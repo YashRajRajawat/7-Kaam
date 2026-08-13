@@ -1,0 +1,34 @@
+{
+  "case_id": "ac_tech_good_video_low_quiz",
+  "trade_id": "ac_technician",
+  "detections": [
+    { "label": "manifold_gauge", "confidence": 0.62 },
+    { "label": "spanner_set", "confidence": 0.62 },
+    { "label": "electrical_tester", "confidence": 0.62 },
+    { "label": "fin_comb", "confidence": 0.62 }
+  ],
+  "token": { "expected": "KC-90008", "observed": "KC-90008", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.9
+  },
+  "task": {
+    "step_ids": ["isolate", "diagnose", "test", "document"],
+    "step_completion": [1, 1, 1, 0],
+    "quality_score": 0.6,
+    "safety_score": 0.68
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["indoor_unit"],
+  "knowledge_score": 0.15,
+  "media": { "sha256": "f008", "phash": "5000000000000008" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "provisionally_verified",
+    "reason_codes_include": ["LOW_KNOWLEDGE_SCORE"],
+    "writeback": "skipped_offline"
+  }
+}

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/discovery_provider.dart';
+import '../../widgets/unclaimed_badge.dart';
 import '../../widgets/worker_card_skeleton.dart';
 import 'map_view.dart';
 import 'worker_card.dart';
@@ -35,6 +36,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final state = ref.watch(discoveryProvider);
     final notifier = ref.read(discoveryProvider.notifier);
     final filteredWorkers = state.filteredWorkers;
+    final unclaimedCount = filteredWorkers.where((w) => w.isUnclaimed).length;
+    final verifiedCount = filteredWorkers.length - unclaimedCount;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -229,6 +232,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                   const SizedBox(height: 8),
 
+                  // 'Verified only' — the one filter that removes every
+                  // unclaimed public-directory listing. Given its own row so
+                  // it cannot be squeezed out of the layout on a narrow phone.
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilterChip(
+                      label: Text(UnclaimedCopy.filterChip),
+                      selected: state.verifiedOnly,
+                      onSelected: (_) => notifier.toggleVerifiedOnly(),
+                      selectedColor: AppColors.primaryTeal.withValues(alpha: 0.15),
+                      checkmarkColor: AppColors.primaryTeal,
+                      labelStyle: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: state.verifiedOnly ? AppColors.primaryTeal : AppColors.darkText,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
                   // Secondary Filter Row: KaamCard Only, Tier & Sort
                   Row(
                     children: [
@@ -293,16 +317,38 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
-                          // Results Header Count
+                          // Results Header Count.
+                          // The old string said "N verified workers", which
+                          // becomes a false statement the moment a single
+                          // unclaimed directory listing appears in the list.
+                          // Both numbers are computed from THIS list, not from
+                          // a server counts envelope covering other rows.
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12.0),
-                            child: Text(
-                              '${filteredWorkers.length} verified workers in ${state.selectedCity}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.grayText,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  UnclaimedCopy.listHeader(
+                                      filteredWorkers.length, state.selectedCity),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.grayText,
+                                  ),
+                                ),
+                                if (unclaimedCount > 0) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    UnclaimedCopy.listSubheader(
+                                        verifiedCount, unclaimedCount),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: UnclaimedColors.text,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
 
@@ -324,8 +370,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   const SizedBox(height: 12),
                                   Text(
                                     state.useGps
-                                        ? 'No workers near you yet'
-                                        : 'No verified workers found',
+                                        ? 'No workers near you'
+                                        : UnclaimedCopy.listEmpty,
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -335,7 +381,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   const SizedBox(height: 6),
                                   Text(
                                     state.useGps
-                                        ? 'Workers in your area haven\'t registered their location yet. Try searching by city instead.'
+                                        ? 'Workers in your area have not registered their location. Try searching by city instead.'
                                         : 'Try adjusting your search query or trade/tier filters',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.poppins(

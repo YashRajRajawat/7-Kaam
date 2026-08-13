@@ -1,0 +1,142 @@
+{
+  "_comment": [
+    "The ONLY vocabulary reporting.py may emit. Spec section 12.5: the report",
+    "generator receives structured evidence, not raw untrusted text, and 'must",
+    "not invent detected tools, completed steps, customer reviews, or safety",
+    "outcomes'. Every user-visible sentence in an assessment comes from this",
+    "file, with placeholders filled only from values that exist in the evidence.",
+    "",
+    "kind drives which section of the spec section 12.5 report it lands in.",
+    "Customer-facing phrasing follows spec section 2: no model names, no raw",
+    "confidence percentages, no implication of a legal certification."
+  ],
+  "codes": {
+    "ALL_REQUIRED_TOOLS_VISIBLE": {
+      "kind": "strength",
+      "text": "All required tools for this trade were visible in the submission."
+    },
+    "TASK_STEPS_COMPLETED": {
+      "kind": "strength",
+      "text": "Every step of the guided task was completed: {steps}."
+    },
+    "SAFETY_STEPS_OBSERVED": {
+      "kind": "strength",
+      "text": "The expected safety practices were observed during the task."
+    },
+    "MEDIA_QUALITY_GOOD": {
+      "kind": "strength",
+      "text": "The recording was clear enough to review confidently."
+    },
+    "IDENTITY_TOKEN_VERIFIED": {
+      "kind": "strength",
+      "text": "The on-screen verification code matched, supporting a live capture."
+    },
+    "KNOWLEDGE_CHECK_STRONG": {
+      "kind": "strength",
+      "text": "The knowledge check was answered well."
+    },
+
+    "MISSING_REQUIRED_TOOL": {
+      "kind": "improvement",
+      "text": "These required tools were not clearly visible: {tools}. Show each one on camera before starting."
+    },
+    "TOKEN_MISMATCH": {
+      "kind": "improvement",
+      "text": "The on-screen verification code did not match the one issued for this submission. Please record again with the current code visible."
+    },
+    "TOKEN_UNREADABLE": {
+      "kind": "improvement",
+      "text": "The verification code could not be read. Hold it steady and closer to the camera, in good light."
+    },
+    "LOW_MEDIA_QUALITY": {
+      "kind": "improvement",
+      "text": "The recording was too unclear to review reliably. Record again in better light, holding the camera steady."
+    },
+    "VIDEO_TOO_SHORT": {
+      "kind": "improvement",
+      "text": "The recording was shorter than the minimum required for review."
+    },
+    "NO_PERSON_DETECTED": {
+      "kind": "improvement",
+      "text": "No person was visible for most of the recording. Make sure you and your hands stay in frame."
+    },
+    "DUPLICATE_MEDIA": {
+      "kind": "improvement",
+      "text": "This recording closely matches one submitted earlier. Please record a new attempt."
+    },
+    "SCENE_DISCONTINUITY": {
+      "kind": "improvement",
+      "text": "The recording appears to contain cuts. Please submit one continuous take."
+    },
+    "METADATA_INCONSISTENT": {
+      "kind": "improvement",
+      "text": "The recording details were inconsistent and need a second look."
+    },
+    "SAFETY_REVIEW_REQUIRED": {
+      "kind": "improvement",
+      "text": "One or more safety practices need review before this task can be marked complete."
+    },
+    "PRACTICAL_TASK_NOT_PASSED": {
+      "kind": "improvement",
+      "text": "The guided task was not completed to the expected standard. These steps were not evidenced: {steps}."
+    },
+    "LOW_KNOWLEDGE_SCORE": {
+      "kind": "improvement",
+      "text": "The knowledge check score was low. This does not by itself affect the practical result."
+    },
+    "RESUBMIT_IDENTITY": {
+      "kind": "improvement",
+      "text": "Identity evidence was incomplete. Please complete identity verification and submit again."
+    },
+    "LOW_EVIDENCE_COVERAGE": {
+      "kind": "improvement",
+      "text": "Not enough evidence was available to reach a conclusion. Missing: {missing}."
+    },
+
+    "LIMIT_SINGLE_TASK": {
+      "kind": "limitation",
+      "text": "This review evaluates one guided task and does not guarantee performance on every job."
+    },
+    "LIMIT_NOT_A_LICENCE": {
+      "kind": "limitation",
+      "text": "This is not a licence or a legally recognised trade certification."
+    },
+    "LIMIT_TOOLS_ARE_NOT_SKILL": {
+      "kind": "limitation",
+      "text": "Visible tools show what was present on camera, not ownership or correct use."
+    },
+    "LIMIT_CONFIG_NOT_EXPERT_REVIEWED": {
+      "kind": "limitation",
+      "text": "The rubric for this trade has not yet been reviewed by a qualified trade expert."
+    },
+    "LIMIT_HEURISTIC_ADAPTERS": {
+      "kind": "limitation",
+      "text": "Evidence was produced by prototype quality checks, not validated detection models."
+    },
+    "LIMIT_UNCALIBRATED_SCORE": {
+      "kind": "limitation",
+      "text": "The score reflects available evidence only and has not been calibrated against real outcomes."
+    },
+
+    "TRADE_NOT_SUPPORTED_BY_DB": {
+      "kind": "operational",
+      "text": "This trade is not present in the platform's trade list, so the result was not filed against a worker record."
+    },
+    "NO_VIDEO_TRADETEST_FOR_TRADE": {
+      "kind": "operational",
+      "text": "No video assessment exists for this trade, so the result could not be filed."
+    },
+    "AMBIGUOUS_VIDEO_TRADETEST": {
+      "kind": "operational",
+      "text": "More than one video assessment matched this trade, so the result was not filed."
+    },
+    "SCHEMA_DRIFT_TABLE_MISSING": {
+      "kind": "operational",
+      "text": "The assessment was completed but could not be filed because the target table is unavailable."
+    },
+    "WRITEBACK_POLICY_WITHHELD_SCORE": {
+      "kind": "operational",
+      "text": "The assessment was filed without a numeric score, as configured."
+    }
+  }
+}

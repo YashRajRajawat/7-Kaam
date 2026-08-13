@@ -2,6 +2,7 @@ const prisma = require('../utils/prisma');
 const { computeWorkHistoryScore, computeFinalScore, computeTier } = require('../services/scoringEngine');
 const { evaluateTestWithGroq } = require('../services/groqEvaluator');
 const { createUploadSignedUrl } = require('../services/supabaseStorage');
+const { assertNotUnclaimed } = require('../utils/listing');
 
 // Helper: internal rolling average score recomputation & KaamCard version history update
 async function internalComputeScore(workerId) {
@@ -10,6 +11,10 @@ async function internalComputeScore(workerId) {
     include: { workHistories: true },
   });
   if (!worker) return null;
+  // §D.7 — an unclaimed public-directory listing must never acquire a score.
+  // `worker.videoScore ?? 0` / `worker.testScore ?? 0` below would otherwise
+  // manufacture a finalScore and a tier out of nothing for a scraped business.
+  assertNotUnclaimed(worker, 'compute a score');
 
   // Rolling average for video score from VIDEO scoring logs
   const videoLogs = await prisma.scoringLog.findMany({
@@ -97,7 +102,10 @@ async function internalComputeScore(workerId) {
 // Helper: initial KaamCard issuance
 async function internalIssueKaamCard(workerId) {
   const worker = await prisma.worker.findUnique({ where: { id: workerId } });
-  if (!worker || !worker.finalScore) return null;
+  if (!worker) return null;
+  // §D.7 / invariant I2 — zero KaamCard rows for an unclaimed listing.
+  assertNotUnclaimed(worker, 'issue a KaamCard');
+  if (!worker.finalScore) return null;
 
   const existing = await prisma.kaamCard.findFirst({ where: { workerId } });
   if (existing) return existing;
@@ -197,6 +205,7 @@ async function getVideoUploadUrl(req, res) {
 
     res.json({ signedUrl: signedData.signedUrl, token: signedData.token, videoUrl: publicData.publicUrl });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -208,6 +217,9 @@ async function scoreVideo(req, res) {
     const { score: customScore, notes } = req.body || {};
     const worker = await prisma.worker.findUnique({ where: { id } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
+    // Writes videoScore + a ScoringLog row before internalComputeScore runs —
+    // guard here too, or invariants I1/I2 break before the deeper guard fires.
+    assertNotUnclaimed(worker, 'record a video assessment');
 
     if (customScore == null || Number.isNaN(Number(customScore))) {
       return res.status(400).json({ error: 'A numeric score is required — video scoring is admin-manual only' });
@@ -244,6 +256,7 @@ async function scoreVideo(req, res) {
 
     res.json({ videoScore: score, scoredAt: now, updatedScore: updatedScores });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -261,6 +274,9 @@ async function submitTest(req, res) {
 
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
     if (!test) return res.status(404).json({ error: 'Test not found' });
+    // Invariant I2 — zero TestSubmission / SkillCertificate / ScoringLog rows
+    // for an unclaimed listing.
+    assertNotUnclaimed(worker, 'submit a test');
 
     const submission = await prisma.testSubmission.create({
       data: { workerId: id, testId, answers, status: 'EVALUATING' },
@@ -355,6 +371,7 @@ async function submitTest(req, res) {
       certificateId: certificateRecord?.id || null,
     });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -380,6 +397,8 @@ async function addWorkHistory(req, res) {
 
     const worker = await prisma.worker.findUnique({ where: { id } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
+    // Invariant I2 — zero WorkHistory rows for an unclaimed listing.
+    assertNotUnclaimed(worker, 'add work history');
 
     const start = new Date(startDate || Date.now());
     const end = endDate ? new Date(endDate) : null;
@@ -411,6 +430,7 @@ async function addWorkHistory(req, res) {
     const updatedWorker = await prisma.worker.findUnique({ where: { id } });
     res.status(201).json({ history, workHistoryScore: updatedWorker.workHistoryScore });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -423,6 +443,7 @@ async function computeScore(req, res) {
     if (!result) return res.status(404).json({ error: 'Worker not found' });
     res.json(result);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -435,6 +456,7 @@ async function issueKaamCard(req, res) {
     if (!kaamCard) return res.status(400).json({ error: 'Worker not found or final score missing' });
     res.json(kaamCard);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -459,7 +481,9 @@ async function getWorkerCertificates(req, res) {
       testId: s.testId,
       testTitle: s.test?.title || `${worker.trade} Competency Certificate`,
       trade: s.test?.trade || worker.trade,
-      score: s.rawScore || 80,
+      // Never `|| 80`. The filter above already guarantees rawScore >= 60; a
+      // fallback here would mint a score nobody earned.
+      score: s.rawScore,
       issuedAt: s.submittedAt || new Date(),
       pdfUrl: `http://localhost:8000/api/v1/kaamcards/${id}/pdf`,
       test: s.test,
@@ -467,6 +491,7 @@ async function getWorkerCertificates(req, res) {
 
     res.json(dynamicCerts);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -482,6 +507,7 @@ async function getCertificateDetail(req, res) {
     if (!certificate) return res.status(404).json({ error: 'Certificate not found' });
     res.json(certificate);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -497,6 +523,7 @@ async function getWorkerVideoAssessments(req, res) {
     });
     res.json(assessments);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -516,6 +543,7 @@ async function getKaamCardHistory(req, res) {
     });
     res.json(history);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }

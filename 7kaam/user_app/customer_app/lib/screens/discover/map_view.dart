@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/worker_public_model.dart';
 import '../../providers/discovery_provider.dart';
 import '../../widgets/tier_badge.dart';
+import '../../widgets/unclaimed_badge.dart';
 
 import 'package:geolocator/geolocator.dart';
 
@@ -15,16 +16,11 @@ double _calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) 
   return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000.0;
 }
 
-String _getDigiPin(double lat, double lon) {
-  final pin1 = (lat * 100).abs().toInt() % 900 + 100;
-  final pin2 = (lon * 100).abs().toInt() % 900 + 100;
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  final c1 = chars[(lat.abs() * 1000).toInt() % chars.length];
-  final c2 = chars[(lon.abs() * 1000).toInt() % chars.length];
-  final c3 = chars[((lat + lon).abs() * 100).toInt() % chars.length];
-  final c4 = chars[((lat * lon).abs() * 10).toInt() % chars.length];
-  return '$pin1-$pin2-$c1$c2$c3$c4';
-}
+// `_getDigiPin` was removed here on purpose. It was arithmetic on latitude and
+// longitude dressed up as India Post's DIGIPIN — a fabricated government-style
+// identifier attached to a real street address, for every worker on the map,
+// not only imported listings. Do not reintroduce it in any form. If a real
+// DIGIPIN is ever needed, it must come from India Post, over the wire.
 
 class DiscoverMapView extends ConsumerStatefulWidget {
   const DiscoverMapView({super.key});
@@ -39,9 +35,15 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
 
   Set<Marker> _buildMarkers(List<WorkerPublicModel> workers, String? selectedId, LatLng userLoc) {
     return workers.where((w) => w.latitude != null && w.longitude != null).map((w) {
-      final hue = w.hasKaamCard ? BitmapDescriptor.hueCyan : BitmapDescriptor.hueViolet;
+      // Cyan == KaamCard certified, violet == registered but no KaamCard.
+      // Unclaimed directory listings must reuse neither. Azure is the closest
+      // neutral available from the stock marker hues.
+      // TODO(§E.6): replace with the slate `assets/markers/unclaimed_pin.png`
+      // once pubspec asset registration is in scope for this change set.
+      final hue = w.isUnclaimed
+          ? BitmapDescriptor.hueAzure
+          : (w.hasKaamCard ? BitmapDescriptor.hueCyan : BitmapDescriptor.hueViolet);
       final dist = _calculateDistanceKm(userLoc.latitude, userLoc.longitude, w.latitude!, w.longitude!).toStringAsFixed(1);
-      final digiPin = _getDigiPin(w.latitude!, w.longitude!);
 
       return Marker(
         markerId: MarkerId(w.id),
@@ -50,8 +52,13 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
           w.id == selectedId ? BitmapDescriptor.hueGreen : hue,
         ),
         infoWindow: InfoWindow(
-          title: '${w.fullName} (${w.finalScore?.toInt() ?? '—'}/100)',
-          snippet: '$dist km away • DigiPin: $digiPin',
+          // Name only. The old title appended '(—/100)' when finalScore was
+          // null, which reads as a score that failed to load rather than a
+          // business that was never assessed.
+          title: w.fullName,
+          snippet: w.isUnclaimed
+              ? UnclaimedCopy.mapInfoSnippet(dist)
+              : '$dist km away',
           onTap: () {
             context.push('/worker/${w.id}');
           },
@@ -68,6 +75,7 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
     final discoveryState = ref.watch(discoveryProvider);
     final workers = discoveryState.filteredWorkers;
     final mappableWorkers = workers.where((w) => w.latitude != null && w.longitude != null).toList();
+    final mappableUnclaimedCount = mappableWorkers.where((w) => w.isUnclaimed).length;
     final selectedId = discoveryState.selectedWorkerId;
     final userLoc = discoveryState.useGps && discoveryState.latitude != null
         ? LatLng(discoveryState.latitude!, discoveryState.longitude!)
@@ -127,16 +135,32 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Header count
+                  // Header count. Never "verified workers" — this list can
+                  // contain unclaimed public-directory listings.
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      '${mappableWorkers.length} verified workers on map',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.navy,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          UnclaimedCopy.mapHeader(mappableWorkers.length),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        if (mappableUnclaimedCount > 0) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            UnclaimedCopy.mapSubheader(mappableUnclaimedCount),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: UnclaimedColors.text,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -152,7 +176,6 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                         final w = mappableWorkers[index];
                         final isSelected = w.id == selectedId;
                         final dist = _calculateDistanceKm(userLoc.latitude, userLoc.longitude, w.latitude!, w.longitude!).toStringAsFixed(1);
-                        final digiPin = _getDigiPin(w.latitude!, w.longitude!);
 
                         return GestureDetector(
                           onTap: () {
@@ -170,14 +193,26 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
+                              // Teal is the verified colour — never paint it on
+                              // an unclaimed listing, not even as a selection
+                              // highlight.
                               border: Border.all(
-                                color: isSelected ? AppColors.primaryTeal : AppColors.borderGray,
+                                color: isSelected
+                                    ? (w.isUnclaimed
+                                        ? UnclaimedColors.accent
+                                        : AppColors.primaryTeal)
+                                    : (w.isUnclaimed
+                                        ? UnclaimedColors.border
+                                        : AppColors.borderGray),
                                 width: isSelected ? 2 : 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: isSelected
-                                      ? AppColors.primaryTeal.withValues(alpha: 0.15)
+                                      ? (w.isUnclaimed
+                                              ? UnclaimedColors.accent
+                                              : AppColors.primaryTeal)
+                                          .withValues(alpha: 0.15)
                                       : Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 8,
                                 ),
@@ -216,17 +251,24 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
+                                      // Trade only unless there is a real
+                                      // score. '★ —' reads as a star rating
+                                      // that failed to load.
                                       Text(
-                                        '${w.trade.replaceAll('_', ' ')} · ★ ${w.finalScore?.toInt() ?? '—'}',
+                                        w.finalScore != null
+                                            ? '${w.trade.replaceAll('_', ' ')} · ★ ${w.finalScore!.toInt()}'
+                                            : w.trade.replaceAll('_', ' '),
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
-                                          color: AppColors.primaryTeal,
+                                          color: w.isUnclaimed
+                                              ? UnclaimedColors.text
+                                              : AppColors.primaryTeal,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '📍 $dist km away • $digiPin',
+                                        '📍 $dist km away',
                                         style: GoogleFonts.poppins(
                                           fontSize: 11,
                                           color: AppColors.grayText,
@@ -236,7 +278,12 @@ class _DiscoverMapViewState extends ConsumerState<DiscoverMapView> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
-                                      if (w.tier != null) TierBadge(tier: w.tier!, isSmall: true),
+                                      // INVARIANT I4 — the disclosure sits in
+                                      // the same card as the name.
+                                      if (w.isUnclaimed)
+                                        const UnclaimedBadge.chip()
+                                      else if (w.tier != null)
+                                        TierBadge(tier: w.tier, isSmall: true),
                                     ],
                                   ),
                                 ),

@@ -243,7 +243,21 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                   style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(width: 8),
-                TierBadge(tier: res.tier, isSmall: true),
+                // TierBadge renders NOTHING for a tier outside the four real
+                // ones — including the 'NONE' sentinel this screen builds for
+                // a NOT_FOUND card, which previously painted a bronze "NONE"
+                // badge. Say so in words rather than leave the row empty.
+                if (TierBadge.isRealTier(res.tier))
+                  TierBadge(tier: res.tier, isSmall: true)
+                else
+                  Text(
+                    'Not a valid KaamCard',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.grayText,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 4),

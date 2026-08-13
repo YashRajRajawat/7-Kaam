@@ -1,0 +1,34 @@
+{
+  "case_id": "electrician_invalid_token",
+  "trade_id": "electrician",
+  "detections": [
+    { "label": "multimeter", "confidence": 0.9 },
+    { "label": "wire_stripper", "confidence": 0.9 },
+    { "label": "insulated_screwdriver", "confidence": 0.9 },
+    { "label": "voltage_tester", "confidence": 0.9 }
+  ],
+  "token": { "expected": "KC-90002", "observed": "KC-90009", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.95
+  },
+  "task": {
+    "step_ids": ["isolate", "test", "strip", "join", "insulate"],
+    "step_completion": [1, 1, 1, 1, 1],
+    "quality_score": 0.8,
+    "safety_score": 0.85
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": ["distribution_board", "cable"],
+  "knowledge_score": 0.75,
+  "media": { "sha256": "f002", "phash": "5000000000000002" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "needs_resubmission",
+    "reason_codes_include": ["TOKEN_MISMATCH"],
+    "writeback": "skipped_offline"
+  }
+}

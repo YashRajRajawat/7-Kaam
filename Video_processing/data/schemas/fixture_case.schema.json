@@ -1,0 +1,421 @@
+{
+  "$defs": {
+    "Decision": {
+      "description": "Spec section 11.4 confidence bands.\n\nOperational labels, deliberately not a raw number pretending to be truth.",
+      "enum": [
+        "insufficient_evidence",
+        "needs_resubmission",
+        "human_review",
+        "provisionally_verified",
+        "strongly_verified"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "Detection": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "bbox": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bbox"
+        },
+        "occluded": {
+          "default": false,
+          "title": "Occluded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "confidence"
+      ],
+      "title": "Detection",
+      "type": "object"
+    },
+    "FixtureExpectation": {
+      "additionalProperties": false,
+      "description": "What a test asserts about this case. Not consumed by the engine.\n\nAll fixtures run through NullIntegration in tests, which always reports\n\"skipped_offline\" regardless of trade support \u2014 that branch of logic lives\nin the live SupabaseIntegration/testid_resolver path, exercised separately\nin test_testid_resolver.py, not here.",
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "reason_codes_include": {
+          "items": {
+            "$ref": "#/$defs/ReasonCode"
+          },
+          "title": "Reason Codes Include",
+          "type": "array"
+        },
+        "writeback": {
+          "const": "skipped_offline",
+          "default": "skipped_offline",
+          "title": "Writeback",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision"
+      ],
+      "title": "FixtureExpectation",
+      "type": "object"
+    },
+    "IdentityEvidence": {
+      "additionalProperties": false,
+      "description": "Spec section 4.2: identity evidence suggests the account holder is\npresent. It never implies competence.",
+      "properties": {
+        "document_present": {
+          "default": false,
+          "title": "Document Present",
+          "type": "boolean"
+        },
+        "face_match": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Face Match"
+        },
+        "liveness": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Liveness"
+        },
+        "declared_valid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Declared Valid"
+        }
+      },
+      "title": "IdentityEvidence",
+      "type": "object"
+    },
+    "MediaIdentity": {
+      "additionalProperties": false,
+      "description": "Hashes used for duplicate detection (spec section 13).",
+      "properties": {
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "phash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phash"
+        }
+      },
+      "title": "MediaIdentity",
+      "type": "object"
+    },
+    "ReasonCode": {
+      "description": "Every code the engine can attach to a decision.",
+      "enum": [
+        "ALL_REQUIRED_TOOLS_VISIBLE",
+        "TASK_STEPS_COMPLETED",
+        "SAFETY_STEPS_OBSERVED",
+        "MEDIA_QUALITY_GOOD",
+        "IDENTITY_TOKEN_VERIFIED",
+        "KNOWLEDGE_CHECK_STRONG",
+        "MISSING_REQUIRED_TOOL",
+        "TOKEN_MISMATCH",
+        "TOKEN_UNREADABLE",
+        "LOW_MEDIA_QUALITY",
+        "VIDEO_TOO_SHORT",
+        "NO_PERSON_DETECTED",
+        "DUPLICATE_MEDIA",
+        "SCENE_DISCONTINUITY",
+        "METADATA_INCONSISTENT",
+        "SAFETY_REVIEW_REQUIRED",
+        "PRACTICAL_TASK_NOT_PASSED",
+        "LOW_KNOWLEDGE_SCORE",
+        "RESUBMIT_IDENTITY",
+        "LOW_EVIDENCE_COVERAGE",
+        "LIMIT_SINGLE_TASK",
+        "LIMIT_NOT_A_LICENCE",
+        "LIMIT_TOOLS_ARE_NOT_SKILL",
+        "LIMIT_CONFIG_NOT_EXPERT_REVIEWED",
+        "LIMIT_HEURISTIC_ADAPTERS",
+        "LIMIT_UNCALIBRATED_SCORE",
+        "TRADE_NOT_SUPPORTED_BY_DB",
+        "NO_VIDEO_TRADETEST_FOR_TRADE",
+        "AMBIGUOUS_VIDEO_TRADETEST",
+        "SCHEMA_DRIFT_TABLE_MISSING",
+        "WRITEBACK_POLICY_WITHHELD_SCORE"
+      ],
+      "title": "ReasonCode",
+      "type": "string"
+    },
+    "TaskEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "step_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Step Ids",
+          "type": "array"
+        },
+        "step_completion": {
+          "items": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer"
+          },
+          "title": "Step Completion",
+          "type": "array"
+        },
+        "quality_score": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Quality Score",
+          "type": "number"
+        },
+        "safety_score": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Safety Score",
+          "type": "number"
+        }
+      },
+      "title": "TaskEvidence",
+      "type": "object"
+    },
+    "TokenEvidence": {
+      "additionalProperties": false,
+      "description": "Dynamic challenge token, spec section 12.2.",
+      "properties": {
+        "expected": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed"
+        },
+        "readable": {
+          "default": true,
+          "title": "Readable",
+          "type": "boolean"
+        }
+      },
+      "title": "TokenEvidence",
+      "type": "object"
+    },
+    "VideoProbe": {
+      "additionalProperties": false,
+      "description": "Measured media properties feeding spec section 12.3.",
+      "properties": {
+        "duration_seconds": {
+          "minimum": 0.0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "blur_score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Blur Score",
+          "type": "number"
+        },
+        "scene_changes": {
+          "minimum": 0,
+          "title": "Scene Changes",
+          "type": "integer"
+        },
+        "duplicate_frame_ratio": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Duplicate Frame Ratio",
+          "type": "number"
+        },
+        "person_visible_ratio": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Person Visible Ratio",
+          "type": "number"
+        },
+        "frame_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_seconds",
+        "blur_score",
+        "scene_changes",
+        "duplicate_frame_ratio",
+        "person_visible_ratio"
+      ],
+      "title": "VideoProbe",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "title": "Case Id",
+      "type": "string"
+    },
+    "trade_id": {
+      "title": "Trade Id",
+      "type": "string"
+    },
+    "detections": {
+      "items": {
+        "$ref": "#/$defs/Detection"
+      },
+      "title": "Detections",
+      "type": "array"
+    },
+    "token": {
+      "$ref": "#/$defs/TokenEvidence"
+    },
+    "video": {
+      "$ref": "#/$defs/VideoProbe"
+    },
+    "task": {
+      "$ref": "#/$defs/TaskEvidence"
+    },
+    "identity": {
+      "$ref": "#/$defs/IdentityEvidence"
+    },
+    "workspace_tags_observed": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Workspace Tags Observed",
+      "type": "array"
+    },
+    "knowledge_score": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Knowledge Score"
+    },
+    "media": {
+      "$ref": "#/$defs/MediaIdentity"
+    },
+    "metadata_consistent": {
+      "default": true,
+      "title": "Metadata Consistent",
+      "type": "boolean"
+    },
+    "duplicate_of": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duplicate Of"
+    },
+    "expected": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FixtureExpectation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "case_id",
+    "trade_id",
+    "video"
+  ],
+  "title": "FixtureCase",
+  "type": "object"
+}

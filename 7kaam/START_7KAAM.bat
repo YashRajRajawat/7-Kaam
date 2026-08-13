@@ -13,6 +13,7 @@ echo.
 
 :: ── Paths ──────────────────────────────────────────────────────────────────
 set ROOT=%~dp0
+set REPO_ROOT=%ROOT%..
 if exist "C:\Users\%USERNAME%\Flutter\flutter\bin\flutter.bat" (
     set FLUTTER=C:\Users\%USERNAME%\Flutter\flutter\bin\flutter.bat
 ) else if exist "C:\Users\Yazor\Flutter\flutter\bin\flutter.bat" (
@@ -28,21 +29,31 @@ set CUSTOMER_APP=%ROOT%user_app\customer_app
 :: ── 1. Backend API (Node.js + Supabase) ────────────────────────────────────
 echo  [1/4]  Starting Backend API on http://localhost:8000 ...
 start "7 Kaam - Backend API" cmd /k "color 0A && cd /d "%BACKEND%" && npm run dev"
-timeout /t 4 /nobreak >nul
+ping -n 5 127.0.0.1 >nul 2>&1
 
 :: ── 2. Admin Dashboard (Next.js) ───────────────────────────────────────────
 echo  [2/4]  Starting Admin Dashboard on http://localhost:3000 ...
 start "7 Kaam - Admin Dashboard" cmd /k "color 0E && cd /d "%DASHBOARD%" && npm run dev"
-timeout /t 4 /nobreak >nul
+ping -n 5 127.0.0.1 >nul 2>&1
 
 :: ── 3. Worker App (Flutter - Chrome) ───────────────────────────────────────
 echo  [3/4]  Starting Worker App in Chrome ...
 start "7 Kaam - Worker App" cmd /k "color 0D && cd /d "%WORKER_APP%" && "%FLUTTER%" run -d chrome"
-timeout /t 2 /nobreak >nul
+ping -n 3 127.0.0.1 >nul 2>&1
 
 :: ── 4. Customer App (Flutter - Chrome) ─────────────────────────────────────
 echo  [4/4]  Starting Customer App in Chrome ...
 start "7 Kaam - Customer App" cmd /k "color 09 && cd /d "%CUSTOMER_APP%" && "%FLUTTER%" run -d chrome"
+
+:: ── Open browsers once servers are ready ───────────────────────────────────
+echo.
+echo  Waiting for servers to boot before opening Chrome...
+ping -n 9 127.0.0.1 >nul 2>&1
+echo  Opening Admin Dashboard in Chrome...
+start chrome "http://localhost:3000"
+ping -n 3 127.0.0.1 >nul 2>&1
+echo  Opening Backend API in Chrome...
+start chrome "http://localhost:8000"
 
 :: ── Done ───────────────────────────────────────────────────────────────────
 echo.
@@ -50,10 +61,10 @@ echo  ================================================================
 echo   ALL SERVICES LAUNCHED
 echo  ================================================================
 echo.
-echo   Backend API   :  http://localhost:8000
-echo   Admin Panel   :  http://localhost:3000
-echo   Worker App    :  Opens in Chrome (port auto-assigned)
-echo   Customer App  :  Opens in Chrome (port auto-assigned)
+echo   Backend API      :  http://localhost:8000
+echo   Admin Panel      :  http://localhost:3000
+echo   Worker App       :  Opens in Chrome (port auto-assigned)
+echo   Customer App     :  Opens in Chrome (port auto-assigned)
 echo.
 echo  ================================================================
 echo   LOGIN CREDENTIALS

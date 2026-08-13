@@ -1,0 +1,29 @@
+{
+  "case_id": "welder_no_validated_config",
+  "trade_id": "welder",
+  "detections": [],
+  "token": { "expected": "KC-90011", "observed": "KC-90011", "readable": true },
+  "video": {
+    "duration_seconds": 15,
+    "blur_score": 0.8,
+    "scene_changes": 0,
+    "duplicate_frame_ratio": 0.02,
+    "person_visible_ratio": 0.8
+  },
+  "task": {
+    "step_ids": ["weld_bead"],
+    "step_completion": [1],
+    "quality_score": 0.8,
+    "safety_score": 0.8
+  },
+  "identity": { "declared_valid": true },
+  "workspace_tags_observed": [],
+  "knowledge_score": 0.8,
+  "media": { "sha256": "f011", "phash": "5000000000000011" },
+  "metadata_consistent": true,
+  "expected": {
+    "decision": "insufficient_evidence",
+    "reason_codes_include": ["LOW_EVIDENCE_COVERAGE"],
+    "writeback": "skipped_offline"
+  }
+}

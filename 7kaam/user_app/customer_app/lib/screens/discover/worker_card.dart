@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/worker_public_model.dart';
 import '../../widgets/tier_badge.dart';
+import '../../widgets/unclaimed_badge.dart';
 
 class WorkerCard extends StatelessWidget {
   final WorkerPublicModel worker;
@@ -16,6 +17,13 @@ class WorkerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // An unclaimed listing is a real business scraped from a public directory
+    // that 7 Kaam has never verified and that never consented to being here.
+    // Every score / tier / credibility affordance below is suppressed for it —
+    // NOT defaulted, NOT zeroed. A "0" next to a real business's name is a
+    // statement about that business, and it would be a false one.
+    final isUnclaimed = worker.isUnclaimed;
+
     return InkWell(
       onTap: () {
         context.push('/worker/${worker.id}');
@@ -34,7 +42,11 @@ class WorkerCard extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.6)),
+          border: Border.all(
+            color: isUnclaimed
+                ? UnclaimedColors.border
+                : AppColors.borderGray.withValues(alpha: 0.6),
+          ),
         ),
         child: Column(
           children: [
@@ -105,45 +117,60 @@ class WorkerCard extends StatelessWidget {
                           ),
                         ],
                       ),
+
+                      // INVARIANT I4 — the disclosure sits in the SAME visual
+                      // block as the name, directly beneath it. Never behind a
+                      // scroll, a tab or an expand. Do not move this.
+                      if (isUnclaimed) ...[
+                        const SizedBox(height: 6),
+                        UnclaimedBadge.strip(sourceName: worker.sourceName),
+                      ],
                       const SizedBox(height: 4),
 
-                      // KaamCard Status Badge & Score
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: AppColors.gold, size: 18),
-                          const SizedBox(width: 2),
-                          Text(
-                            worker.finalScore != null ? '${worker.finalScore!.toInt()}/100' : 'Not scored yet',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: AppColors.darkText,
-                            ),
-                          ),
-                          if (worker.tier != null) ...[
-                            const SizedBox(width: 6),
-                            TierBadge(tier: worker.tier!, isSmall: true),
-                          ],
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: worker.hasKaamCard
-                                  ? Colors.green.withValues(alpha: 0.12)
-                                  : Colors.orange.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              worker.hasKaamCard ? '✓ KaamCard' : 'Listed',
+                      // Score / tier / KaamCard row — verified rows only.
+                      if (!isUnclaimed)
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.gold, size: 18),
+                            const SizedBox(width: 2),
+                            Text(
+                              worker.finalScore != null
+                                  ? '${worker.finalScore!.toInt()}/100'
+                                  : 'Not scored',
                               style: GoogleFonts.poppins(
-                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: worker.hasKaamCard ? Colors.green : Colors.orange,
+                                fontSize: 14,
+                                color: AppColors.darkText,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                            if (worker.tier != null) ...[
+                              const SizedBox(width: 6),
+                              TierBadge(tier: worker.tier, isSmall: true),
+                            ],
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: worker.hasKaamCard
+                                    ? Colors.green.withValues(alpha: 0.12)
+                                    : Colors.orange.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                worker.hasKaamCard ? '✓ KaamCard' : 'Listed',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: worker.hasKaamCard ? Colors.green : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        // No star, no score text, no tier badge, no orange
+                        // 'Listed' pill. Just the plain statement of fact.
+                        const UnclaimedBadge.chip(),
                       const SizedBox(height: 4),
 
                       // Location & Distance
@@ -184,17 +211,24 @@ class WorkerCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _buildMiniPill('📜', '${worker.certificatesEarned} certs'),
-                    const SizedBox(width: 6),
-                    _buildMiniPill('👤', worker.credibilityLevel),
+                    // Suppressed entirely for unclaimed listings: '0 certs' is
+                    // a count of something never attempted, and credibilityLevel
+                    // is null server-side for exactly this reason.
+                    if (!isUnclaimed) ...[
+                      _buildMiniPill('📜', '${worker.certificatesEarned} certs'),
+                      if (worker.credibilityLevel != null) ...[
+                        const SizedBox(width: 6),
+                        _buildMiniPill('👤', worker.credibilityLevel!),
+                      ],
+                    ],
                   ],
                 ),
                 Text(
-                  'View Profile →',
+                  isUnclaimed ? UnclaimedCopy.cardCta : 'View Profile →',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primaryTeal,
+                    color: isUnclaimed ? UnclaimedColors.text : AppColors.primaryTeal,
                   ),
                 ),
               ],
