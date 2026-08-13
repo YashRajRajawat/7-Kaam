@@ -1,0 +1,35 @@
+# ── Secrets ────────────────────────────────────────────────────────────────
+# Never commit real credentials. Only *.env.example belongs in git.
+.env
+*.env
+!*.env.example
+!.env.example
+
+# ── Scraped directory data ─────────────────────────────────────────────────
+# Real business names, addresses and phone numbers. Keep the raw dataset out of
+# git; import_directory_workers.js reads it from disk locally.
+Data_Scraped/*
+!Data_Scraped/README.md
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ── Local databases / logs / scratch ───────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+*.log
+debug_screenshot.png
+
+# ── Node ───────────────────────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+
+# ── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
