@@ -39,14 +39,24 @@ async function downloadKaamCardPdf(req, res) {
 
     if (!card) return res.status(404).json({ error: 'No KaamCard found for this worker' });
 
+    // A KaamCard is a trust document. `finalScore ?? 80` / `tier ?? 'GOLD'` used
+    // to sit here, which minted a GOLD-tier card scoring 80 for a worker who had
+    // never been scored at all. Refuse instead of inventing a score.
+    if (card.worker.finalScore == null || card.worker.tier == null) {
+      return res.status(409).json({
+        error: 'This worker has no computed score yet, so a KaamCard cannot be issued.',
+        code: 'NO_COMPUTED_SCORE',
+      });
+    }
+
     const { generateKaamCard } = require('../services/kaamCardGenerator');
     const { pdfUrl } = await generateKaamCard({
       worker: card.worker,
       videoScore: card.worker.videoScore ?? 0,
       testScore: card.worker.testScore ?? 0,
       workHistoryScore: card.worker.workHistoryScore ?? 0,
-      finalScore: card.worker.finalScore ?? 80,
-      tier: card.worker.tier ?? 'GOLD',
+      finalScore: card.worker.finalScore,
+      tier: card.worker.tier,
       existingQrToken: card.qrToken,
     });
 
@@ -147,12 +157,37 @@ async function verifyKaamCard(req, res) {
 function renderVerificationHtml(card, status, now) {
   const worker = card.worker || {};
   const breakdown = card.scoreBreakdown || {};
-  const finalScore = Math.round(breakdown.finalScore || 80);
-  const videoScore = Math.round(breakdown.videoScore || 85);
-  const testScore = Math.round(breakdown.testScore || 80);
-  const workHistoryScore = Math.round(breakdown.workHistoryScore || 85);
-  const tier = breakdown.tier || 'GOLD';
-  const phone = worker.phoneNumber || '9876543210';
+  // This is the PUBLIC verification page — the thing a customer scans the QR to
+  // see. These used to default to 80/85/85/'GOLD' and a hardcoded phone number
+  // '9876543210', so a card with an empty scoreBreakdown rendered as a fully
+  // scored GOLD worker with someone else's number, under a "VALID CERTIFIED"
+  // badge. Missing data now reads as missing.
+  const num = (v) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Math.round(Number(v)));
+  const outOf100 = (v) => (num(v) == null ? 'Not scored' : `${num(v)}/100`);
+  const finalScore = num(breakdown.finalScore) == null ? '—' : `${num(breakdown.finalScore)}`;
+  const videoScoreText = outOf100(breakdown.videoScore);
+  const testScoreText = outOf100(breakdown.testScore);
+  const workHistoryScoreText = outOf100(breakdown.workHistoryScore);
+  const tier = breakdown.tier || 'NOT RATED';
+  const phone = worker.phoneNumber || null;
+  const phoneText = phone || 'Not available';
+
+  // Contact buttons only exist when there is a real number to dial. Previously
+  // `phone` was defaulted to a hardcoded '9876543210', so this bar always
+  // rendered and pointed strangers at a number that was not the worker's.
+  const contactBar = phone
+    ? `
+          <div class="grid grid-cols-2 gap-2.5">
+            <a href="tel:${phone}" class="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+              Call Worker
+            </a>
+            <a href="https://wa.me/91${phone.replace(/\D/g, '')}?text=Hi%20${encodeURIComponent(worker.fullName || '')},%20I%20verified%20your%207%20Kaam%20KaamCard!" target="_blank" class="flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 font-extrabold text-xs transition-all">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.099 4.019 4.142-1.087z"/></svg>
+              WhatsApp
+            </a>
+          </div>`
+    : '';
 
   const statusBadge = status === 'VALID'
     ? '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">✓ VALID CERTIFIED</span>'
@@ -199,7 +234,7 @@ function renderVerificationHtml(card, status, now) {
                   ${worker.aadhaarVerified !== false ? '<span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-bold border border-emerald-500/30">✓ Aadhaar Verified</span>' : ''}
                 </div>
                 <p class="text-xs text-slate-400 font-semibold mt-0.5">${(worker.trade || 'ELECTRICIAN').replace(/_/g, ' ')} · ${worker.city || 'Bangalore'}</p>
-                <p class="text-xs font-mono text-emerald-400 mt-1">${phone}</p>
+                <p class="text-xs font-mono text-emerald-400 mt-1">${phoneText}</p>
               </div>
             </div>
 
@@ -222,33 +257,24 @@ function renderVerificationHtml(card, status, now) {
             <div class="grid grid-cols-3 gap-2 pt-1">
               <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center">
                 <p class="text-[10px] font-bold text-slate-400">Video</p>
-                <p class="text-sm font-black text-emerald-400 mt-0.5">${videoScore}/100</p>
+                <p class="text-sm font-black text-emerald-400 mt-0.5">${videoScoreText}</p>
                 <p class="text-[9px] text-slate-400">35% weight</p>
               </div>
               <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center">
                 <p class="text-[10px] font-bold text-slate-400">Test</p>
-                <p class="text-sm font-black text-emerald-400 mt-0.5">${testScore}/100</p>
+                <p class="text-sm font-black text-emerald-400 mt-0.5">${testScoreText}</p>
                 <p class="text-[9px] text-slate-400">45% weight</p>
               </div>
               <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-center">
                 <p class="text-[10px] font-bold text-slate-400">Work History</p>
-                <p class="text-sm font-black text-emerald-400 mt-0.5">${workHistoryScore}/100</p>
+                <p class="text-sm font-black text-emerald-400 mt-0.5">${workHistoryScoreText}</p>
                 <p class="text-[9px] text-slate-400">20% weight</p>
               </div>
             </div>
           </div>
 
-          <!-- Direct Contact & Action Bar -->
-          <div class="grid grid-cols-2 gap-2.5">
-            <a href="tel:${phone}" class="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-              Call Worker
-            </a>
-            <a href="https://wa.me/91${phone.replace(/\D/g,'')}?text=Hi%20${encodeURIComponent(worker.fullName || '')},%20I%20verified%20your%207%20Kaam%20KaamCard!" target="_blank" class="flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 font-extrabold text-xs transition-all">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.099 4.019 4.142-1.087z"/></svg>
-              WhatsApp
-            </a>
-          </div>
+          <!-- Direct Contact & Action Bar (empty when no phone on file) -->
+${contactBar}
 
           <!-- Download PDF Certificate Button -->
           <a href="/api/v1/kaamcards/${card.workerId}/pdf?force=true" target="_blank" class="block w-full text-center py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-lg transition-all">

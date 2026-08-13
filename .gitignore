@@ -1,0 +1,4 @@
+# Scraped directory data: real business names, addresses and phone numbers.
+# Keep the raw dataset out of git; the importer reads it from disk locally.
+Data_Scraped/*
+!Data_Scraped/README.md
