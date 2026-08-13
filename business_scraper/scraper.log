@@ -1,0 +1,1029 @@
+2026-08-08 01:52:48,689 - scraper_logger - INFO - ════════════════════════════════════════════════════════════
+2026-08-08 01:52:48,808 - scraper_logger - INFO -   Local Business Data Collection Pipeline
+2026-08-08 01:52:48,811 - scraper_logger - INFO - ════════════════════════════════════════════════════════════
+2026-08-08 01:52:48,814 - scraper_logger - INFO -   City       : Bangalore
+2026-08-08 01:52:48,816 - scraper_logger - INFO -   Areas      : ['Jayanagar']
+2026-08-08 01:52:48,819 - scraper_logger - INFO -   Categories : ['Electrician']
+2026-08-08 01:52:48,822 - scraper_logger - INFO -   Target sites: ['justdial']
+2026-08-08 01:52:48,824 - scraper_logger - INFO -   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 01:52:48,826 - scraper_logger - INFO - ════════════════════════════════════════════════════════════
+2026-08-08 01:52:48,830 - scraper_logger - INFO - 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 01:52:48,832 - scraper_logger - INFO - [BaseScraper] Launching browser…
+2026-08-08 01:52:52,296 - scraper_logger - INFO - [BaseScraper] Browser ready (headless=False)
+2026-08-08 01:52:52,301 - scraper_logger - INFO - [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 01:52:52,468 - scraper_logger - INFO - [JustDial] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 01:52:56,723 - scraper_logger - INFO - [JustDial] Loading all results (scroll + Load More)…
+2026-08-08 01:53:04,075 - scraper_logger - INFO - [JustDial] Stable at 10 cards. Done scrolling.
+2026-08-08 01:53:04,088 - scraper_logger - INFO - [JustDial] Extracting 10 cards…
+2026-08-08 01:53:44,052 - scraper_logger - INFO - [StateManager] ✦ Checkpoint: saving 10 records → justdial_businesses.csv
+2026-08-08 01:53:44,565 - scraper_logger - INFO - [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 01:53:44,570 - scraper_logger - INFO - [JustDial] ✔  Collected 10 businesses for: Electrician in Jayanagar, Bangalore
+2026-08-08 01:53:44,982 - scraper_logger - INFO - [BaseScraper] Browser closed.
+2026-08-08 01:53:44,987 - scraper_logger - INFO - ▶ Finished scraper: JUSTDIAL
+2026-08-08 01:53:44,992 - scraper_logger - INFO - [Merge] Merging 1 CSV files → all_businesses.csv
+2026-08-08 01:53:45,053 - scraper_logger - INFO - [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (10 unique records, 0 duplicates removed)
+2026-08-08 01:53:45,059 - scraper_logger - INFO - 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 01:58:09,298 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 01:58:09,309 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 01:58:09,310 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 01:58:09,312 | INFO     |   City       : Bangalore
+2026-08-08 01:58:09,313 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 01:58:09,314 | INFO     |   Categories : ['Electrician']
+2026-08-08 01:58:09,315 | INFO     |   Target sites: ['justdial']
+2026-08-08 01:58:09,316 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 01:58:09,316 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 01:58:09,317 | INFO     | 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 01:58:09,319 | INFO     | [StateManager] Resumed: loaded 10 known keys from justdial_businesses.csv (10 existing records).
+2026-08-08 01:58:09,320 | INFO     | [BaseScraper] Launching browser…
+2026-08-08 01:58:09,987 | INFO     | [BaseScraper] Browser ready (headless=False)
+2026-08-08 01:58:09,989 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 01:58:10,109 | INFO     | [JustDial] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 01:58:14,293 | INFO     | [JustDial] Loading all results (scroll + Load More)…
+2026-08-08 01:58:21,682 | INFO     | [JustDial] Stable at 10 cards. Done scrolling.
+2026-08-08 01:58:21,688 | INFO     | [JustDial] Extracting 10 cards…
+2026-08-08 01:59:07,953 | INFO     | [JustDial] ✔  Collected 10 businesses for: Electrician in Jayanagar, Bangalore
+2026-08-08 01:59:08,274 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 01:59:08,275 | INFO     | ▶ Finished scraper: JUSTDIAL
+2026-08-08 01:59:08,276 | INFO     | [Merge] Merging 1 CSV files → all_businesses.csv
+2026-08-08 01:59:08,551 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (10 unique records, 0 duplicates removed)
+2026-08-08 01:59:08,554 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:11:32,983 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:11:32,993 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:11:32,994 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:11:32,995 | INFO     |   City       : Bangalore
+2026-08-08 02:11:32,996 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:11:32,997 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:11:32,999 | INFO     |   Target sites: ['google_maps']
+2026-08-08 02:11:33,000 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:11:33,001 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:11:33,002 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 02:11:33,004 | INFO     | [BaseScraper] Launching browser…
+2026-08-08 02:11:33,703 | INFO     | [BaseScraper] playwright-stealth enabled.
+2026-08-08 02:11:33,705 | INFO     | [BaseScraper] Browser ready (headless=False)
+2026-08-08 02:11:33,707 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:11:33,832 | INFO     | [GoogleMaps] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:12:03,851 | WARNING  | [GoogleMaps] Timeout attempt 1/3
+2026-08-08 02:12:33,863 | WARNING  | [GoogleMaps] Timeout attempt 2/3
+2026-08-08 02:13:03,869 | WARNING  | [GoogleMaps] Timeout attempt 3/3
+2026-08-08 02:23:38,647 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:23:38,658 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:23:38,659 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:23:38,660 | INFO     |   City       : Bangalore
+2026-08-08 02:23:38,661 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:23:38,662 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:23:38,663 | INFO     |   Target sites: ['justdial']
+2026-08-08 02:23:38,664 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:23:38,665 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:23:38,666 | INFO     | 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 02:23:38,668 | INFO     | [StateManager] Resumed: loaded 10 known keys from justdial_businesses.csv (10 existing records).
+2026-08-08 02:23:38,670 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:23:39,072 | INFO     | [BaseScraper] Using real Chrome + user profile: C:\Users\letss\AppData\Local\Google\Chrome\User Data
+2026-08-08 02:23:39,457 | WARNING  | [BaseScraper] Real Chrome failed (BrowserType.launch_persistent_context: Failed to create a ProcessSingleton for your profile directory. This usually means that the profile is already in use by another instance of Chromium.
+Call log:
+  - <launching> C:\Program Files\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --no-first-run --no-default-browser-check --user-data-dir=C:\Users\letss\AppData\Local\Google\Chrome\User Data --remote-debugging-pipe about:blank
+  - <launched> pid=26100
+  - [pid=26100][err] [26100:13600:0808/022339.194:ERROR:chrome\browser\process_singleton_win.cc:414] Lock file can not be created: The process cannot access the file because it is being used by another process. (0x20)
+  - [pid=26100][err] [26100:13600:0808/022339.196:ERROR:chrome\app\chrome_main_delegate.cc:520] Failed to create a ProcessSingleton for your profile directory. This means that running multiple instances would start multiple browser processes rather than opening a new window in the existing process. Aborting now to avoid profile corruption.
+  - [pid=26100] <gracefully close start>
+  - [pid=26100] <kill>
+  - [pid=26100] <will force kill>
+  - [pid=26100] taskkill stderr: ERROR: The process "26100" not found.
+  - [pid=26100] <process did exit: exitCode=21, signal=null>
+  - [pid=26100] starting temporary directories cleanup
+  - [pid=26100] finished temporary directories cleanup
+  - [pid=26100] <gracefully close end>
+), falling back to Chromium...
+2026-08-08 02:23:39,470 | INFO     | [BaseScraper] Using Playwright Chromium + stealth mode.
+2026-08-08 02:23:39,766 | INFO     | [BaseScraper] playwright-stealth enabled.
+2026-08-08 02:23:39,768 | INFO     | [BaseScraper] Chromium ready (headless=False).
+2026-08-08 02:23:39,770 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:23:39,905 | INFO     | [JustDial] Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:23:47,893 | WARNING  | [JustDial] Could not load results for: Electrician in Jayanagar, Bangalore
+2026-08-08 02:23:48,372 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 02:23:48,373 | INFO     | ▶ Finished scraper: JUSTDIAL
+2026-08-08 02:23:48,375 | INFO     | [Merge] Merging 1 CSV files → all_businesses.csv
+2026-08-08 02:23:48,849 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (10 unique records, 0 duplicates removed)
+2026-08-08 02:23:48,852 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:24:59,518 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:24:59,529 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:24:59,530 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:24:59,531 | INFO     |   City       : Bangalore
+2026-08-08 02:24:59,532 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:24:59,533 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:24:59,534 | INFO     |   Target sites: ['justdial']
+2026-08-08 02:24:59,534 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:24:59,535 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:24:59,536 | INFO     | 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 02:24:59,538 | INFO     | [StateManager] Resumed: loaded 10 known keys from justdial_businesses.csv (10 existing records).
+2026-08-08 02:24:59,540 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:24:59,971 | INFO     | [BaseScraper] Temp Chrome profile ready: C:\Users\letss\AppData\Local\Temp\scraper_chrome_o0soimpi
+2026-08-08 02:25:54,580 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:25:54,592 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:25:54,593 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:25:54,594 | INFO     |   City       : Bangalore
+2026-08-08 02:25:54,595 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:25:54,596 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:25:54,597 | INFO     |   Target sites: ['justdial']
+2026-08-08 02:25:54,598 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:25:54,599 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:25:54,600 | INFO     | 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 02:25:54,602 | INFO     | [StateManager] Resumed: loaded 10 known keys from justdial_businesses.csv (10 existing records).
+2026-08-08 02:25:54,603 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:25:55,789 | WARNING  | [BaseScraper] Chrome Cookies DB not found: C:\Users\letss\AppData\Local\Google\Chrome\User Data\Default\Cookies
+2026-08-08 02:25:55,790 | INFO     | [BaseScraper] Browser ready — no cookies (stealth only)
+2026-08-08 02:25:55,793 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:25:55,843 | INFO     | [JustDial] Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:26:04,252 | WARNING  | [JustDial] Could not load results for: Electrician in Jayanagar, Bangalore
+2026-08-08 02:26:04,803 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 02:26:04,805 | INFO     | ▶ Finished scraper: JUSTDIAL
+2026-08-08 02:26:04,806 | INFO     | [Merge] Merging 1 CSV files → all_businesses.csv
+2026-08-08 02:26:05,219 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (10 unique records, 0 duplicates removed)
+2026-08-08 02:26:05,221 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:26:51,273 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:26:51,283 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:26:51,284 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:26:51,285 | INFO     |   City       : Bangalore
+2026-08-08 02:26:51,286 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:26:51,286 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:26:51,287 | INFO     |   Target sites: ['justdial']
+2026-08-08 02:26:51,288 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:26:51,290 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:26:51,291 | INFO     | 
+▶ Starting scraper: JUSTDIAL
+2026-08-08 02:26:51,292 | INFO     | [StateManager] Resumed: loaded 10 known keys from justdial_businesses.csv (10 existing records).
+2026-08-08 02:26:51,294 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:26:52,345 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 02:26:52,346 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 02:26:52,349 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:26:52,409 | INFO     | [JustDial] Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:27:00,283 | WARNING  | [JustDial] Could not load results for: Electrician in Jayanagar, Bangalore
+2026-08-08 02:27:00,845 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 02:27:00,847 | INFO     | ▶ Finished scraper: JUSTDIAL
+2026-08-08 02:27:00,849 | INFO     | [Merge] Merging 1 CSV files → all_businesses.csv
+2026-08-08 02:27:01,233 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (10 unique records, 0 duplicates removed)
+2026-08-08 02:27:01,236 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:27:30,311 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:27:30,321 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:27:30,322 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:27:30,323 | INFO     |   City       : Bangalore
+2026-08-08 02:27:30,325 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:27:30,326 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:27:30,327 | INFO     |   Target sites: ['google_maps']
+2026-08-08 02:27:30,328 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:27:30,330 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:27:30,332 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 02:27:30,333 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:27:31,247 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 02:27:31,248 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 02:27:31,251 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:27:31,299 | INFO     | [GoogleMaps] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:27:32,657 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:27:46,240 | INFO     | [GoogleMaps] Stable at 30 cards. Done scrolling.
+2026-08-08 02:27:46,249 | INFO     | [GoogleMaps] Found 30 result links. Extracting details…
+2026-08-08 02:28:57,181 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:28:57,514 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:30:02,704 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:30:02,781 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:30:56,953 | INFO     | [GoogleMaps] ✔  Collected 27 businesses for: Electrician in Jayanagar, Bangalore
+2026-08-08 02:30:56,991 | INFO     | [StateManager] ✦ Checkpoint: saving 7 records → google_maps_businesses.csv
+2026-08-08 02:30:57,088 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:30:57,779 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 02:30:57,781 | INFO     | ▶ Finished scraper: GOOGLE_MAPS
+2026-08-08 02:30:57,783 | INFO     | [Merge] Merging 2 CSV files → all_businesses.csv
+2026-08-08 02:30:57,854 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (37 unique records, 0 duplicates removed)
+2026-08-08 02:30:57,857 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:32:42,089 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:32:42,099 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:32:42,100 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:32:42,101 | INFO     |   City       : Bangalore
+2026-08-08 02:32:42,101 | INFO     |   Areas      : ['Jayanagar']
+2026-08-08 02:32:42,102 | INFO     |   Categories : ['Electrician']
+2026-08-08 02:32:42,103 | INFO     |   Target sites: ['google_maps']
+2026-08-08 02:32:42,105 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:32:42,105 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:32:42,106 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 02:32:42,108 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:32:43,298 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 02:32:43,300 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 02:32:43,302 | INFO     | [BaseScraper] Task 1/1 — Electrician in Jayanagar, Bangalore
+2026-08-08 02:32:43,352 | INFO     | [GoogleMaps] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 02:32:44,641 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:33:00,328 | INFO     | [GoogleMaps] Stable at 40 cards. Done scrolling.
+2026-08-08 02:33:00,336 | INFO     | [GoogleMaps] Found 40 result links. Extracting details…
+2026-08-08 02:34:11,129 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:34:11,563 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:35:18,390 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:35:18,463 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:36:25,519 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:36:25,594 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:37:35,166 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:37:35,252 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:37:36,602 | INFO     | [GoogleMaps] ✔  Collected 40 businesses for: Electrician in Jayanagar, Bangalore
+2026-08-08 02:37:37,461 | INFO     | [BaseScraper] Browser closed.
+2026-08-08 02:37:37,462 | INFO     | ▶ Finished scraper: GOOGLE_MAPS
+2026-08-08 02:37:37,464 | INFO     | [Merge] Merging 2 CSV files → all_businesses.csv
+2026-08-08 02:37:37,543 | INFO     | [Merge] ✔ Master file saved: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped\all_businesses.csv (50 unique records, 0 duplicates removed)
+2026-08-08 02:37:37,546 | INFO     | 
+✔ Pipeline finished. Data saved to: c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:37:55,543 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:37:55,556 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 02:37:55,558 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:37:55,559 | INFO     |   City       : Bangalore
+2026-08-08 02:37:55,560 | INFO     |   Areas      : ['SG Palya', 'Jayanagar', 'Indiranagar', 'MG Road', 'HSR Layout', 'Koramangala', 'Whitefield']
+2026-08-08 02:37:55,562 | INFO     |   Categories : ['Electrician', 'Plumber', 'Mechanic', 'Painter', 'Hardware Shop', 'Tailor', 'Welder', 'Carpenter', 'Laundry', 'Mobile Repair', 'Bike Repair', 'AC Repair']
+2026-08-08 02:37:55,564 | INFO     |   Target sites: ['google_maps']
+2026-08-08 02:37:55,566 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 02:37:55,567 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 02:37:55,568 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 02:37:55,569 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 02:37:56,814 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 02:37:56,816 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 02:37:56,821 | INFO     | [BaseScraper] Task 1/84 — Electrician in SG Palya, Bangalore
+2026-08-08 02:37:56,870 | INFO     | [GoogleMaps] ▶  Searching: Electrician in SG Palya, Bangalore
+2026-08-08 02:37:58,171 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:38:07,403 | INFO     | [GoogleMaps] Stable at 25 cards. Done scrolling.
+2026-08-08 02:38:07,409 | INFO     | [GoogleMaps] Found 25 result links. Extracting details…
+2026-08-08 02:39:24,283 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:39:24,690 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:40:43,150 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:40:43,234 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:41:06,580 | INFO     | [GoogleMaps] ✔  Collected 23 businesses for: Electrician in SG Palya, Bangalore
+2026-08-08 02:41:06,620 | INFO     | [BaseScraper] Task 2/84 — Plumber in SG Palya, Bangalore
+2026-08-08 02:41:06,668 | INFO     | [GoogleMaps] ▶  Searching: Plumber in SG Palya, Bangalore
+2026-08-08 02:41:07,607 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:41:20,014 | INFO     | [GoogleMaps] Stable at 34 cards. Done scrolling.
+2026-08-08 02:41:20,018 | INFO     | [GoogleMaps] Found 34 result links. Extracting details…
+2026-08-08 02:42:18,481 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:42:18,549 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:43:48,010 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:43:48,098 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:45:10,783 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:45:10,879 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:45:29,509 | INFO     | [GoogleMaps] ✔  Collected 30 businesses for: Plumber in SG Palya, Bangalore
+2026-08-08 02:45:29,534 | INFO     | [BaseScraper] Task 3/84 — Mechanic in SG Palya, Bangalore
+2026-08-08 02:45:29,644 | INFO     | [GoogleMaps] ▶  Searching: Mechanic in SG Palya, Bangalore
+2026-08-08 02:45:30,774 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:45:50,776 | INFO     | [GoogleMaps] Stable at 62 cards. Done scrolling.
+2026-08-08 02:45:50,783 | INFO     | [GoogleMaps] Found 62 result links. Extracting details…
+2026-08-08 02:46:50,834 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:46:50,941 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:48:13,098 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:48:13,210 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:49:50,331 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:49:50,449 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:51:13,092 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:51:13,211 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:52:35,633 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:52:35,757 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:54:03,699 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:54:03,825 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:54:04,776 | INFO     | [GoogleMaps] ✔  Collected 60 businesses for: Mechanic in SG Palya, Bangalore
+2026-08-08 02:54:04,804 | INFO     | [BaseScraper] Task 4/84 — Painter in SG Palya, Bangalore
+2026-08-08 02:54:04,857 | INFO     | [GoogleMaps] ▶  Searching: Painter in SG Palya, Bangalore
+2026-08-08 02:54:05,816 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 02:54:31,574 | INFO     | [GoogleMaps] Found 104 result links. Extracting details…
+2026-08-08 02:55:35,484 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:55:35,624 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:56:46,309 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:56:46,452 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:57:58,447 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:57:58,601 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 02:59:11,935 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 02:59:12,097 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:00:26,770 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:00:26,932 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:01:46,616 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:01:46,790 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:03:07,772 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:03:07,952 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:04:31,093 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:04:31,279 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:06:10,145 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:06:10,343 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:06:17,249 | INFO     | [GoogleMaps] ✔  Collected 97 businesses for: Painter in SG Palya, Bangalore
+2026-08-08 03:06:17,277 | INFO     | [BaseScraper] Task 5/84 — Hardware Shop in SG Palya, Bangalore
+2026-08-08 03:06:17,334 | INFO     | [GoogleMaps] ▶  Searching: Hardware Shop in SG Palya, Bangalore
+2026-08-08 03:06:18,419 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:06:37,447 | INFO     | [GoogleMaps] Stable at 43 cards. Done scrolling.
+2026-08-08 03:06:37,451 | INFO     | [GoogleMaps] Found 43 result links. Extracting details…
+2026-08-08 03:07:58,794 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:07:58,993 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:09:11,745 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:09:11,955 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:10:16,686 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:10:16,889 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:11:15,896 | INFO     | [GoogleMaps] ✔  Collected 41 businesses for: Hardware Shop in SG Palya, Bangalore
+2026-08-08 03:11:15,923 | INFO     | [BaseScraper] Task 6/84 — Tailor in SG Palya, Bangalore
+2026-08-08 03:11:15,973 | INFO     | [GoogleMaps] ▶  Searching: Tailor in SG Palya, Bangalore
+2026-08-08 03:11:17,063 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:11:41,324 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 03:12:06,386 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:12:06,604 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:13:32,599 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:13:32,827 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:14:54,353 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:14:54,581 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:16:28,189 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:16:28,438 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:17:56,654 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:17:56,897 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:19:21,132 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:19:21,372 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:20:45,659 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:20:45,912 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:22:10,399 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:22:10,712 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:22:47,960 | INFO     | [GoogleMaps] ✔  Collected 78 businesses for: Tailor in SG Palya, Bangalore
+2026-08-08 03:22:47,987 | INFO     | [BaseScraper] Task 7/84 — Welder in SG Palya, Bangalore
+2026-08-08 03:22:48,039 | INFO     | [GoogleMaps] ▶  Searching: Welder in SG Palya, Bangalore
+2026-08-08 03:22:48,979 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:22:59,222 | INFO     | [GoogleMaps] Stable at 27 cards. Done scrolling.
+2026-08-08 03:22:59,227 | INFO     | [GoogleMaps] Found 27 result links. Extracting details…
+2026-08-08 03:23:34,614 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:23:34,879 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:24:54,471 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:24:54,739 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:26:21,980 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:26:22,260 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:26:23,403 | INFO     | [GoogleMaps] ✔  Collected 25 businesses for: Welder in SG Palya, Bangalore
+2026-08-08 03:26:23,429 | INFO     | [BaseScraper] Task 8/84 — Carpenter in SG Palya, Bangalore
+2026-08-08 03:26:23,489 | INFO     | [GoogleMaps] ▶  Searching: Carpenter in SG Palya, Bangalore
+2026-08-08 03:26:24,592 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:26:50,718 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 03:28:34,182 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:28:34,465 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:29:46,665 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:29:46,943 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:31:04,036 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:31:04,336 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:32:12,837 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:32:13,138 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:33:33,717 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:33:34,022 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:34:40,674 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:34:40,990 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:36:14,409 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:36:14,735 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:37:36,453 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:37:36,780 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:39:03,323 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:39:03,653 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:40:04,021 | INFO     | [GoogleMaps] ✔  Collected 105 businesses for: Carpenter in SG Palya, Bangalore
+2026-08-08 03:40:04,051 | INFO     | [BaseScraper] Task 9/84 — Laundry in SG Palya, Bangalore
+2026-08-08 03:40:04,104 | INFO     | [GoogleMaps] ▶  Searching: Laundry in SG Palya, Bangalore
+2026-08-08 03:40:05,180 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:40:20,267 | INFO     | [GoogleMaps] Stable at 46 cards. Done scrolling.
+2026-08-08 03:40:20,273 | INFO     | [GoogleMaps] Found 46 result links. Extracting details…
+2026-08-08 03:40:54,262 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:40:54,596 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:42:06,733 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:42:07,079 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:43:29,891 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:43:30,232 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:45:05,081 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:45:05,425 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:46:19,058 | INFO     | [GoogleMaps] ✔  Collected 45 businesses for: Laundry in SG Palya, Bangalore
+2026-08-08 03:46:19,085 | INFO     | [BaseScraper] Task 10/84 — Mobile Repair in SG Palya, Bangalore
+2026-08-08 03:46:19,142 | INFO     | [GoogleMaps] ▶  Searching: Mobile Repair in SG Palya, Bangalore
+2026-08-08 03:46:20,294 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 03:46:45,096 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 03:47:03,912 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:47:04,325 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:48:34,787 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:48:35,159 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:49:57,538 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:49:57,922 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:51:22,930 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:51:23,310 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:52:47,827 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:52:48,216 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:54:19,382 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:54:19,782 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:55:51,061 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:55:51,477 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:57:20,469 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:57:20,872 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:58:33,918 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:58:34,403 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 03:59:45,555 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 03:59:45,976 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:00:11,619 | INFO     | [GoogleMaps] ✔  Collected 104 businesses for: Mobile Repair in SG Palya, Bangalore
+2026-08-08 04:00:11,649 | INFO     | [BaseScraper] Task 11/84 — Bike Repair in SG Palya, Bangalore
+2026-08-08 04:00:11,698 | INFO     | [GoogleMaps] ▶  Searching: Bike Repair in SG Palya, Bangalore
+2026-08-08 04:00:12,832 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:00:37,316 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 04:02:43,154 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:02:43,575 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:04:48,011 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:04:48,434 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:06:32,873 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:06:33,298 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:07:56,873 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:07:57,346 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:09:34,542 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:09:35,118 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:11:13,889 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:11:14,352 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:12:42,613 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:12:43,061 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:13:49,261 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:13:49,735 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:14:28,227 | INFO     | [GoogleMaps] ✔  Collected 106 businesses for: Bike Repair in SG Palya, Bangalore
+2026-08-08 04:14:28,256 | INFO     | [BaseScraper] Task 12/84 — AC Repair in SG Palya, Bangalore
+2026-08-08 04:14:28,312 | INFO     | [GoogleMaps] ▶  Searching: AC Repair in SG Palya, Bangalore
+2026-08-08 04:14:29,415 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:14:35,410 | INFO     | [GoogleMaps] Stable at 15 cards. Done scrolling.
+2026-08-08 04:14:35,415 | INFO     | [GoogleMaps] Found 15 result links. Extracting details…
+2026-08-08 04:15:11,043 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:15:11,506 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:16:07,763 | INFO     | [GoogleMaps] ✔  Collected 12 businesses for: AC Repair in SG Palya, Bangalore
+2026-08-08 04:16:07,791 | INFO     | [BaseScraper] Task 13/84 — Electrician in Jayanagar, Bangalore
+2026-08-08 04:16:07,838 | INFO     | [GoogleMaps] ▶  Searching: Electrician in Jayanagar, Bangalore
+2026-08-08 04:16:08,924 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:16:33,162 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 04:17:17,881 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:17:18,438 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:18:36,663 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:18:37,136 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:19:32,792 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:19:33,381 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:20:49,189 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:20:49,725 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:21:56,951 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:21:57,454 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:23:02,937 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:23:03,509 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:24:19,287 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:24:19,814 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:25:26,332 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:25:26,888 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:25:28,098 | INFO     | [GoogleMaps] ✔  Collected 79 businesses for: Electrician in Jayanagar, Bangalore
+2026-08-08 04:25:28,131 | INFO     | [BaseScraper] Task 14/84 — Plumber in Jayanagar, Bangalore
+2026-08-08 04:25:28,189 | INFO     | [GoogleMaps] ▶  Searching: Plumber in Jayanagar, Bangalore
+2026-08-08 04:25:28,995 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:25:35,416 | INFO     | [GoogleMaps] Stable at 8 cards. Done scrolling.
+2026-08-08 04:25:35,421 | INFO     | [GoogleMaps] Found 8 result links. Extracting details…
+2026-08-08 04:26:34,563 | INFO     | [GoogleMaps] ✔  Collected 8 businesses for: Plumber in Jayanagar, Bangalore
+2026-08-08 04:26:34,591 | INFO     | [BaseScraper] Task 15/84 — Mechanic in Jayanagar, Bangalore
+2026-08-08 04:26:34,647 | INFO     | [GoogleMaps] ▶  Searching: Mechanic in Jayanagar, Bangalore
+2026-08-08 04:26:35,734 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:27:01,033 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 04:27:46,444 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:27:46,984 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:29:10,002 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:29:10,562 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:30:39,366 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:30:39,912 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:32:24,106 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:32:24,693 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:33:48,318 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:33:48,872 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:35:14,468 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:35:15,115 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:36:31,667 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:36:32,254 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:37:44,331 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:37:44,920 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:39:09,875 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:39:10,471 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:40:32,697 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:40:33,287 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:40:34,236 | INFO     | [GoogleMaps] ✔  Collected 105 businesses for: Mechanic in Jayanagar, Bangalore
+2026-08-08 04:40:34,266 | INFO     | [BaseScraper] Task 16/84 — Painter in Jayanagar, Bangalore
+2026-08-08 04:40:34,322 | INFO     | [GoogleMaps] ▶  Searching: Painter in Jayanagar, Bangalore
+2026-08-08 04:40:35,448 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:40:43,031 | INFO     | [GoogleMaps] Stable at 20 cards. Done scrolling.
+2026-08-08 04:40:43,035 | INFO     | [GoogleMaps] Found 20 result links. Extracting details…
+2026-08-08 04:42:23,074 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:42:23,678 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:43:02,663 | INFO     | [GoogleMaps] ✔  Collected 20 businesses for: Painter in Jayanagar, Bangalore
+2026-08-08 04:43:02,691 | INFO     | [BaseScraper] Task 17/84 — Hardware Shop in Jayanagar, Bangalore
+2026-08-08 04:43:02,748 | INFO     | [GoogleMaps] ▶  Searching: Hardware Shop in Jayanagar, Bangalore
+2026-08-08 04:43:03,859 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:43:28,298 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 04:44:13,171 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:44:13,784 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:45:18,598 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:45:19,204 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:46:42,872 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:46:43,496 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:47:57,499 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:47:58,138 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:49:07,599 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:49:08,254 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:50:25,799 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:50:26,611 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:51:27,605 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:51:28,258 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:52:16,279 | INFO     | [GoogleMaps] ✔  Collected 76 businesses for: Hardware Shop in Jayanagar, Bangalore
+2026-08-08 04:52:16,306 | INFO     | [BaseScraper] Task 18/84 — Tailor in Jayanagar, Bangalore
+2026-08-08 04:52:16,353 | INFO     | [GoogleMaps] ▶  Searching: Tailor in Jayanagar, Bangalore
+2026-08-08 04:52:17,268 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 04:52:42,188 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 04:53:24,155 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:53:24,835 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:54:35,496 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:54:36,193 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:55:48,635 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:55:49,306 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:57:03,912 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:57:04,674 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:58:17,251 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:58:17,923 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 04:59:28,653 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 04:59:29,342 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:00:49,109 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:00:49,842 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:02:08,867 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:02:09,577 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:02:30,331 | INFO     | [GoogleMaps] ✔  Collected 79 businesses for: Tailor in Jayanagar, Bangalore
+2026-08-08 05:02:30,359 | INFO     | [BaseScraper] Task 19/84 — Welder in Jayanagar, Bangalore
+2026-08-08 05:02:30,409 | INFO     | [GoogleMaps] ▶  Searching: Welder in Jayanagar, Bangalore
+2026-08-08 05:02:31,523 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 05:02:56,122 | INFO     | [GoogleMaps] Found 93 result links. Extracting details…
+2026-08-08 05:05:42,774 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:05:43,475 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:07:59,463 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:08:00,180 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:09:30,136 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:09:30,856 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:10:48,658 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:10:49,413 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:12:16,255 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:12:17,069 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:14:13,589 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:14:14,329 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:15:23,480 | INFO     | [GoogleMaps] ✔  Collected 88 businesses for: Welder in Jayanagar, Bangalore
+2026-08-08 05:15:23,511 | INFO     | [BaseScraper] Task 20/84 — Carpenter in Jayanagar, Bangalore
+2026-08-08 05:15:23,563 | INFO     | [GoogleMaps] ▶  Searching: Carpenter in Jayanagar, Bangalore
+2026-08-08 05:15:24,650 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 05:15:49,005 | INFO     | [GoogleMaps] Found 89 result links. Extracting details…
+2026-08-08 05:17:47,351 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:17:48,086 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:21:48,380 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:21:49,144 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:23:03,393 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:23:04,240 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:24:21,119 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:24:21,901 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:26:09,479 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:26:10,270 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:26:31,158 | INFO     | [GoogleMaps] ✔  Collected 85 businesses for: Carpenter in Jayanagar, Bangalore
+2026-08-08 05:26:31,188 | INFO     | [BaseScraper] Task 21/84 — Laundry in Jayanagar, Bangalore
+2026-08-08 05:26:31,241 | INFO     | [GoogleMaps] ▶  Searching: Laundry in Jayanagar, Bangalore
+2026-08-08 05:26:32,351 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 05:26:56,892 | INFO     | [GoogleMaps] Found 104 result links. Extracting details…
+2026-08-08 05:28:15,372 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:28:16,170 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:30:12,497 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:30:13,364 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:31:52,553 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:31:53,353 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:33:23,945 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:33:24,733 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:34:39,005 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:34:39,876 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:36:03,772 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:36:04,642 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:37:36,175 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:37:36,999 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:38:52,942 | INFO     | [GoogleMaps] ✔  Collected 96 businesses for: Laundry in Jayanagar, Bangalore
+2026-08-08 05:38:52,969 | INFO     | [BaseScraper] Task 22/84 — Mobile Repair in Jayanagar, Bangalore
+2026-08-08 05:38:53,022 | INFO     | [GoogleMaps] ▶  Searching: Mobile Repair in Jayanagar, Bangalore
+2026-08-08 05:38:54,195 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 05:39:19,272 | INFO     | [GoogleMaps] Found 96 result links. Extracting details…
+2026-08-08 05:39:47,404 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:39:48,212 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:42:00,989 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:42:01,824 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:43:25,660 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:43:26,576 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:44:44,246 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:44:45,068 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:46:00,584 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:46:01,450 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:47:17,329 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:47:18,191 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:48:43,668 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:48:44,616 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:50:06,963 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:50:07,847 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:50:39,738 | INFO     | [GoogleMaps] ✔  Collected 92 businesses for: Mobile Repair in Jayanagar, Bangalore
+2026-08-08 05:50:39,768 | INFO     | [BaseScraper] Task 23/84 — Bike Repair in Jayanagar, Bangalore
+2026-08-08 05:50:39,826 | INFO     | [GoogleMaps] ▶  Searching: Bike Repair in Jayanagar, Bangalore
+2026-08-08 05:50:40,955 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 05:51:05,023 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 05:53:20,760 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:53:21,626 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:55:31,809 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:55:32,779 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:56:42,692 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:56:43,585 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:58:26,401 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:58:27,309 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 05:59:50,251 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 05:59:51,130 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:01:05,617 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:01:06,619 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:02:52,759 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:02:53,689 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:03:30,750 | INFO     | [GoogleMaps] ✔  Collected 103 businesses for: Bike Repair in Jayanagar, Bangalore
+2026-08-08 06:03:30,779 | INFO     | [BaseScraper] Task 24/84 — AC Repair in Jayanagar, Bangalore
+2026-08-08 06:03:30,834 | INFO     | [GoogleMaps] ▶  Searching: AC Repair in Jayanagar, Bangalore
+2026-08-08 06:03:31,980 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:03:45,294 | INFO     | [GoogleMaps] Stable at 43 cards. Done scrolling.
+2026-08-08 06:03:45,301 | INFO     | [GoogleMaps] Found 43 result links. Extracting details…
+2026-08-08 06:05:17,587 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:05:18,505 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:06:53,739 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:06:54,665 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:08:57,338 | INFO     | [GoogleMaps] ✔  Collected 42 businesses for: AC Repair in Jayanagar, Bangalore
+2026-08-08 06:08:57,367 | INFO     | [BaseScraper] Task 25/84 — Electrician in Indiranagar, Bangalore
+2026-08-08 06:08:57,422 | INFO     | [GoogleMaps] ▶  Searching: Electrician in Indiranagar, Bangalore
+2026-08-08 06:08:58,539 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:09:15,177 | INFO     | [GoogleMaps] Stable at 52 cards. Done scrolling.
+2026-08-08 06:09:15,183 | INFO     | [GoogleMaps] Found 52 result links. Extracting details…
+2026-08-08 06:09:24,096 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:09:25,108 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:11:27,490 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:11:28,432 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:12:44,766 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:12:45,805 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:14:13,858 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:14:14,898 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:15:40,068 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:15:41,039 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:15:53,634 | INFO     | [GoogleMaps] ✔  Collected 49 businesses for: Electrician in Indiranagar, Bangalore
+2026-08-08 06:15:53,663 | INFO     | [BaseScraper] Task 26/84 — Plumber in Indiranagar, Bangalore
+2026-08-08 06:15:53,718 | INFO     | [GoogleMaps] ▶  Searching: Plumber in Indiranagar, Bangalore
+2026-08-08 06:15:54,862 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:16:18,593 | INFO     | [GoogleMaps] Found 100 result links. Extracting details…
+2026-08-08 06:18:45,622 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:18:46,588 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:20:57,781 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:20:58,854 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:22:27,538 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:22:28,545 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:23:40,439 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:23:41,419 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:25:09,355 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:25:10,352 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:26:27,205 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:26:28,329 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:27:58,213 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:27:59,220 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:29:21,336 | INFO     | [GoogleMaps] ✔  Collected 94 businesses for: Plumber in Indiranagar, Bangalore
+2026-08-08 06:29:21,366 | INFO     | [BaseScraper] Task 27/84 — Mechanic in Indiranagar, Bangalore
+2026-08-08 06:29:21,417 | INFO     | [GoogleMaps] ▶  Searching: Mechanic in Indiranagar, Bangalore
+2026-08-08 06:29:22,519 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:29:46,645 | INFO     | [GoogleMaps] Found 103 result links. Extracting details…
+2026-08-08 06:30:23,267 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:30:24,293 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:31:55,272 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:31:56,389 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:33:22,064 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:33:23,094 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:34:41,958 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:34:42,999 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:36:10,363 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:36:11,503 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:37:16,349 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:37:17,451 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:38:30,846 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:38:31,905 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:39:43,186 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:39:44,245 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:40:54,150 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:40:55,302 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:42:00,264 | INFO     | [GoogleMaps] ✔  Collected 98 businesses for: Mechanic in Indiranagar, Bangalore
+2026-08-08 06:42:00,292 | INFO     | [BaseScraper] Task 28/84 — Painter in Indiranagar, Bangalore
+2026-08-08 06:42:00,341 | INFO     | [GoogleMaps] ▶  Searching: Painter in Indiranagar, Bangalore
+2026-08-08 06:42:01,472 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:42:15,702 | INFO     | [GoogleMaps] Stable at 47 cards. Done scrolling.
+2026-08-08 06:42:15,707 | INFO     | [GoogleMaps] Found 47 result links. Extracting details…
+2026-08-08 06:42:29,157 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:42:30,226 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:44:48,397 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:44:49,518 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:46:16,546 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:46:17,728 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:47:21,971 | INFO     | [GoogleMaps] ✔  Collected 41 businesses for: Painter in Indiranagar, Bangalore
+2026-08-08 06:47:22,000 | INFO     | [BaseScraper] Task 29/84 — Hardware Shop in Indiranagar, Bangalore
+2026-08-08 06:47:22,067 | INFO     | [GoogleMaps] ▶  Searching: Hardware Shop in Indiranagar, Bangalore
+2026-08-08 06:47:23,202 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:47:46,320 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 06:48:22,025 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:48:23,099 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:49:45,777 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:49:46,864 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:51:01,716 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:51:02,913 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:52:21,393 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:52:22,515 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:53:38,933 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:53:40,053 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:55:03,761 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:55:05,031 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:56:07,842 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:56:08,989 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:56:17,022 | INFO     | [GoogleMaps] ✔  Collected 72 businesses for: Hardware Shop in Indiranagar, Bangalore
+2026-08-08 06:56:17,048 | INFO     | [BaseScraper] Task 30/84 — Tailor in Indiranagar, Bangalore
+2026-08-08 06:56:17,106 | INFO     | [GoogleMaps] ▶  Searching: Tailor in Indiranagar, Bangalore
+2026-08-08 06:56:18,238 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 06:56:42,767 | INFO     | [GoogleMaps] Found 80 result links. Extracting details…
+2026-08-08 06:57:39,366 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:57:40,517 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 06:59:09,558 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 06:59:10,796 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:01:26,254 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:01:27,397 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:03:11,805 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:03:12,976 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:04:35,831 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:04:37,081 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:05:25,312 | INFO     | [GoogleMaps] ✔  Collected 65 businesses for: Tailor in Indiranagar, Bangalore
+2026-08-08 07:05:25,340 | INFO     | [BaseScraper] Task 31/84 — Welder in Indiranagar, Bangalore
+2026-08-08 07:05:25,398 | INFO     | [GoogleMaps] ▶  Searching: Welder in Indiranagar, Bangalore
+2026-08-08 07:05:26,606 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 07:05:50,812 | INFO     | [GoogleMaps] Stable at 86 cards. Done scrolling.
+2026-08-08 07:05:50,828 | INFO     | [GoogleMaps] Found 86 result links. Extracting details…
+2026-08-08 07:06:46,437 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:06:47,610 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:09:53,133 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:09:54,315 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:13:23,801 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:13:25,075 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:15:21,468 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:15:22,738 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:17:02,035 | INFO     | [GoogleMaps] ✔  Collected 78 businesses for: Welder in Indiranagar, Bangalore
+2026-08-08 07:17:02,067 | INFO     | [BaseScraper] Task 32/84 — Carpenter in Indiranagar, Bangalore
+2026-08-08 07:17:02,115 | INFO     | [GoogleMaps] ▶  Searching: Carpenter in Indiranagar, Bangalore
+2026-08-08 07:17:03,229 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 07:17:09,994 | INFO     | [GoogleMaps] Stable at 16 cards. Done scrolling.
+2026-08-08 07:17:09,999 | INFO     | [GoogleMaps] Found 16 result links. Extracting details…
+2026-08-08 07:17:41,763 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:17:43,061 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:19:22,558 | INFO     | [GoogleMaps] ✔  Collected 16 businesses for: Carpenter in Indiranagar, Bangalore
+2026-08-08 07:19:22,583 | INFO     | [BaseScraper] Task 33/84 — Laundry in Indiranagar, Bangalore
+2026-08-08 07:19:22,638 | INFO     | [GoogleMaps] ▶  Searching: Laundry in Indiranagar, Bangalore
+2026-08-08 07:19:23,709 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 07:19:48,352 | INFO     | [GoogleMaps] Found 94 result links. Extracting details…
+2026-08-08 07:20:20,951 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:20:22,161 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 07:21:58,114 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 07:21:59,310 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:21:52,314 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:21:52,324 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 10:21:52,325 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:21:52,326 | INFO     |   City       : Bangalore
+2026-08-08 10:21:52,327 | INFO     |   Areas      : ['SG Palya', 'Jayanagar', 'Indiranagar', 'MG Road', 'HSR Layout', 'Koramangala', 'Whitefield']
+2026-08-08 10:21:52,329 | INFO     |   Categories : ['Electrician', 'Plumber', 'Mechanic', 'Painter', 'Hardware Shop', 'Tailor', 'Welder', 'Carpenter', 'Laundry', 'Mobile Repair', 'Bike Repair', 'AC Repair']
+2026-08-08 10:21:52,330 | INFO     |   Target sites: ['google_maps']
+2026-08-08 10:21:52,331 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 10:21:52,332 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:21:52,333 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 10:21:52,373 | INFO     | [StateManager] Resumed: loaded 3197 known keys from google_maps_businesses.csv (1780 existing records).
+2026-08-08 10:21:52,374 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 10:21:54,245 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 10:21:54,246 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 10:21:54,249 | INFO     | [BaseScraper] Task 1/84 — Electrician in SG Palya, Bangalore
+2026-08-08 10:21:54,290 | INFO     | [GoogleMaps] ▶  Searching: Electrician in SG Palya, Bangalore
+2026-08-08 10:21:55,828 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:22:08,624 | INFO     | [GoogleMaps] Stable at 40 cards. Done scrolling.
+2026-08-08 10:22:08,632 | INFO     | [GoogleMaps] Found 40 result links. Extracting details…
+2026-08-08 10:23:29,086 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:23:29,097 | INFO     |   Local Business Data Collection Pipeline
+2026-08-08 10:23:29,098 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:23:29,100 | INFO     |   City       : Bangalore
+2026-08-08 10:23:29,101 | INFO     |   Areas      : ['SG Palya', 'Jayanagar', 'Indiranagar', 'MG Road', 'HSR Layout', 'Koramangala', 'Whitefield']
+2026-08-08 10:23:29,102 | INFO     |   Categories : ['Electrician', 'Plumber', 'Mechanic', 'Painter', 'Hardware Shop', 'Tailor', 'Welder', 'Carpenter', 'Laundry', 'Mobile Repair', 'Bike Repair', 'AC Repair']
+2026-08-08 10:23:29,103 | INFO     |   Target sites: ['google_maps']
+2026-08-08 10:23:29,104 | INFO     |   Output dir : c:/Users/letss/OneDrive/Desktop/GitHub/7-Kaam/Data_Scraped
+2026-08-08 10:23:29,107 | INFO     | ════════════════════════════════════════════════════════════
+2026-08-08 10:23:29,108 | INFO     | 
+▶ Starting scraper: GOOGLE_MAPS
+2026-08-08 10:23:29,129 | INFO     | [StateManager] Resumed: loaded 3197 known keys from google_maps_businesses.csv (1780 existing records).
+2026-08-08 10:23:29,131 | INFO     | [BaseScraper] Launching browser...
+2026-08-08 10:23:30,054 | INFO     | [BaseScraper] Injected 126 Chrome cookies.
+2026-08-08 10:23:30,055 | INFO     | [BaseScraper] Browser ready — Chrome cookies injected (126 cookies)
+2026-08-08 10:23:30,057 | INFO     | [BaseScraper] Task 1/84 — Electrician in SG Palya, Bangalore
+2026-08-08 10:23:30,101 | INFO     | [GoogleMaps] ▶  Searching: Electrician in SG Palya, Bangalore
+2026-08-08 10:23:31,624 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:23:45,764 | INFO     | [GoogleMaps] Stable at 43 cards. Done scrolling.
+2026-08-08 10:23:45,777 | INFO     | [GoogleMaps] Found 43 result links. Extracting details…
+2026-08-08 10:26:07,964 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 10:26:09,690 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:26:46,547 | INFO     | [GoogleMaps] ✔  Collected 23 businesses for: Electrician in SG Palya, Bangalore
+2026-08-08 10:26:46,552 | INFO     | [BaseScraper] Task 2/84 — Plumber in SG Palya, Bangalore
+2026-08-08 10:26:46,556 | ERROR    | [BaseScraper] Task failed (Plumber in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,558 | INFO     | [BaseScraper] Task 3/84 — Mechanic in SG Palya, Bangalore
+2026-08-08 10:26:46,562 | ERROR    | [BaseScraper] Task failed (Mechanic in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,564 | INFO     | [BaseScraper] Task 4/84 — Painter in SG Palya, Bangalore
+2026-08-08 10:26:46,568 | ERROR    | [BaseScraper] Task failed (Painter in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,570 | INFO     | [BaseScraper] Task 5/84 — Hardware Shop in SG Palya, Bangalore
+2026-08-08 10:26:46,573 | ERROR    | [BaseScraper] Task failed (Hardware Shop in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,576 | INFO     | [BaseScraper] Task 6/84 — Tailor in SG Palya, Bangalore
+2026-08-08 10:26:46,579 | ERROR    | [BaseScraper] Task failed (Tailor in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,581 | INFO     | [BaseScraper] Task 7/84 — Welder in SG Palya, Bangalore
+2026-08-08 10:26:46,584 | ERROR    | [BaseScraper] Task failed (Welder in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,586 | INFO     | [BaseScraper] Task 8/84 — Carpenter in SG Palya, Bangalore
+2026-08-08 10:26:46,590 | ERROR    | [BaseScraper] Task failed (Carpenter in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,592 | INFO     | [BaseScraper] Task 9/84 — Laundry in SG Palya, Bangalore
+2026-08-08 10:26:46,596 | ERROR    | [BaseScraper] Task failed (Laundry in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,598 | INFO     | [BaseScraper] Task 10/84 — Mobile Repair in SG Palya, Bangalore
+2026-08-08 10:26:46,601 | ERROR    | [BaseScraper] Task failed (Mobile Repair in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,605 | INFO     | [BaseScraper] Task 11/84 — Bike Repair in SG Palya, Bangalore
+2026-08-08 10:26:46,609 | ERROR    | [BaseScraper] Task failed (Bike Repair in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,612 | INFO     | [BaseScraper] Task 12/84 — AC Repair in SG Palya, Bangalore
+2026-08-08 10:26:46,615 | ERROR    | [BaseScraper] Task failed (AC Repair in SG Palya): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,617 | INFO     | [BaseScraper] Task 13/84 — Electrician in Jayanagar, Bangalore
+2026-08-08 10:26:46,620 | ERROR    | [BaseScraper] Task failed (Electrician in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,622 | INFO     | [BaseScraper] Task 14/84 — Plumber in Jayanagar, Bangalore
+2026-08-08 10:26:46,625 | ERROR    | [BaseScraper] Task failed (Plumber in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,627 | INFO     | [BaseScraper] Task 15/84 — Mechanic in Jayanagar, Bangalore
+2026-08-08 10:26:46,630 | ERROR    | [BaseScraper] Task failed (Mechanic in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,633 | INFO     | [BaseScraper] Task 16/84 — Painter in Jayanagar, Bangalore
+2026-08-08 10:26:46,636 | ERROR    | [BaseScraper] Task failed (Painter in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,638 | INFO     | [BaseScraper] Task 17/84 — Hardware Shop in Jayanagar, Bangalore
+2026-08-08 10:26:46,641 | ERROR    | [BaseScraper] Task failed (Hardware Shop in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,643 | INFO     | [BaseScraper] Task 18/84 — Tailor in Jayanagar, Bangalore
+2026-08-08 10:26:46,646 | ERROR    | [BaseScraper] Task failed (Tailor in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,647 | INFO     | [BaseScraper] Task 19/84 — Welder in Jayanagar, Bangalore
+2026-08-08 10:26:46,650 | ERROR    | [BaseScraper] Task failed (Welder in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,651 | INFO     | [BaseScraper] Task 20/84 — Carpenter in Jayanagar, Bangalore
+2026-08-08 10:26:46,654 | ERROR    | [BaseScraper] Task failed (Carpenter in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,656 | INFO     | [BaseScraper] Task 21/84 — Laundry in Jayanagar, Bangalore
+2026-08-08 10:26:46,659 | ERROR    | [BaseScraper] Task failed (Laundry in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,661 | INFO     | [BaseScraper] Task 22/84 — Mobile Repair in Jayanagar, Bangalore
+2026-08-08 10:26:46,664 | ERROR    | [BaseScraper] Task failed (Mobile Repair in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,665 | INFO     | [BaseScraper] Task 23/84 — Bike Repair in Jayanagar, Bangalore
+2026-08-08 10:26:46,668 | ERROR    | [BaseScraper] Task failed (Bike Repair in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,669 | INFO     | [BaseScraper] Task 24/84 — AC Repair in Jayanagar, Bangalore
+2026-08-08 10:26:46,672 | ERROR    | [BaseScraper] Task failed (AC Repair in Jayanagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,674 | INFO     | [BaseScraper] Task 25/84 — Electrician in Indiranagar, Bangalore
+2026-08-08 10:26:46,676 | ERROR    | [BaseScraper] Task failed (Electrician in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,677 | INFO     | [BaseScraper] Task 26/84 — Plumber in Indiranagar, Bangalore
+2026-08-08 10:26:46,680 | ERROR    | [BaseScraper] Task failed (Plumber in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,681 | INFO     | [BaseScraper] Task 27/84 — Mechanic in Indiranagar, Bangalore
+2026-08-08 10:26:46,684 | ERROR    | [BaseScraper] Task failed (Mechanic in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,686 | INFO     | [BaseScraper] Task 28/84 — Painter in Indiranagar, Bangalore
+2026-08-08 10:26:46,688 | ERROR    | [BaseScraper] Task failed (Painter in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,690 | INFO     | [BaseScraper] Task 29/84 — Hardware Shop in Indiranagar, Bangalore
+2026-08-08 10:26:46,692 | ERROR    | [BaseScraper] Task failed (Hardware Shop in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,694 | INFO     | [BaseScraper] Task 30/84 — Tailor in Indiranagar, Bangalore
+2026-08-08 10:26:46,696 | ERROR    | [BaseScraper] Task failed (Tailor in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,697 | INFO     | [BaseScraper] Task 31/84 — Welder in Indiranagar, Bangalore
+2026-08-08 10:26:46,700 | ERROR    | [BaseScraper] Task failed (Welder in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,701 | INFO     | [BaseScraper] Task 32/84 — Carpenter in Indiranagar, Bangalore
+2026-08-08 10:26:46,703 | ERROR    | [BaseScraper] Task failed (Carpenter in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,706 | INFO     | [BaseScraper] Task 33/84 — Laundry in Indiranagar, Bangalore
+2026-08-08 10:26:46,708 | ERROR    | [BaseScraper] Task failed (Laundry in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,710 | INFO     | [BaseScraper] Task 34/84 — Mobile Repair in Indiranagar, Bangalore
+2026-08-08 10:26:46,712 | ERROR    | [BaseScraper] Task failed (Mobile Repair in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,714 | INFO     | [BaseScraper] Task 35/84 — Bike Repair in Indiranagar, Bangalore
+2026-08-08 10:26:46,717 | ERROR    | [BaseScraper] Task failed (Bike Repair in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,718 | INFO     | [BaseScraper] Task 36/84 — AC Repair in Indiranagar, Bangalore
+2026-08-08 10:26:46,721 | ERROR    | [BaseScraper] Task failed (AC Repair in Indiranagar): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,722 | INFO     | [BaseScraper] Task 37/84 — Electrician in MG Road, Bangalore
+2026-08-08 10:26:46,725 | ERROR    | [BaseScraper] Task failed (Electrician in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,727 | INFO     | [BaseScraper] Task 38/84 — Plumber in MG Road, Bangalore
+2026-08-08 10:26:46,730 | ERROR    | [BaseScraper] Task failed (Plumber in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,732 | INFO     | [BaseScraper] Task 39/84 — Mechanic in MG Road, Bangalore
+2026-08-08 10:26:46,734 | ERROR    | [BaseScraper] Task failed (Mechanic in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,736 | INFO     | [BaseScraper] Task 40/84 — Painter in MG Road, Bangalore
+2026-08-08 10:26:46,739 | ERROR    | [BaseScraper] Task failed (Painter in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,741 | INFO     | [BaseScraper] Task 41/84 — Hardware Shop in MG Road, Bangalore
+2026-08-08 10:26:46,745 | ERROR    | [BaseScraper] Task failed (Hardware Shop in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,747 | INFO     | [BaseScraper] Task 42/84 — Tailor in MG Road, Bangalore
+2026-08-08 10:26:46,749 | ERROR    | [BaseScraper] Task failed (Tailor in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,751 | INFO     | [BaseScraper] Task 43/84 — Welder in MG Road, Bangalore
+2026-08-08 10:26:46,754 | ERROR    | [BaseScraper] Task failed (Welder in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,756 | INFO     | [BaseScraper] Task 44/84 — Carpenter in MG Road, Bangalore
+2026-08-08 10:26:46,759 | ERROR    | [BaseScraper] Task failed (Carpenter in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,761 | INFO     | [BaseScraper] Task 45/84 — Laundry in MG Road, Bangalore
+2026-08-08 10:26:46,764 | ERROR    | [BaseScraper] Task failed (Laundry in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,767 | INFO     | [BaseScraper] Task 46/84 — Mobile Repair in MG Road, Bangalore
+2026-08-08 10:26:46,770 | ERROR    | [BaseScraper] Task failed (Mobile Repair in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,773 | INFO     | [BaseScraper] Task 47/84 — Bike Repair in MG Road, Bangalore
+2026-08-08 10:26:46,776 | ERROR    | [BaseScraper] Task failed (Bike Repair in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,778 | INFO     | [BaseScraper] Task 48/84 — AC Repair in MG Road, Bangalore
+2026-08-08 10:26:46,781 | ERROR    | [BaseScraper] Task failed (AC Repair in MG Road): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,783 | INFO     | [BaseScraper] Task 49/84 — Electrician in HSR Layout, Bangalore
+2026-08-08 10:26:46,787 | ERROR    | [BaseScraper] Task failed (Electrician in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,789 | INFO     | [BaseScraper] Task 50/84 — Plumber in HSR Layout, Bangalore
+2026-08-08 10:26:46,792 | ERROR    | [BaseScraper] Task failed (Plumber in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,794 | INFO     | [BaseScraper] Task 51/84 — Mechanic in HSR Layout, Bangalore
+2026-08-08 10:26:46,797 | ERROR    | [BaseScraper] Task failed (Mechanic in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,799 | INFO     | [BaseScraper] Task 52/84 — Painter in HSR Layout, Bangalore
+2026-08-08 10:26:46,802 | ERROR    | [BaseScraper] Task failed (Painter in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,804 | INFO     | [BaseScraper] Task 53/84 — Hardware Shop in HSR Layout, Bangalore
+2026-08-08 10:26:46,808 | ERROR    | [BaseScraper] Task failed (Hardware Shop in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,809 | INFO     | [BaseScraper] Task 54/84 — Tailor in HSR Layout, Bangalore
+2026-08-08 10:26:46,813 | ERROR    | [BaseScraper] Task failed (Tailor in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,815 | INFO     | [BaseScraper] Task 55/84 — Welder in HSR Layout, Bangalore
+2026-08-08 10:26:46,819 | ERROR    | [BaseScraper] Task failed (Welder in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,821 | INFO     | [BaseScraper] Task 56/84 — Carpenter in HSR Layout, Bangalore
+2026-08-08 10:26:46,825 | ERROR    | [BaseScraper] Task failed (Carpenter in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,828 | INFO     | [BaseScraper] Task 57/84 — Laundry in HSR Layout, Bangalore
+2026-08-08 10:26:46,830 | ERROR    | [BaseScraper] Task failed (Laundry in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,832 | INFO     | [BaseScraper] Task 58/84 — Mobile Repair in HSR Layout, Bangalore
+2026-08-08 10:26:46,834 | ERROR    | [BaseScraper] Task failed (Mobile Repair in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,836 | INFO     | [BaseScraper] Task 59/84 — Bike Repair in HSR Layout, Bangalore
+2026-08-08 10:26:46,839 | ERROR    | [BaseScraper] Task failed (Bike Repair in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,841 | INFO     | [BaseScraper] Task 60/84 — AC Repair in HSR Layout, Bangalore
+2026-08-08 10:26:46,843 | ERROR    | [BaseScraper] Task failed (AC Repair in HSR Layout): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,844 | INFO     | [BaseScraper] Task 61/84 — Electrician in Koramangala, Bangalore
+2026-08-08 10:26:46,847 | ERROR    | [BaseScraper] Task failed (Electrician in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,848 | INFO     | [BaseScraper] Task 62/84 — Plumber in Koramangala, Bangalore
+2026-08-08 10:26:46,851 | ERROR    | [BaseScraper] Task failed (Plumber in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,852 | INFO     | [BaseScraper] Task 63/84 — Mechanic in Koramangala, Bangalore
+2026-08-08 10:26:46,854 | ERROR    | [BaseScraper] Task failed (Mechanic in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,856 | INFO     | [BaseScraper] Task 64/84 — Painter in Koramangala, Bangalore
+2026-08-08 10:26:46,858 | ERROR    | [BaseScraper] Task failed (Painter in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,860 | INFO     | [BaseScraper] Task 65/84 — Hardware Shop in Koramangala, Bangalore
+2026-08-08 10:26:46,862 | ERROR    | [BaseScraper] Task failed (Hardware Shop in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,864 | INFO     | [BaseScraper] Task 66/84 — Tailor in Koramangala, Bangalore
+2026-08-08 10:26:46,866 | ERROR    | [BaseScraper] Task failed (Tailor in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,868 | INFO     | [BaseScraper] Task 67/84 — Welder in Koramangala, Bangalore
+2026-08-08 10:26:46,870 | ERROR    | [BaseScraper] Task failed (Welder in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,871 | INFO     | [BaseScraper] Task 68/84 — Carpenter in Koramangala, Bangalore
+2026-08-08 10:26:46,874 | ERROR    | [BaseScraper] Task failed (Carpenter in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,875 | INFO     | [BaseScraper] Task 69/84 — Laundry in Koramangala, Bangalore
+2026-08-08 10:26:46,878 | ERROR    | [BaseScraper] Task failed (Laundry in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,879 | INFO     | [BaseScraper] Task 70/84 — Mobile Repair in Koramangala, Bangalore
+2026-08-08 10:26:46,882 | ERROR    | [BaseScraper] Task failed (Mobile Repair in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,883 | INFO     | [BaseScraper] Task 71/84 — Bike Repair in Koramangala, Bangalore
+2026-08-08 10:26:46,885 | ERROR    | [BaseScraper] Task failed (Bike Repair in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,887 | INFO     | [BaseScraper] Task 72/84 — AC Repair in Koramangala, Bangalore
+2026-08-08 10:26:46,889 | ERROR    | [BaseScraper] Task failed (AC Repair in Koramangala): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,891 | INFO     | [BaseScraper] Task 73/84 — Electrician in Whitefield, Bangalore
+2026-08-08 10:26:46,893 | ERROR    | [BaseScraper] Task failed (Electrician in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,895 | INFO     | [BaseScraper] Task 74/84 — Plumber in Whitefield, Bangalore
+2026-08-08 10:26:46,897 | ERROR    | [BaseScraper] Task failed (Plumber in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,899 | INFO     | [BaseScraper] Task 75/84 — Mechanic in Whitefield, Bangalore
+2026-08-08 10:26:46,902 | ERROR    | [BaseScraper] Task failed (Mechanic in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,903 | INFO     | [BaseScraper] Task 76/84 — Painter in Whitefield, Bangalore
+2026-08-08 10:26:46,906 | ERROR    | [BaseScraper] Task failed (Painter in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,908 | INFO     | [BaseScraper] Task 77/84 — Hardware Shop in Whitefield, Bangalore
+2026-08-08 10:26:46,910 | ERROR    | [BaseScraper] Task failed (Hardware Shop in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,911 | INFO     | [BaseScraper] Task 78/84 — Tailor in Whitefield, Bangalore
+2026-08-08 10:26:46,914 | ERROR    | [BaseScraper] Task failed (Tailor in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,915 | INFO     | [BaseScraper] Task 79/84 — Welder in Whitefield, Bangalore
+2026-08-08 10:26:46,918 | ERROR    | [BaseScraper] Task failed (Welder in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,919 | INFO     | [BaseScraper] Task 80/84 — Carpenter in Whitefield, Bangalore
+2026-08-08 10:26:46,922 | ERROR    | [BaseScraper] Task failed (Carpenter in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,923 | INFO     | [BaseScraper] Task 81/84 — Laundry in Whitefield, Bangalore
+2026-08-08 10:26:46,926 | ERROR    | [BaseScraper] Task failed (Laundry in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,927 | INFO     | [BaseScraper] Task 82/84 — Mobile Repair in Whitefield, Bangalore
+2026-08-08 10:26:46,929 | ERROR    | [BaseScraper] Task failed (Mobile Repair in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,931 | INFO     | [BaseScraper] Task 83/84 — Bike Repair in Whitefield, Bangalore
+2026-08-08 10:26:46,933 | ERROR    | [BaseScraper] Task failed (Bike Repair in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,935 | INFO     | [BaseScraper] Task 84/84 — AC Repair in Whitefield, Bangalore
+2026-08-08 10:26:46,937 | ERROR    | [BaseScraper] Task failed (AC Repair in Whitefield): BrowserContext.new_page: Target page, context or browser has been closed
+2026-08-08 10:26:46,938 | INFO     | [StateManager] ✦ Checkpoint: saving 4 records → google_maps_businesses.csv
+2026-08-08 10:26:48,601 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:27:06,495 | INFO     | [GoogleMaps] ✔  Collected 36 businesses for: Electrician in SG Palya, Bangalore
+2026-08-08 10:27:06,519 | INFO     | [BaseScraper] Task 2/84 — Plumber in SG Palya, Bangalore
+2026-08-08 10:27:06,568 | INFO     | [GoogleMaps] ▶  Searching: Plumber in SG Palya, Bangalore
+2026-08-08 10:27:07,630 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:27:24,617 | INFO     | [GoogleMaps] Stable at 51 cards. Done scrolling.
+2026-08-08 10:27:24,623 | INFO     | [GoogleMaps] Found 51 result links. Extracting details…
+2026-08-08 10:31:28,703 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 10:31:29,546 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:33:32,301 | INFO     | [GoogleMaps] ✔  Collected 45 businesses for: Plumber in SG Palya, Bangalore
+2026-08-08 10:33:32,331 | INFO     | [BaseScraper] Task 3/84 — Mechanic in SG Palya, Bangalore
+2026-08-08 10:33:32,379 | INFO     | [GoogleMaps] ▶  Searching: Mechanic in SG Palya, Bangalore
+2026-08-08 10:33:33,501 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:33:49,447 | INFO     | [GoogleMaps] Stable at 55 cards. Done scrolling.
+2026-08-08 10:33:49,453 | INFO     | [GoogleMaps] Found 55 result links. Extracting details…
+2026-08-08 10:41:04,287 | INFO     | [GoogleMaps] ✔  Collected 53 businesses for: Mechanic in SG Palya, Bangalore
+2026-08-08 10:41:04,323 | INFO     | [BaseScraper] Task 4/84 — Painter in SG Palya, Bangalore
+2026-08-08 10:41:04,400 | INFO     | [GoogleMaps] ▶  Searching: Painter in SG Palya, Bangalore
+2026-08-08 10:41:05,535 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:41:31,150 | INFO     | [GoogleMaps] Found 108 result links. Extracting details…
+2026-08-08 10:44:06,707 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 10:44:07,600 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:53:05,590 | INFO     | [StateManager] ✦ Checkpoint: saving 10 records → google_maps_businesses.csv
+2026-08-08 10:53:06,803 | INFO     | [StateManager] ✔ Checkpoint saved (CSV + Excel + JSON).
+2026-08-08 10:53:13,134 | INFO     | [GoogleMaps] ✔  Collected 97 businesses for: Painter in SG Palya, Bangalore
+2026-08-08 10:53:13,165 | INFO     | [BaseScraper] Task 5/84 — Hardware Shop in SG Palya, Bangalore
+2026-08-08 10:53:13,227 | INFO     | [GoogleMaps] ▶  Searching: Hardware Shop in SG Palya, Bangalore
+2026-08-08 10:53:14,382 | INFO     | [GoogleMaps] Scrolling results panel to load all listings…
+2026-08-08 10:53:35,550 | INFO     | [GoogleMaps] Stable at 57 cards. Done scrolling.
+2026-08-08 10:53:35,555 | INFO     | [GoogleMaps] Found 57 result links. Extracting details…
