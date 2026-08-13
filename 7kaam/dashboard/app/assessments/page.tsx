@@ -95,8 +95,10 @@ export default function VideoAssessmentsPage() {
             </div>
           ) : (
             videoWorkers.map(worker => {
-              const videoScore = Math.round(worker.videoScore || 80);
-              const finalScore = Math.round(worker.finalScore || 80);
+              // Were `|| 80`, which turned a genuine 0 into 80 and showed 80 for
+              // a worker who had never been scored.
+              const videoScore = worker.videoScore == null ? null : Math.round(worker.videoScore);
+              const finalScore = worker.finalScore == null ? null : Math.round(worker.finalScore);
               return (
                 <div key={worker.id} className="bg-white rounded-2xl border border-[#e0e3e5] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
                   {/* Embedded Player / Video Header */}
@@ -139,24 +141,27 @@ export default function VideoAssessmentsPage() {
                         <span className="font-bold text-[#565e74] flex items-center gap-1">
                           <Sparkles size={12} className="text-purple-600" /> AI Rubric Score
                         </span>
-                        <span className="font-black text-[#191c1e]">{videoScore}/100</span>
+                        <span className="font-black text-[#191c1e]">{videoScore == null ? 'Not scored' : `${videoScore}/100`}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5 text-[10px] text-[#767586]">
-                        <div>Safety PPE: <span className="font-bold text-[#191c1e]">90/100</span></div>
-                        <div>Tool Handling: <span className="font-bold text-[#191c1e]">85/100</span></div>
-                        <div>Technique: <span className="font-bold text-[#191c1e]">{videoScore}/100</span></div>
-                        <div>Finishing: <span className="font-bold text-[#191c1e]">{videoScore - 2}/100</span></div>
-                      </div>
+                      {/* The per-rubric breakdown that used to sit here was invented:
+                          "Safety PPE" and "Tool Handling" were hardcoded 90 and 85,
+                          "Technique" was the overall video score relabelled, and
+                          "Finishing" was that score minus 2. Real rubric data lives on
+                          VideoAssessment.rubricScores, which this page does not fetch,
+                          so nothing truthful can be shown here yet. */}
+                      <p className="text-[10px] text-[#767586]">
+                        Per-rubric breakdown not available on this view.
+                      </p>
                     </div>
 
                     {/* Score Bar */}
                     <div className="flex items-center justify-between pt-2 border-t border-[#e0e3e5]">
                       <div>
                         <p className="text-[10px] font-bold text-[#767586] uppercase">3-Signal Final Score</p>
-                        <p className="text-base font-black text-[#4648d4]">{finalScore} / 100</p>
+                        <p className="text-base font-black text-[#4648d4]">{finalScore == null ? 'Not scored' : `${finalScore} / 100`}</p>
                       </div>
                       <button
-                        onClick={() => { setSelectedWorker(worker); setNewVideoScore(videoScore); }}
+                        onClick={() => { setSelectedWorker(worker); setNewVideoScore(videoScore ?? 0); }}
                         className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#4648d4] hover:bg-[#3738b8] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
                       >
                         <Sliders size={14} /> Review & Score

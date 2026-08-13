@@ -231,7 +231,7 @@ function renderVerificationHtml(card, status, now) {
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <h2 class="text-lg font-black text-white truncate">${worker.fullName || 'Worker Name'}</h2>
-                  ${worker.aadhaarVerified !== false ? '<span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-bold border border-emerald-500/30">✓ Aadhaar Verified</span>' : ''}
+                  ${worker.aadhaarVerified === true ? '<span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-bold border border-emerald-500/30">✓ Aadhaar Verified</span>' : ''}
                 </div>
                 <p class="text-xs text-slate-400 font-semibold mt-0.5">${(worker.trade || 'ELECTRICIAN').replace(/_/g, ' ')} · ${worker.city || 'Bangalore'}</p>
                 <p class="text-xs font-mono text-emerald-400 mt-1">${phoneText}</p>
