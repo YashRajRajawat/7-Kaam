@@ -10,10 +10,10 @@ cls
 :: ============================================================================
 
 set ROOT=%~dp0
-set BACKEND=%ROOT%7kaam\backend
-set DASHBOARD=%ROOT%7kaam\dashboard
-set WORKER_APP=%ROOT%7kaam\user_app\flutter_sample_1
-set CUSTOMER_APP=%ROOT%7kaam\user_app\customer_app
+set BACKEND=%ROOT%backend
+set DASHBOARD=%ROOT%dashboard
+set WORKER_APP=%ROOT%mobile\flutter_sample_1
+set CUSTOMER_APP=%ROOT%mobile\customer_app
 set SCRAPER=%ROOT%business_scraper
 set TRUST=%ROOT%Video_processing
 
@@ -47,8 +47,8 @@ echo  Checking prerequisites...
 set MISSING=0
 
 where node >nul 2>&1 || (echo    [X] Node.js not found - install from https://nodejs.org & set MISSING=1)
-if exist "%BACKEND%\node_modules" (echo    [OK] backend dependencies) else (echo    [!] backend dependencies missing - run: npm install --prefix 7kaam\backend & set MISSING=1)
-if exist "%DASHBOARD%\node_modules" (echo    [OK] dashboard dependencies) else (echo    [!] dashboard dependencies missing - run: npm install --prefix 7kaam\dashboard & set MISSING=1)
+if exist "%BACKEND%\node_modules" (echo    [OK] backend dependencies) else (echo    [!] backend dependencies missing - run: npm install --prefix backend & set MISSING=1)
+if exist "%DASHBOARD%\node_modules" (echo    [OK] dashboard dependencies) else (echo    [!] dashboard dependencies missing - run: npm install --prefix dashboard & set MISSING=1)
 if exist "%BACKEND%\.env" (echo    [OK] backend .env) else (echo    [!] %BACKEND%\.env missing - copy .env.example and fill it in & set MISSING=1)
 if exist "%TRUST%\.venv\Scripts\python.exe" (echo    [OK] trust engine venv) else (echo    [-] trust engine venv missing - it will be skipped)
 if exist "%SCRAPER%\venv\Scripts\python.exe" (echo    [OK] scraper venv) else (echo    [-] scraper venv missing - "Collect Data" in the dashboard will fail)

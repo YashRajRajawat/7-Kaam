@@ -1,0 +1,93 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+coverage/
+.nyc_output/
+
+# OS files
+Thumbs.db
+.DS_Store
+*.pid
+*.seed
+
+# Logs
+logs/
+*.log
+
+# Backend specific
+backend/node_modules/
+backend/dist/
+backend/.env.local
+backend/uploads/
+backend/temp/
+
+# Dashboard specific
+dashboard/.next/
+dashboard/out/
+dashboard/build/
+dashboard/public/sw.js
+dashboard/.env.local
+
+# Mobile/Flutter specific
+mobile/build/
+mobile/.dart_tool/
+mobile/pubspec.lock
+mobile/ios/Pods/
+mobile/android/app/debug/
+mobile/android/app/release/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis
+dump.rdb
+
+# Prisma
+prisma/.env
+prisma/migrations/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Testing
+.coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.cache/
+
+# IDE generated files
+.eslintcache
+.stylelintcache
