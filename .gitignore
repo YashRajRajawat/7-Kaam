@@ -1,26 +1,23 @@
-# Environment variables
+# ── Environment & Secrets ───────────────────────────────────────────────────
+# Never commit real credentials. Only *.env.example belongs in git.
 .env
 .env.local
 .env.*.local
 .env.production.local
+*.env
+!*.env.example
+!.env.example
 
-# Node modules
+# ── Node modules & Package Managers ──────────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# IDEs and editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
-
-# Build outputs
+# ── Build outputs & Frameworks ───────────────────────────────────────────────
 dist/
 build/
 out/
@@ -28,66 +25,68 @@ out/
 .nuxt/
 coverage/
 .nyc_output/
+.cache/
 
-# OS files
-Thumbs.db
+# ── IDEs and Editors ────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-*.pid
-*.seed
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+.eslintcache
+.stylelintcache
 
-# Logs
-logs/
-*.log
-
-# Backend specific
+# ── Backend Specific ─────────────────────────────────────────────────────────
 backend/node_modules/
 backend/dist/
 backend/.env.local
 backend/uploads/
 backend/temp/
 
-# Dashboard specific
+# ── Dashboard Specific ───────────────────────────────────────────────────────
 dashboard/.next/
 dashboard/out/
 dashboard/build/
 dashboard/public/sw.js
 dashboard/.env.local
 
-# Mobile/Flutter specific
+# ── Mobile / Flutter Specific ────────────────────────────────────────────────
 mobile/build/
 mobile/.dart_tool/
 mobile/pubspec.lock
 mobile/ios/Pods/
 mobile/android/app/debug/
 mobile/android/app/release/
+*/build/
+*/.dart_tool/
 
-# Database
+# ── Python / Scraper / Trust Engine ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ── Scraped Directory Data ───────────────────────────────────────────────────
+# Keep raw scraped dataset out of git to avoid committing local business PII
+Data_Scraped/*
+!Data_Scraped/README.md
+!Data_Scraped/.gitkeep
+
+# ── Local Databases, Logs & Scratch ─────────────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
-
-# Redis
+*.log
+logs/
+*.pid
+*.seed
 dump.rdb
-
-# Prisma
-prisma/.env
-prisma/migrations/
-
-# Package managers
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Testing
-.coverage
-coverage/
-
-# Temporary files
+debug_screenshot.png
 *.tmp
 *.bak
-*.swp
-.cache/
-
-# IDE generated files
-.eslintcache
-.stylelintcache

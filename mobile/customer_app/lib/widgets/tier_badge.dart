@@ -2,8 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants/app_colors.dart';
 
+/// A tier a worker has actually earned. Renders NOTHING for null or for any
+/// value outside the four real tiers.
+///
+/// The previous `default:` branch painted BRONZE for any unknown string — so
+/// a `tier: 'NONE'` sentinel (the QR scanner's NOT-FOUND result) rendered as a
+/// bronze "NONE" badge, i.e. a credential the platform never issued. There is
+/// deliberately no `default:` and no fallback colour below.
 class TierBadge extends StatelessWidget {
-  final String tier;
+  static const Set<String> validTiers = {'EXPERT', 'GOLD', 'SILVER', 'BRONZE'};
+
+  /// Nullable on purpose — never give this a default.
+  final String? tier;
   final bool isSmall;
 
   const TierBadge({
@@ -12,12 +22,19 @@ class TierBadge extends StatelessWidget {
     this.isSmall = false,
   });
 
+  /// True when [tier] is a real, earned tier this widget will actually paint.
+  static bool isRealTier(String? tier) =>
+      tier != null && validTiers.contains(tier.toUpperCase());
+
   @override
   Widget build(BuildContext context) {
-    Color badgeColor;
-    Color textColor = Colors.white;
+    final t = tier?.toUpperCase();
+    if (t == null || !validTiers.contains(t)) {
+      return const SizedBox.shrink();
+    }
 
-    switch (tier.toUpperCase()) {
+    final Color badgeColor;
+    switch (t) {
       case 'EXPERT':
         badgeColor = AppColors.tierExpert;
         break;
@@ -28,9 +45,13 @@ class TierBadge extends StatelessWidget {
         badgeColor = AppColors.tierSilver;
         break;
       case 'BRONZE':
-      default:
         badgeColor = AppColors.tierBronze;
         break;
+      default:
+        // Unreachable — guarded by the validTiers check above. Present only
+        // because Dart's definite-assignment analysis requires it. Must never
+        // paint a tier colour.
+        return const SizedBox.shrink();
     }
 
     return Container(
@@ -50,9 +71,9 @@ class TierBadge extends StatelessWidget {
         ],
       ),
       child: Text(
-        tier.toUpperCase(),
+        t,
         style: GoogleFonts.poppins(
-          color: textColor,
+          color: Colors.white,
           fontWeight: FontWeight.w700,
           fontSize: isSmall ? 10 : 12,
           letterSpacing: 0.5,

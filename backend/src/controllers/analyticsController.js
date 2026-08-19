@@ -1,4 +1,47 @@
 const prisma = require('../utils/prisma');
+const { PUBLIC_DIRECTORY, isUnclaimed } = require('../utils/listing');
+
+// ── Unclaimed-listing exclusion (§D.8 + critique MINOR) ───────────────────────
+// Every "how many workers do we have" metric must exclude unclaimed
+// public-directory listings. Otherwise all 245 scraped businesses land in
+// totalWorkers, activeWorkers, this week's newRegistrations, and the per-city /
+// per-trade breakdowns — i.e. the company reports 245 workers it does not have.
+// `averageScore` / `tierBreakdown` / `scoreDistribution` are already safe: they
+// filter `finalScore`/`tier` `not: null`, which no unclaimed row can satisfy.
+
+const UNCLAIMED_WHERE = { listingSource: PUBLIC_DIRECTORY, claimStatus: { not: 'CLAIMED' } };
+
+// Never throws: on a database where the migration has not been applied yet the
+// columns do not exist — and neither do any directory listings, so 0 is the
+// correct exclusion.
+async function countWorkersSafe(where) {
+  try {
+    return await prisma.worker.count({ where });
+  } catch {
+    return 0;
+  }
+}
+
+// The REST proxy's groupBy() already fetches every row and groups in JS
+// (src/utils/prisma.js:335-374), so grouping here costs nothing extra — and it
+// is the only way to express "exclude unclaimed", which needs an OR that
+// applyWhere (src/utils/prisma.js:84-110) cannot build.
+async function fetchWorkersExcludingUnclaimed() {
+  const rows = await prisma.worker.findMany({});
+  return rows.filter((w) => !isUnclaimed(w));
+}
+
+function groupRows(rows, key, avgField) {
+  const groups = new Map();
+  for (const r of rows) {
+    const k = r[key];
+    if (!groups.has(k)) groups.set(k, { key: k, count: 0, sum: 0, n: 0 });
+    const g = groups.get(k);
+    g.count++;
+    if (avgField && r[avgField] != null) { g.sum += r[avgField]; g.n++; }
+  }
+  return [...groups.values()];
+}
 
 // ── Simple 60-second in-memory TTL cache ──────────────────────────────────────
 // Prevents 11+ parallel DB queries on every dashboard load.
@@ -25,17 +68,22 @@ async function overview(req, res) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const [
-      totalWorkers,
-      activeWorkers,
+      allWorkers,
+      allActiveWorkers,
       suspendedWorkers,
       totalKaamCardsIssued,
       certifiedToday,
       avgScoreData,
-      cities,
+      claimedWorkerRows,
       tierCounts,
-      newRegistrationsThisWeek,
+      allNewRegistrationsThisWeek,
       testsAttemptedToday,
       certificatesIssuedToday,
+      unclaimedTotal,
+      unclaimedActive,
+      unclaimedThisWeek,
+      directoryListingsTotal,
+      directoryListingsClaimed,
     ] = await Promise.all([
       prisma.worker.count(),
       prisma.worker.count({ where: { status: 'ACTIVE' } }),
@@ -43,28 +91,39 @@ async function overview(req, res) {
       prisma.kaamCard.count({ where: { isRevoked: false } }),
       prisma.kaamCard.count({ where: { issuedAt: { gte: startOfToday } } }),
       prisma.worker.aggregate({ _avg: { finalScore: true }, where: { finalScore: { not: null } } }),
-      prisma.worker.groupBy({ by: ['city'], _count: true }),
+      fetchWorkersExcludingUnclaimed(),
       prisma.worker.groupBy({ by: ['tier'], _count: true, where: { tier: { not: null } } }),
       prisma.worker.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
       prisma.testSubmission.count({ where: { submittedAt: { gte: startOfToday } } }),
       prisma.skillCertificate.count({ where: { issuedAt: { gte: startOfToday } } }),
+      countWorkersSafe(UNCLAIMED_WHERE),
+      countWorkersSafe({ status: 'ACTIVE', ...UNCLAIMED_WHERE }),
+      countWorkersSafe({ createdAt: { gte: sevenDaysAgo }, ...UNCLAIMED_WHERE }),
+      countWorkersSafe({ listingSource: PUBLIC_DIRECTORY }),
+      countWorkersSafe({ listingSource: PUBLIC_DIRECTORY, claimStatus: 'CLAIMED' }),
     ]);
 
     const payload = {
-      totalWorkers,
-      activeWorkers,
+      // Unclaimed directory listings are not 7 Kaam workers and are subtracted
+      // out of every headcount (§D.8).
+      totalWorkers: allWorkers - unclaimedTotal,
+      activeWorkers: allActiveWorkers - unclaimedActive,
       suspendedWorkers,
       totalKaamCardsIssued,
       certifiedToday,
       averageScore: Math.round(avgScoreData._avg.finalScore || 0),
-      activeCities: cities.length,
+      activeCities: new Set(claimedWorkerRows.map((w) => w.city)).size,
       tierBreakdown: tierCounts.map((t) => ({ tier: t.tier, count: t._count })),
-      newRegistrationsThisWeek,
+      newRegistrationsThisWeek: allNewRegistrationsThisWeek - unclaimedThisWeek,
       testsAttemptedToday,
       certificatesIssuedToday,
+      // Reported separately and honestly, never folded into the worker counts.
+      directoryListingsTotal,
+      directoryListingsClaimed,
     };
     res.json(_setCached('overview', payload));
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -75,13 +134,16 @@ async function byTrade(req, res) {
   try {
     const cached = _getCached('byTrade');
     if (cached) return res.json(cached);
-    const data = await prisma.worker.groupBy({
-      by: ['trade'],
-      _count: true,
-      _avg: { finalScore: true },
-    });
-    res.json(_setCached('byTrade', data.map((d) => ({ trade: d.trade, count: d._count, avgScore: Math.round(d._avg.finalScore || 0) }))));
+    // Critique MINOR — this breakdown counted all 245 imports as workers.
+    const rows = await fetchWorkersExcludingUnclaimed();
+    const data = groupRows(rows, 'trade', 'finalScore');
+    res.json(_setCached('byTrade', data.map((d) => ({
+      trade: d.key,
+      count: d.count,
+      avgScore: Math.round(d.n ? d.sum / d.n : 0),
+    }))));
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -92,18 +154,16 @@ async function byCity(req, res) {
     const cached = _getCached('byCity');
     if (cached) return res.json(cached);
 
-    const data = await prisma.worker.groupBy({
-      by: ['city'],
-      _count: true,
-      _avg: { finalScore: true },
-    });
+    // Critique MINOR — this breakdown counted all 245 imports as workers.
+    const workers = await fetchWorkersExcludingUnclaimed();
+    const data = groupRows(workers, 'city', 'finalScore');
+
     const certified = await prisma.kaamCard.groupBy({
       by: ['workerId'],
       where: { isRevoked: false },
     });
     const certifiedWorkerIds = new Set(certified.map((c) => c.workerId));
 
-    const workers = await prisma.worker.findMany({ select: { city: true, id: true } });
     const cityMap = {};
     workers.forEach((w) => {
       if (!cityMap[w.city]) cityMap[w.city] = { total: 0, certified: 0 };
@@ -112,13 +172,14 @@ async function byCity(req, res) {
     });
 
     const payload = data.map((d) => ({
-      city: d.city,
-      workers: d._count,
-      certified: cityMap[d.city]?.certified || 0,
-      avgScore: Math.round(d._avg.finalScore || 0),
+      city: d.key,
+      workers: d.count,
+      certified: cityMap[d.key]?.certified || 0,
+      avgScore: Math.round(d.n ? d.sum / d.n : 0),
     }));
     res.json(_setCached('byCity', payload));
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -150,6 +211,7 @@ async function scoreDistribution(req, res) {
 
     res.json(_setCached('scoreDistribution', bands));
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -189,6 +251,7 @@ async function certificationsOverTime(req, res) {
 
     res.json(_setCached(cacheKey, result));
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }

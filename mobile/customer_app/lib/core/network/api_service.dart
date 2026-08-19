@@ -62,6 +62,10 @@ class ApiService {
     String sortBy = 'score',
     int page = 1,
     int limit = 20,
+    // 'Verified only' filter. Server default is false — unclaimed public
+    // directory listings are returned but always ranked last and always
+    // labelled. Sending 'true' drops every unclaimed row server-side.
+    bool? verifiedOnly,
   }) async {
     final queryParams = <String, dynamic>{
       'sortBy': sortBy,
@@ -79,6 +83,7 @@ class ApiService {
     }
     if (hasKaamCard == true) queryParams['hasKaamCard'] = 'true';
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    if (verifiedOnly == true) queryParams['verifiedOnly'] = 'true';
 
     return await _dioClient.dio.get(
       ApiConstants.publicWorkers,
@@ -89,6 +94,28 @@ class ApiService {
   // Worker Public Profile — phone included automatically if a customer token is attached
   Future<Response> getWorkerPublicProfile(String workerId) async {
     return await _dioClient.dio.get(ApiConstants.publicWorkerDetail(workerId));
+  }
+
+  // Claim / removal request for an unclaimed public-directory listing.
+  // POST /public/workers/:id/listing-request — see backend §D.6.
+  // `type` is 'CLAIM' or 'REMOVAL'. Neither grants anything by itself:
+  // CLAIM only records a pending claim, REMOVAL suppresses the listing.
+  Future<Response> submitListingRequest({
+    required String workerId,
+    required String type,
+    required String contactName,
+    required String contactPhone,
+    String? note,
+  }) async {
+    return await _dioClient.dio.post(
+      '${ApiConstants.publicWorkerDetail(workerId)}/listing-request',
+      data: {
+        'type': type,
+        'contactName': contactName,
+        'contactPhone': contactPhone,
+        if (note != null && note.isNotEmpty) 'note': note,
+      },
+    );
   }
 
   // KaamCard QR Verification

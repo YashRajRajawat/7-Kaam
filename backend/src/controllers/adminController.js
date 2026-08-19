@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { internalComputeScore, internalIssueKaamCard } = require('./scoringController');
+const { assertNotUnclaimed, isUnclaimed } = require('../utils/listing');
 
 // POST /api/v1/admin/workers/:id/issue-kaamcard
 async function issueKaamCardAdmin(req, res) {
@@ -7,6 +8,9 @@ async function issueKaamCardAdmin(req, res) {
     const { id } = req.params;
     const worker = await prisma.worker.findUnique({ where: { id } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
+    // §D.7 — 409 UNCLAIMED_LISTING, never a fabricated card for a business
+    // that never consented to being listed.
+    assertNotUnclaimed(worker, 'issue a KaamCard');
 
     await internalComputeScore(id);
     const kaamCard = await internalIssueKaamCard(id);
@@ -21,6 +25,7 @@ async function issueKaamCardAdmin(req, res) {
 
     res.status(201).json(kaamCard);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -36,6 +41,9 @@ async function assessVideoScore(req, res) {
     const workerId = req.params.id;
     const worker = await prisma.worker.findUnique({ where: { id: workerId } });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
+    // §D.7 — the tier ladder three lines below manufactures a tier from a
+    // single number. It must never run against an unclaimed listing.
+    assertNotUnclaimed(worker, 'record a video assessment');
 
     const vScore = Number(videoScore);
     const tScore = worker.testScore ?? vScore;
@@ -70,6 +78,7 @@ async function assessVideoScore(req, res) {
 
     res.json({ message: 'Video score assessed and KaamCard updated', videoScore: vScore, finalScore, tier });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }
@@ -84,6 +93,7 @@ async function suspendWorker(req, res) {
     });
     res.json({ message: 'Worker suspended', reason: reason || null, worker });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2025') return res.status(404).json({ error: 'Worker not found' });
     res.status(500).json({ error: err.message });
   }
@@ -98,6 +108,7 @@ async function reactivateWorker(req, res) {
     });
     res.json({ message: 'Worker reactivated', worker });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2025') return res.status(404).json({ error: 'Worker not found' });
     res.status(500).json({ error: err.message });
   }
@@ -116,6 +127,7 @@ async function requireRecertification(req, res) {
     });
     res.json({ message: 'Worker flagged for recertification', worker });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     if (err.code === 'P2025') return res.status(404).json({ error: 'Worker not found' });
     res.status(500).json({ error: err.message });
   }
@@ -144,8 +156,14 @@ async function pendingReviewQueue(req, res) {
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ workers, total: workers.length });
+    // Invariant I2 means an unclaimed listing cannot have a TestSubmission and
+    // so cannot reach this queue. Filtered anyway — an unclaimed listing must
+    // never be offered to an admin as something to certify.
+    const reviewable = workers.filter((w) => !isUnclaimed(w));
+
+    res.json({ workers: reviewable, total: reviewable.length });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message, code: err.code });
     res.status(500).json({ error: err.message });
   }
 }

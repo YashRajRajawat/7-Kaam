@@ -9,11 +9,24 @@ export type SubmissionStatus = 'SUBMITTED' | 'EVALUATING' | 'COMPLETED' | 'FAILE
 export type SignalType = 'VIDEO' | 'TEST' | 'WORK_HISTORY' | 'FINAL';
 export type ReportStatus = 'OPEN' | 'DISMISSED' | 'ACTIONED';
 
+// ── Listing provenance ────────────────────────────────────────────────────────
+// Who put this row in the database. Orthogonal to WorkerStatus (lifecycle) and
+// to Tier (trust). 'PUBLIC_DIRECTORY' rows were scraped from a third-party
+// directory; the named person never signed up and never consented.
+export type ListingSource = 'SELF_SIGNUP' | 'PUBLIC_DIRECTORY';
+
+// Three states, not two. There is no `isClaimed` boolean anywhere — a boolean
+// plus a status is two sources of truth that will disagree.
+export type ClaimStatus = 'UNCLAIMED' | 'CLAIM_PENDING' | 'CLAIMED';
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 export interface Worker {
   id: string;
-  aadhaarHash: string;
+  // CHANGED: nullable. Directory imports write NULL — no placeholder hash is
+  // invented. getWorker/listWorkers return the raw row, so this key really does
+  // reach the dashboard.
+  aadhaarHash?: string | null;
   fullName: string;
   phoneNumber: string;
   profilePhotoUrl?: string;
@@ -36,6 +49,26 @@ export interface Worker {
   underReview?: boolean;
   recertificationTestIds?: string[];
   recertificationReason?: string;
+
+  // ── Listing provenance (see §A.2) ───────────────────────────────────────────
+  // listingSource and claimStatus are REQUIRED, never optional. An optional
+  // field is `undefined`, and `undefined` reads as "self-registered" in every
+  // truthiness check in this codebase — which is exactly how an unverified
+  // stranger silently becomes a verified-looking one.
+  listingSource: ListingSource;
+  claimStatus: ClaimStatus;
+  sourceName?: string | null;
+  sourceRef?: string | null;
+  sourceUrl?: string | null;
+  sourceAddress?: string | null;
+  importBatchId?: string | null;
+  importedAt?: string | null;
+  claimRequestedAt?: string | null;
+  claimedAt?: string | null;
+  suppressedAt?: string | null;
+  suppressionReason?: string | null;
+  tradeInferred?: boolean;
+
   createdAt: string;
   updatedAt: string;
   workHistories?: WorkHistory[];

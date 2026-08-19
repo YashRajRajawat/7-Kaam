@@ -5,8 +5,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import type { KaamCard, Worker } from '@/types';
-import { cn, tierColor, tradeLabel, formatDate } from '@/lib/utils';
-import { XCircle, Copy, CheckCheck, ExternalLink, Award, ShieldCheck, Download, CheckCircle2, Clock } from 'lucide-react';
+import { cn, tierColor, tradeLabel, formatDate, formatScore } from '@/lib/utils';
+import { XCircle, Copy, CheckCheck, ExternalLink, Award, ShieldCheck, Download, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+
+// ── Listing provenance helpers ────────────────────────────────────────────────
+// Module-local for the same reason as in app/workers/page.tsx: §F.3 wants these
+// in lib/utils.ts, which is owned elsewhere and holds uncommitted work.
+
+// Mirrors §A.3.
+function isUnclaimedListing(w: Pick<Worker, 'listingSource' | 'claimStatus'>): boolean {
+  return w.listingSource === 'PUBLIC_DIRECTORY' && w.claimStatus !== 'CLAIMED';
+}
+
+// A POSITIVE assertion, deliberately not the negation of isUnclaimedListing.
+// If the API omits listingSource/claimStatus — stale PostgREST schema cache, an
+// older backend build — the negation would return true and re-open the exact
+// hole this page exists to close. Unknown provenance is not a green light.
+function isIssuable(w: Pick<Worker, 'listingSource' | 'claimStatus'>): boolean {
+  return w.listingSource === 'SELF_SIGNUP' || w.claimStatus === 'CLAIMED';
+}
 
 export default function KaamCardsPage() {
   const qc = useQueryClient();
@@ -31,8 +48,15 @@ export default function KaamCardsPage() {
     ? workersResponse
     : workersResponse?.data || [];
 
-  // Filter unverified workers who have no active KaamCard yet
-  const pendingQueue = workerList.filter(w => !w.kaamCards || w.kaamCards.length === 0 || w.kaamCards.every(c => c.isRevoked));
+  // Filter unverified workers who have no active KaamCard yet.
+  const noActiveCard = (w: Worker) =>
+    !w.kaamCards || w.kaamCards.length === 0 || w.kaamCards.every(c => c.isRevoked);
+
+  // Unclaimed directory listings are excluded ENTIRELY. This queue sits next to
+  // a one-click "Verify & Issue KaamCard" button; a scraped business appearing
+  // here is one misclick away from being issued a real 7 Kaam certificate.
+  const pendingQueue = workerList.filter(w => noActiveCard(w) && !isUnclaimedListing(w));
+  const excludedUnclaimed = workerList.filter(w => noActiveCard(w) && isUnclaimedListing(w)).length;
 
   // Issue KaamCard Mutation
   const issueKaamCard = useMutation({
@@ -113,6 +137,18 @@ export default function KaamCardsPage() {
             <span className="text-xs text-[#767586]">Admin review required before issuing valid KaamCard</span>
           </div>
 
+          {excludedUnclaimed > 0 && (
+            <p className="flex items-start gap-1.5 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <AlertTriangle size={13} className="flex-shrink-0 mt-px" />
+              <span>
+                {excludedUnclaimed} unclaimed directory listing{excludedUnclaimed === 1 ? '' : 's'} hidden
+                from this queue. They were imported from a public directory, nobody applied for
+                verification, and a KaamCard can never be issued for them until the real owner
+                claims the listing.
+              </span>
+            </p>
+          )}
+
           <div className="bg-white border border-[#e0e3e5] rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -143,7 +179,11 @@ export default function KaamCardsPage() {
                         <td className="px-6 py-4 text-xs text-[#767586]">{worker.city}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-[#191c1e]">{Math.round(worker.finalScore || 80)}/100</span>
+                            {/* Was `Math.round(worker.finalScore || 80)/100`, which
+                                turned a genuine 0 into 80 and invented an 80 for
+                                anyone never scored at all. formatScore renders an
+                                em dash for null/undefined and never fabricates. */}
+                            <span className="text-xs font-black text-[#191c1e]">{formatScore(worker.finalScore)}</span>
                             {worker.tier && (
                               <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold border', tierColor(worker.tier))}>
                                 {worker.tier}
@@ -157,13 +197,35 @@ export default function KaamCardsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() => issueKaamCard.mutate(worker.id)}
-                            disabled={issueKaamCard.isPending}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-extrabold transition-all shadow-sm active:scale-[0.98]"
-                          >
-                            <CheckCircle2 size={14} /> Verify & Issue KaamCard
-                          </button>
+                          {(() => {
+                            // Two independent gates, both required.
+                            // 1. Provenance must positively say this person is ours.
+                            // 2. A KaamCard states a score and a tier; if neither
+                            //    exists there is nothing truthful to print, and the
+                            //    backend now 409s on exactly this case.
+                            const provenanceOk = isIssuable(worker);
+                            const scoreOk = worker.finalScore != null && worker.tier != null;
+                            const blockedReason = !provenanceOk
+                              ? 'Provenance unknown — cannot confirm this worker signed up with 7 Kaam'
+                              : !scoreOk
+                                ? 'No computed score or tier — compute a score before issuing'
+                                : '';
+                            return (
+                              <>
+                                <button
+                                  onClick={() => issueKaamCard.mutate(worker.id)}
+                                  disabled={issueKaamCard.isPending || !!blockedReason}
+                                  title={blockedReason || 'Issue an official KaamCard'}
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 text-white text-xs font-extrabold transition-all shadow-sm active:scale-[0.98]"
+                                >
+                                  <CheckCircle2 size={14} /> Verify & Issue KaamCard
+                                </button>
+                                {blockedReason && (
+                                  <p className="text-[10px] text-amber-800 mt-1.5 max-w-[220px]">{blockedReason}</p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </td>
                       </tr>
                     ))
@@ -218,7 +280,8 @@ export default function KaamCardsPage() {
                             <p className="text-[11px] font-mono text-[#565e74] font-normal">{card.worker?.phoneNumber}</p>
                           </td>
                           <td className="px-6 py-4 text-xs text-[#565e74] font-semibold">{tradeLabel(card.worker?.trade || '')}</td>
-                          <td className="px-6 py-4 text-xs font-black text-[#191c1e]">{Math.round(breakdown?.finalScore || 0)}/100</td>
+                          {/* `|| 0` rendered a missing breakdown as a real 0/100. */}
+                          <td className="px-6 py-4 text-xs font-black text-[#191c1e]">{formatScore(breakdown?.finalScore)}</td>
                           <td className="px-6 py-4">
                             {breakdown?.tier && (
                               <span className={cn('px-2.5 py-0.5 rounded text-[10px] font-bold border', tierColor(breakdown.tier))}>

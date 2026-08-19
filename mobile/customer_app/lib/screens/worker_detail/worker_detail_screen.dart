@@ -13,6 +13,7 @@ import '../../providers/worker_detail_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/score_bar.dart';
 import '../../widgets/tier_badge.dart';
+import '../../widgets/unclaimed_badge.dart';
 
 class WorkerDetailScreen extends ConsumerStatefulWidget {
   final String workerId;
@@ -51,7 +52,26 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ReportBottomSheet(workerId: widget.workerId),
+      builder: (ctx) => _ReportBottomSheet(
+        workerId: widget.workerId,
+        isUnclaimed: ref.read(workerDetailProvider).worker?.isUnclaimed ?? true,
+      ),
+    );
+  }
+
+  /// Claim / removal request for an unclaimed public-directory listing.
+  /// Open to anyone — the real owner of a scraped business has no 7 Kaam
+  /// account by definition, so requiring a login here would make the opt-out
+  /// unreachable for exactly the people it exists for.
+  void _openListingRequestSheet(String type) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ListingRequestBottomSheet(
+        workerId: widget.workerId,
+        type: type,
+      ),
     );
   }
 
@@ -101,6 +121,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
     }
 
     final worker = state.worker!;
+    final isUnclaimed = worker.isUnclaimed;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -112,11 +133,16 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Worker Profile',
+          isUnclaimed ? UnclaimedCopy.detailAppBarTitle : 'Worker Profile',
           style: GoogleFonts.poppins(color: AppColors.navy, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
         actions: [
+          // Sharing is suppressed entirely for unclaimed listings. The share
+          // payload asserts "a worker on 7 Kaam" about a real, named business
+          // that never joined and never consented; there is no safe rewrite of
+          // that sentence, so the affordance goes away.
+          if (!isUnclaimed)
           IconButton(
             icon: const Icon(Icons.share_outlined, color: AppColors.navy),
             tooltip: 'Share worker profile',
@@ -143,10 +169,28 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // INVARIANT I4 — the disclosure is the FIRST thing in the
+                  // scroll view, above the name. Never behind a scroll, a tab
+                  // or an expand.
+                  if (isUnclaimed) ...[
+                    _buildDisclosureCard(worker),
+                    const SizedBox(height: 16),
+                  ],
                   _buildHeader(worker),
                   const SizedBox(height: 16),
-                  _buildScoreSection(worker),
+                  // Never render the score section for an unclaimed listing:
+                  // no teal ring, no '—/100', no credibility text, no
+                  // "Based on 0 assessments", no "not assessed" score rows.
+                  // A slate statement of what is absent goes there instead.
+                  if (isUnclaimed)
+                    _buildNoVerificationCard()
+                  else
+                    _buildScoreSection(worker),
                   const SizedBox(height: 16),
+                  if (isUnclaimed && worker.isClaimable) ...[
+                    _buildClaimCard(),
+                    const SizedBox(height: 16),
+                  ],
                   if (worker.certificates.isNotEmpty) ...[
                     _buildCertificatesSection(worker),
                     const SizedBox(height: 16),
@@ -155,7 +199,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                     _buildExperienceSection(worker),
                     const SizedBox(height: 16),
                   ],
-                  _buildReportSection(),
+                  _buildReportSection(isUnclaimed),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -178,6 +222,176 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
         ],
       ),
       child: child,
+    );
+  }
+
+  /// Slate card shell for unclaimed-listing surfaces. Deliberately shares no
+  /// colour with the verified / tier / score palette.
+  Widget _slateCard({required Widget child, Color background = UnclaimedColors.bg}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: UnclaimedColors.border),
+      ),
+      child: child,
+    );
+  }
+
+  /// `detail.disclosure.*` — spec §E.4, verbatim.
+  Widget _buildDisclosureCard(WorkerPublicModel worker) {
+    final sourceName = worker.sourceName?.trim();
+    final sourceAddress = worker.sourceAddress?.trim();
+    return _slateCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, size: 18, color: UnclaimedColors.accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  UnclaimedCopy.detailDisclosureTitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: UnclaimedColors.text,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            UnclaimedCopy.detailDisclosureBody,
+            style: GoogleFonts.poppins(fontSize: 12, height: 1.5, color: UnclaimedColors.text),
+          ),
+          if (sourceName != null && sourceName.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Source: $sourceName',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: UnclaimedColors.text,
+              ),
+            ),
+          ],
+          if (sourceAddress != null && sourceAddress.isNotEmpty)
+            Text(
+              sourceAddress,
+              style: GoogleFonts.poppins(fontSize: 11, color: UnclaimedColors.text),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// `detail.novrf.*` — spec §E.4, verbatim. Outline circles only; never a
+  /// checkmark, never teal, never a number.
+  Widget _buildNoVerificationCard() {
+    return _slateCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            UnclaimedCopy.detailNovrfTitle,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: UnclaimedColors.text,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...UnclaimedCopy.detailNovrfRows.map(
+            (row) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.radio_button_unchecked,
+                      size: 14, color: UnclaimedColors.accent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      row,
+                      style: GoogleFonts.poppins(fontSize: 13, color: UnclaimedColors.text),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            UnclaimedCopy.detailNovrfFooter,
+            style: GoogleFonts.poppins(fontSize: 11, color: UnclaimedColors.text),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// `detail.claim.*` — spec §E.4, verbatim. An OUTLINED slate button, never a
+  /// filled teal one: teal is the verified colour.
+  Widget _buildClaimCard() {
+    return _slateCard(
+      background: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            UnclaimedCopy.detailClaimTitle,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: UnclaimedColors.text,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            UnclaimedCopy.detailClaimBody,
+            style: GoogleFonts.poppins(fontSize: 12, height: 1.5, color: UnclaimedColors.text),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => _openListingRequestSheet('CLAIM'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: UnclaimedColors.accent,
+                side: const BorderSide(color: UnclaimedColors.accent),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                UnclaimedCopy.detailClaimPrimary,
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => _openListingRequestSheet('REMOVAL'),
+              style: TextButton.styleFrom(foregroundColor: UnclaimedColors.text),
+              child: Text(
+                UnclaimedCopy.detailClaimSecondary,
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            UnclaimedCopy.detailClaimFootnote,
+            style: GoogleFonts.poppins(fontSize: 11, color: UnclaimedColors.text),
+          ),
+        ],
+      ),
     );
   }
 
@@ -223,9 +437,12 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                 _pillChip(Icons.check_circle_outline, 'Aadhaar Verified', Colors.green),
               if (worker.underReview)
                 _pillChip(Icons.info_outline, 'Under Review', Colors.orange),
+              // Suppressed for unclaimed listings — the disclosure card above
+              // already states the absence of verification, and an hourglass
+              // implies a process this business never entered.
               if (worker.hasKaamCard)
                 _pillChip(Icons.verified, 'KaamCard Certified', AppColors.primaryTeal)
-              else
+              else if (!worker.isUnclaimed)
                 _pillChip(Icons.hourglass_empty, 'Not yet KaamCard certified', Colors.grey),
             ],
           ),
@@ -283,12 +500,17 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (worker.tier != null) TierBadge(tier: worker.tier!),
+                    if (worker.tier != null) TierBadge(tier: worker.tier),
                     const SizedBox(height: 8),
-                    Text(
-                      worker.credibilityLevel,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.darkText),
-                    ),
+                    // credibilityLevel is String? — the server sends null for
+                    // any row it has not assessed. Rendering a client-side
+                    // default here is how a worker acquires a credibility rung
+                    // nobody granted, so there is no `??` fallback.
+                    if (worker.credibilityLevel != null)
+                      Text(
+                        worker.credibilityLevel!,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.darkText),
+                      ),
                     Text(
                       'Based on $assessmentCount assessment${assessmentCount == 1 ? '' : 's'}',
                       style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
@@ -414,7 +636,7 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
     );
   }
 
-  Widget _buildReportSection() {
+  Widget _buildReportSection(bool isUnclaimed) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -425,17 +647,25 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Had a bad experience?', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy)),
+          Text(
+            isUnclaimed ? UnclaimedCopy.detailReportHeading : 'Had a bad experience?',
+            style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.navy),
+          ),
           const SizedBox(height: 8),
           CustomButton(
-            text: 'Report this worker',
+            text: isUnclaimed ? 'Report this listing' : 'Report this worker',
             isOutlined: true,
             height: 40,
             icon: Icons.flag_outlined,
             onPressed: _openReportSheet,
           ),
           const SizedBox(height: 8),
-          Text('Reported workers are reviewed by the 7 Kaam team.', style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText)),
+          Text(
+            isUnclaimed
+                ? 'Reported listings are reviewed by the 7 Kaam team.'
+                : 'Reported workers are reviewed by the 7 Kaam team.',
+            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
+          ),
         ],
       ),
     );
@@ -462,8 +692,13 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Contact the worker directly to discuss your requirements.',
-                  style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grayText),
+                  worker.isUnclaimed
+                      ? UnclaimedCopy.detailPhoneNote
+                      : 'Contact the worker directly to discuss your requirements.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: worker.isUnclaimed ? UnclaimedColors.text : AppColors.grayText,
+                  ),
                 ),
               ],
             )
@@ -474,7 +709,13 @@ class _WorkerDetailScreenState extends ConsumerState<WorkerDetailScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
                     child: Center(
-                      child: Text('98XXXXXX12', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.grayText, letterSpacing: 1)),
+                      // Was the literal placeholder '98XXXXXX12', which
+                      // fabricated the appearance of a stored phone number.
+                      child: Text(
+                        'Log in to see contact details',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grayText),
+                      ),
                     ),
                   ),
                 ),
@@ -570,9 +811,173 @@ class _LoginBottomSheetState extends ConsumerState<_LoginBottomSheet> {
   }
 }
 
+/// Claim or removal request for an unclaimed public-directory listing.
+///
+/// Posts to `POST /public/workers/:id/listing-request`. Neither type grants
+/// anything: CLAIM records a pending claim for a human to confirm, REMOVAL
+/// suppresses the listing. Nothing here sets a score, a tier or a
+/// verification state, and nothing here logs anybody in.
+class _ListingRequestBottomSheet extends ConsumerStatefulWidget {
+  final String workerId;
+  final String type; // 'CLAIM' | 'REMOVAL'
+  const _ListingRequestBottomSheet({required this.workerId, required this.type});
+
+  @override
+  ConsumerState<_ListingRequestBottomSheet> createState() =>
+      _ListingRequestBottomSheetState();
+}
+
+class _ListingRequestBottomSheetState extends ConsumerState<_ListingRequestBottomSheet> {
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _noteController = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  bool get _isRemoval => widget.type == 'REMOVAL';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Enter your name');
+      return;
+    }
+    if (phone.length < 10) {
+      setState(() => _error = 'Enter a valid 10-digit phone number');
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(apiServiceProvider).submitListingRequest(
+            workerId: widget.workerId,
+            type: widget.type,
+            contactName: name,
+            contactPhone: phone,
+            note: _noteController.text.trim(),
+          );
+      if (!mounted) return;
+      nav.pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(_isRemoval
+              ? 'Removal request received. This listing will no longer be shown.'
+              : 'Claim request received. The 7 Kaam team will contact you to confirm you own this business.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = 'Could not send your request. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _isRemoval
+                  ? UnclaimedCopy.detailClaimSecondary
+                  : UnclaimedCopy.detailClaimPrimary,
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: UnclaimedColors.text),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _isRemoval
+                  ? 'Tell us who you are and we will stop showing this listing.'
+                  : UnclaimedCopy.detailClaimBody,
+              style: GoogleFonts.poppins(fontSize: 12, color: UnclaimedColors.text),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Your name'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(prefixText: '+91 ', labelText: 'Your phone number'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _noteController,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Anything else? (optional)'),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: GoogleFonts.poppins(color: Colors.red, fontSize: 12)),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _submitting ? null : _submit,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: UnclaimedColors.accent,
+                  side: const BorderSide(color: UnclaimedColors.accent),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: UnclaimedColors.accent),
+                      )
+                    : Text(
+                        'Send request',
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              UnclaimedCopy.detailClaimFootnote,
+              style: GoogleFonts.poppins(fontSize: 11, color: UnclaimedColors.text),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ReportBottomSheet extends ConsumerStatefulWidget {
   final String workerId;
-  const _ReportBottomSheet({required this.workerId});
+  final bool isUnclaimed;
+  const _ReportBottomSheet({required this.workerId, required this.isUnclaimed});
 
   @override
   ConsumerState<_ReportBottomSheet> createState() => _ReportBottomSheetState();
@@ -580,15 +985,22 @@ class _ReportBottomSheet extends ConsumerStatefulWidget {
 
 class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
   final _descController = TextEditingController();
-  String _reason = 'Unprofessional behavior';
+  late String _reason = _reasons.first;
 
-  final List<String> _reasons = [
+  static const List<String> _baseReasons = [
     'Unprofessional behavior',
     'Poor quality work',
     'No response / unreachable',
     'Fraud or scam',
     'Other',
   ];
+
+  /// An unclaimed listing was never hired by anyone, so the "bad experience"
+  /// reasons are mostly inapplicable. The three data-accuracy / opt-out
+  /// reasons come first because they are the ones its real owner needs.
+  List<String> get _reasons => widget.isUnclaimed
+      ? [...UnclaimedCopy.detailReportNewReasons, ..._baseReasons]
+      : _baseReasons;
 
   @override
   Widget build(BuildContext context) {
@@ -602,7 +1014,10 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Report this worker', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy)),
+            Text(
+              widget.isUnclaimed ? 'Report this listing' : 'Report this worker',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy),
+            ),
             const SizedBox(height: 16),
             Text('Reason', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkText)),
             const SizedBox(height: 6),

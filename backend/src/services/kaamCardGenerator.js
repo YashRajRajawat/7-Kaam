@@ -76,8 +76,11 @@ async function generateKaamCard({ worker, videoScore, testScore, workHistoryScor
     size: 12, font: regularFont, color: GREY,
   });
 
-  // Aadhaar Verified Badge
-  if (worker.aadhaarVerified !== false) {
+  // Aadhaar Verified Badge — `=== true`, not `!== false`. An undefined or null
+  // aadhaarVerified (which the PostgREST proxy can return when the column is not
+  // selected) previously satisfied `!== false` and stamped "Aadhaar Verified"
+  // onto the card of someone who had never been verified.
+  if (worker.aadhaarVerified === true) {
     page.drawRectangle({
       x: 55, y: profileY + profileH - 92,
       width: 125, height: 22,
@@ -111,8 +114,9 @@ async function generateKaamCard({ worker, videoScore, testScore, workHistoryScor
 
   // ── 3. Final Composite Score & Tier Section ──────────────────────────────────
   const scoreY = height - 280;
-  const displayScore = Math.round(finalScore || 80);
-  const scoreText = `${displayScore} / 100`;
+  // `finalScore || 80` turned a genuine score of 0 into 80, and printed 80 for a
+  // worker who had never been scored at all.
+  const scoreText = finalScore == null ? '— / 100' : `${Math.round(finalScore)} / 100`;
 
   // Draw Score Text
   page.drawText(scoreText, {

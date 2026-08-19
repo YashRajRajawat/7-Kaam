@@ -80,7 +80,12 @@ enum ReportStatus {
 
 model Worker {
   id               String       @id @default(uuid())
-  aadhaarHash      String       @unique
+  // NULLABLE since migration 3: a public-directory listing has no Aadhaar on
+  // file because the person never gave us one. No placeholder hash is ever
+  // invented for them. Postgres permits unlimited NULLs in a UNIQUE index, so
+  // @unique is unaffected. Self-signup rows must still carry a hash — that is
+  // enforced by the DB constraint Worker_selfsignup_requires_aadhaarHash.
+  aadhaarHash      String?      @unique
   fullName         String
   phoneNumber      String       @unique
   profilePhotoUrl  String?
@@ -107,6 +112,31 @@ model Worker {
   underReview             Boolean  @default(false)
   recertificationTestIds  String[] @default([])
   recertificationReason   String?
+
+  // ── Provenance / claim state (migration 3) ────────────────────────────────
+  // A row with listingSource = "PUBLIC_DIRECTORY" is a REAL, NAMED business
+  // scraped from a public directory that never consented to being here and has
+  // never been verified by 7 Kaam. Such a row MUST keep videoScore, testScore,
+  // workHistoryScore, finalScore, tier, kaamCardUrl, qrCodeUrl and
+  // kaamCardIssuedAt NULL and aadhaarVerified = false until it is CLAIMED.
+  // That is enforced in the database by the CHECK constraint
+  // Worker_unclaimed_has_no_trust_data — do not attempt to work around it.
+  // No Google rating, review count or any derivative is stored: those columns
+  // deliberately do not exist. A directory rating is NOT a 7 Kaam score.
+  listingSource     String    @default("SELF_SIGNUP")
+  claimStatus       String    @default("CLAIMED")
+  sourceName        String?
+  sourceRef         String?   @unique
+  sourceUrl         String?
+  sourceAddress     String?
+  importBatchId     String?
+  importedAt        DateTime?
+  claimRequestedAt  DateTime?
+  claimedAt         DateTime?
+  suppressedAt      DateTime?
+  suppressionReason String?
+  tradeInferred     Boolean   @default(false)
+
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
